@@ -3,5 +3,11 @@
 
 class Common:
     """Class for common tasks with dataset."""
-    def __init__():
-        print('Hello from COMMON')
+
+    def print_dict(data: dict):
+        print('{')
+        keys = sorted(list(data.keys()))
+        print(keys)
+        for key in keys:
+            print(f'\t{key}: {data[key]}')
+        print('}')
