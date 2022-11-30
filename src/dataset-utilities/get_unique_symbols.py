@@ -4,13 +4,15 @@ import argparse
 import re
 import sys
 import os
+import pandas as pd
 
 
 class Get_unique_symbols:
     """Open file(s) and extract all unique music symbol ids."""
 
     file_names = []
-    data = {}
+
+    unique_symbols = pd.DataFrame()
 
     def __init__(self, dir: str = '', ext: str = '', files: list = []):
         self.file_names = self.get_file_names(dir, ext)
@@ -27,11 +29,13 @@ class Get_unique_symbols:
     def get_symbols_from_file(self, file: str):
         print('getting things from file', file)
 
-        data = self.read_file(file)
-        if not data:
+        file_data = self.read_file(file)
+        if not file_data:
             return
 
-        symbols = re.split(r'\s', data)
+        symbols = re.split(r'\s', file_data)
+
+        unique_symbols = {}
 
         for sym in symbols:
             if not sym:
@@ -39,10 +43,19 @@ class Get_unique_symbols:
 
             type = re.split(r'-|\.', sym)[0]
 
-            if type in list(self.data.keys()):
-                self.data[type].add(sym)
+            if type in list(unique_symbols.keys()):
+                unique_symbols[type].add(sym)
             else:
-                self.data[type] = {sym}
+                unique_symbols[type] = {sym}
+
+        unique_symbols = pd.DataFrame.from_dict(unique_symbols, 'index').T
+
+        print('unique_symbols:')
+        print(unique_symbols)
+        self.unique_symbols = pd.concat([self.unique_symbols, unique_symbols])
+
+        # print('self.unique_symbols:')
+        # print(self.unique_symbols)
 
         return
 
@@ -53,9 +66,22 @@ class Get_unique_symbols:
         return data
 
     def print_symbols(self):
-        self.print_dir(self.data)
+        print('========================')
+        print(self.unique_symbols)
 
-    def print_dir(self, data: dict):
+        print('========================')
+        self.unique_symbols = self.unique_symbols[
+            sorted(self.unique_symbols)].reset_index()
+        del self.unique_symbols['index']
+
+        for col in self.unique_symbols:
+            self.unique_symbols[col] = self.unique_symbols[col].sort_values()
+            print(self.unique_symbols[col].sort_values().to_list())
+
+        print(self.unique_symbols)
+        # self.print_dict(self.unique_symbols)
+
+    def print_dict(self, data: dict):
         print('{')
         print(list(data.keys()))
         for key in list(data.keys()):
