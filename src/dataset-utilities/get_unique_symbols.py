@@ -4,8 +4,6 @@ import argparse
 import re
 import sys
 import os
-import pandas as pd
-
 from common import Common
 
 
@@ -17,17 +15,17 @@ class Get_unique_symbols:
     # Dictionary of Pandas series. Key = symbol type
     unique_symbols = {}
 
-    def __init__(self, dir: str = '', ext: str = '', files: list = []):
-        self.file_names = self.get_file_names(dir, ext)
+    def __init__(self, files: list = [], dirs: str = '',
+                 exts: str = '', recursive: bool = False):
+        if recursive:
+            print("Recursive lookup has NOT been implemented yet!!!",
+                  file=sys.stderr)
 
-    def get_file_names(self, dir, ext) -> list:
-        """Get file names from directory with given extension
-
-        Or all files in indirectory, if ext is empty."""
-        if not dir:
-            return []
-
-        os.listdir(dir)
+        self.file_names = Common.get_existing_file_names(files, dirs,
+                                                         exts, recursive)
+        print(self.file_names)
+        for file in self.file_names:
+            self.get_symbols_from_file(file)
 
     def get_symbols_from_file(self, file: str):
         print('getting things from file', file)
@@ -70,12 +68,13 @@ class Get_unique_symbols:
             data = f.read()
         return data
 
-    def finalize(self):
-        # print('\n' + '========================' * 3 + '\n')
-        # self.print_symbols()
-
-        print('\n' + '========================' * 3 + '\n')
-        self.print_symbols()
+    def finalize(self, file='stdout'):
+        if file == 'stdout':
+            print('\n' + '========================' * 3 + '\n')
+            self.print_symbols()
+        else:
+            print('This type of output has NOT been implemented yet.',
+                  file=sys.stderr)
 
     def print_symbols(self):
         Common.print_dict(self.unique_symbols)
@@ -84,16 +83,25 @@ class Get_unique_symbols:
 def parseargs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-f", "--file", action='append',
-        help="File to read symbols from, you can add more files")
+        "-f", "--files", nargs='*',
+        help=("Files to read symbols from, you can add more files.\n" +
+              "USE FULL FILE PATH (relative or absolute)"))
     parser.add_argument(
-        "-e", "--ext", default='semantic', action='append',
-        help=(f"Set file extension for files in given folder\n" +
-              f"Use in combination with --directory."))
+        "-e", "--extensions", nargs='*', default=['semantic', 'agnostic'],
+        help=("Set file extensions for files in given folder\n" +
+              "Use in combination with --directories."))
     parser.add_argument(
-        "-d", "--dir", default='', action='append',
-        help=(f"Directory where to look for files with correct extension\n" +
-              f"Use in combination with --ext."))
+        "-d", "--directories", nargs='*', default=[],
+        help=("Directories where to look for files with given extensions. \n" +
+              "Use in combination with --extensions."))
+    # parser.add_argument(
+    #     "-r", "--recursive", default=False, action='store_true',
+    #     help=("Activate recursive search in given directory.\n" +
+    #           "If not set, use only files in given directory"))
+    parser.add_argument(
+        "-o", "--output", default='stdout',
+        help="Set output file with extension. Output format is JSON")
+
     # parser.add_argument(
     #     "-o", "--out", default='',
     #     help="Set output file, stdout by default")
@@ -104,13 +112,12 @@ def main():
     """Main function for simple testing"""
     args = parseargs()
 
-    gus = Get_unique_symbols(dir=args.dir, ext=args.ext, files=args.file)
-
-    for f in args.file:
-        gus.get_symbols_from_file(f)
-
+    gus = Get_unique_symbols(
+        files=args.files,
+        dirs=args.directories,
+        exts=args.extensions)
+    gus.finalize(args.output)
     # gus.print_symbols(args.out)
-    gus.finalize()
 
 
 if __name__ == "__main__":
