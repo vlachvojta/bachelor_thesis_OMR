@@ -1,11 +1,14 @@
 PY=python3.8
-UNIQUE_SYMBOLS=get_unique_symbols.py
+GUS=get_unique_symbols.py
+GUS_ALL=../../../datasets/primus_stats/all_unique_symbols.json
 
 all: unique_symbols_test
 
+get_all_unique_symbols:
+	$(PY) $(GUS) -F ../../../datasets/primus_untouched/package_a*/ -o $(GUS_ALL) -d $(GUS_ALL)
 
 unique_symbols_test:
-	$(PY) $(UNIQUE_SYMBOLS) -f test_data/000051650-1_1_1*
+	$(PY) $(GUS) -f test_data/000051650-1_1_1*
 
 clean:
 	rm -rf __pycache__
