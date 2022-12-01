@@ -16,8 +16,8 @@ class Get_unique_symbols:
     # Dictionary of Pandas series. Key = symbol type
     unique_symbols = {}
 
-    def __init__(self, files: list = [], dirs: str = '',
-                 exts: str = '', recursive: bool = False,
+    def __init__(self, files: list = [], exts: list = 'semantic',
+                 folders: str = ['.'], recursive: bool = False,
                  database: str = 'all_unique_symbols.json',
                  input_file: str = 'files.txt'):
         # if recursive:
@@ -29,14 +29,21 @@ class Get_unique_symbols:
         self.load_start_data(database)
         loaded_symbols_sum = self.count_unique_symbols()
 
+        for folder in folders:
+            files += Common.get_files(folder, exts)
+
         files += Common.get_lines(input_file)
+        files = list(set(files))
         self.file_names = Common.check_existing_files(files)
 
         # self.unique_symbols['files'] = self.file_names
         print(f'Getting data from {len(self.file_names)} files '
-              f'(every dot is a parsed file).')
+              f'(every dot is 1000 parsed file).')
 
-        for file in self.file_names:
+        for i, file in enumerate(self.file_names):
+            if i % 1000 == 0:
+                print('.', end='')
+                sys.stdout.flush()
             self.get_symbols_from_file(file)
         print('')
 
@@ -60,8 +67,6 @@ class Get_unique_symbols:
 
     def get_symbols_from_file(self, file: str):
         """Get symbols, save or append to `self.unique_symbols`."""
-        print('.', end='')
-
         file_data = Common.read_file(file)
         if not file_data:
             return
@@ -118,14 +123,14 @@ def parseargs():
         "-f", "--files", nargs='*', default=[],
         help=("Files to read symbols from, you can add more files.\n" +
               "USE FULL FILE PATH (relative or absolute)"))
-    # parser.add_argument(
-    #     "-e", "--extensions", nargs='*', default=['semantic', 'agnostic'],
-    #     help=("Set file extensions for files in given folder\n" +
-    #           "Use in combination with --directories."))
-    # parser.add_argument(
-    #     "-d", "--directories", nargs='*', default=[],
-    #     help=("Directories where to look for files with given extensions. \n" +
-    #           "Use in combination with --extensions."))
+    parser.add_argument(
+        "-e", "--extensions", nargs='*', default=['semantic'],#,  'agnostic'],
+        help=("Set file extensions for files in given folder\n" +
+              "Use in combination with --directories."))
+    parser.add_argument(
+        "-F", "--folders", nargs='*', default=['.'],
+        help=("Directories where to look for files with given extensions. \n" +
+              "Use in combination with --extensions."))
     # parser.add_argument(
     #     "-r", "--recursive", default=False, action='store_true',
     #     help=("Activate recursive search in given directory.\n" +
@@ -153,6 +158,8 @@ def main():
     start = time.time()
     gus = Get_unique_symbols(
         files=args.files,
+        exts=args.extensions,
+        folders=args.folders,
         database=args.database,
         input_file=args.input_file)
     # dirs=args.directories,
