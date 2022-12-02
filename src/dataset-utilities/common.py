@@ -7,6 +7,7 @@ import sys
 import json
 import time
 
+
 class Common:
     """Class for common tasks with dataset."""
 
@@ -34,7 +35,7 @@ class Common:
         print('}')
 
     @staticmethod
-    def check_existing_files(files):
+    def check_existing_files(files: list = []):
         """Return only existing file"""
         return [file for file in files if os.path.exists(file)]
 
@@ -59,12 +60,22 @@ class Common:
 
     @staticmethod
     def save_dict_as_json(data: dict, file: str) -> None:
-        with open(file, 'w') as fp:
-            json.dump(data, fp)
+        with open(file, 'w') as f:
+            json.dump(data, f)
+
+    @staticmethod
+    def write_to_file(data, file) -> None:
+        """Caller is responsible for what is sent to which type of file."""
+        with open(file, 'w') as f:
+            file_extension = file.split('.')[-1]
+            if file_extension == 'json':
+                json.dump(data, f)
+            else:
+                f.write(data)
 
     @staticmethod
     def read_file(file: str):
-        """Read file, method assumes, file exists."""
+        """Read file, if file extension == 'json', read as json"""
         if not os.path.exists(file):
             return
 
@@ -126,3 +137,18 @@ class Common:
         if not file:
             return False
         return file.split('.')[-1] in exts
+
+    @staticmethod
+    def sum_lists_in_dict(data: dict = {}) -> int:
+        """Return sum of all unique symbols found."""
+        sum = 0
+        for v in data.values():
+            sum += len(v)
+        return sum
+
+    @staticmethod
+    def serialize_dict_to_list(data: dict = {}) -> list:
+        result = []
+        for v in data.values():
+            result += v
+        return result

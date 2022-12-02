@@ -27,7 +27,7 @@ class Get_unique_symbols:
         #                                                  exts, recursive)
         print('Hello from GET_UNIQUE_SYMBOLS')
         self.load_start_data(database)
-        loaded_symbols_sum = self.count_unique_symbols()
+        loaded_symbols_sum = Common.sum_lists_in_dict(self.unique_symbols)
 
         for folder in folders:
             files += Common.get_files(folder, exts)
@@ -47,7 +47,7 @@ class Get_unique_symbols:
             self.get_symbols_from_file(file)
         print('')
 
-        total_symbols = self.count_unique_symbols()
+        total_symbols = Common.sum_lists_in_dict(self.unique_symbols)
         new_symbols_count = total_symbols - loaded_symbols_sum
         print(f'{new_symbols_count} new symbols discovered. '
               f'({total_symbols} total)')
@@ -96,16 +96,9 @@ class Get_unique_symbols:
             else:
                 self.unique_symbols[col] = unique_symbols[col]
 
-    def count_unique_symbols(self):
-        """Return sum of all unique symbols found."""
-        sum = 0
-        for key in list(self.unique_symbols.keys()):
-            sum += len(self.unique_symbols[key])
-        return sum
-
     def finalize(self, file='stdout'):
-        for key in list(self.unique_symbols.keys()):
-            self.unique_symbols[key] = list(self.unique_symbols[key])
+        for k, v in self.unique_symbols.items():
+            self.unique_symbols[k] = list(sorted(v))
 
         if file == 'stdout':
             print('\n' + '========================' * 3 + '\n')
@@ -124,7 +117,7 @@ def parseargs():
         help=("Files to read symbols from, you can add more files.\n" +
               "USE FULL FILE PATH (relative or absolute)"))
     parser.add_argument(
-        "-e", "--extensions", nargs='*', default=['semantic'],#,  'agnostic'],
+        "-e", "--extensions", nargs='*', default=['semantic'],
         help=("Set file extensions for files in given folder\n" +
               "Use in combination with --directories."))
     parser.add_argument(
@@ -170,6 +163,7 @@ def main():
 
     end = time.time()
     print(f'Total time: {end - start}')
+
 
 if __name__ == "__main__":
     main()
