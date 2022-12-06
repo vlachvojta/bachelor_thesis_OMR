@@ -17,7 +17,7 @@
 ## Agnostic encoding types
 * accidental
 * barline -> B
-* clef
+* clef -> r'C[CFG]\d'
 * digit
 * dot
 * fermata -> F

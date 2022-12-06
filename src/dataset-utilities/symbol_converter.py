@@ -21,7 +21,7 @@ class Symbol_converter:
     SEPARATORS = r'-._'
 
     # Separator used in new converted dataset
-    SEPARATOR = '.'
+    SEPARATOR = '_'
 
     def __init__(self, input_files: list = [], output: str = [],
                  reverse: bool = False):
@@ -71,14 +71,6 @@ class Symbol_converter:
 
         return out
 
-    converting_patterns_back = {
-        r'S(S|E)(L|S)\.?\d':
-            partial(
-                enlarge.__func__,
-                actions=['slur.', {'E': 'end-', 'S': 'start-'}, 0,
-                         {r'\.': '-', r'\d': 0}, 0])    # TODO SEPARATOR
-    }
-
     @staticmethod
     def shorten(symbol_in: str = '', actions: list = [],
                 encoding: str = 'semantic') -> str:
@@ -88,29 +80,40 @@ class Symbol_converter:
         Actions is list of instructions for individual parts of symbol.
         Options are:
             0 - leave it as is
-            1 - shorten to only one char
+            1 - shorten to only the first char
             2 - shorten to first two chars
+            -1 - shorten to only last char
             9 - ignore part
             r'[0129]sep' - same as previos but add seperator at the end
 
         All lowercase if encoding is semantic,
             uppercase if encoding is agnostic.
         """
+        def resolve_int(action: int, _input: str):
+            if action == 0:
+                return _input
+            elif action == 1 and len(_input) > 0:
+                return _input[0]
+            elif action == 2 and len(_input) > 1:
+                return _input[:2]
+            elif action == -1 and len(_input) > 0:
+                return _input[-1]
+            else:
+                print('AAAAAAAAA')
+                print(type(action))
         out = ''
-        actions = [str(a) if isinstance(a, int) else a for a in actions]
+        # actions = [str(a) if isinstance(a, int) else a for a in actions]
         print(symbol_in)
 
         parts = re.split(r'\.|\-|\_', symbol_in)
         for part, action in zip(parts, actions):
-            if int(action[0]) == 0:
-                out += part
-            elif int(action[0]) == 1:
-                out += part[0]
-            elif int(action[0]) == 2:
-                out += part[:2]
-
-            if len(action) > 1 and action[1:4]:
-                out += Symbol_converter.SEPARATOR
+            if isinstance(action, int):
+                out += resolve_int(action, part)
+            elif isinstance(action, str):
+                if re.fullmatch(r'\d', action[0]):
+                    out += resolve_int(int(action[0]), part)
+                    if len(action) > 3 and action[1:] == 'sep':
+                        out += Symbol_converter.SEPARATOR
 
         if out[-1] == Symbol_converter.SEPARATOR:
             out = out[:-1]
@@ -123,11 +126,36 @@ class Symbol_converter:
         print(f'OUT: {out}')
         return out
 
+    converting_patterns_back = {
+        'b': 'barline',
+        'B': 'barline-L1',
+        'C[CFG]\d':
+            partial(enlarge.__func__,
+                    actions=['clef.', {c: f'{c}-' for c in 'CFG'},
+                             {str(d): f'L{d}' for d in range(10)}]),
+        'DS'+SEPARATOR+r'?\d':
+            partial(enlarge.__func__,
+                    actions=['dot-', 'S', {SEPARATOR: '-', r'\d': 0}, 0]),
+        'F': 'fermata.above-S6',
+
+
+        'S(S|E)(L|S)'+SEPARATOR+r'?\d':
+            partial(enlarge.__func__,
+                    actions=['slur.', {'E': 'end-', 'S': 'start-'}, 0,
+                             {SEPARATOR: '-', r'\d': 0}, 0])
+    }
+
     converting_patterns = {
         'barline': 'b',
         'barline-L1': 'B',
+        'clef\.[CFG]-L\d':
+            partial(shorten.__func__, actions=[1, 1, -1], encoding='agnostic'),
+        'dot-S[-\d]{1,2}':
+            partial(shorten.__func__, actions=[1, '0sep', 0],
+                    encoding='agnostic'),
+        'fermata.above-S6': 'F',
 
-        r'slur.(start|end)-\S*':
+        'slur.(start|end)-\S*':
             partial(shorten.__func__, actions=[1, 1, '0sep', 0],
                     encoding='agnostic')
     }
@@ -150,62 +178,36 @@ class Symbol_converter:
         return symbols_in
 
     @staticmethod
-    def convert_list(symbols_in: list = [], to_smaller: bool = True) -> list:
+    def convert_list(symbols_in: list = [], reverse: bool = False) -> list:
         symbols_out = []
         for sym in symbols_in:
-            symbols_out.append(Symbol_converter.convert(sym, to_smaller))
+            symbols_out.append(Symbol_converter.convert(sym, reverse=reverse))
         return symbols_out
 
     @staticmethod
-    def convert(symbol: str = '', to_smaller: bool = True) -> str:
+    def convert(symbol: str = '', reverse: bool = False) -> str:
         """Convert symbol and back.
 
         if Direction is True, convert to smaller
         else convert to larger.
         """
-        if to_smaller:
-            pattern_matching = Symbol_converter.converting_patterns
-        else:
-            pattern_matching = Symbol_converter.converting_patterns_back
 
+        if reverse:
+            pattern_matching = Symbol_converter.converting_patterns_back
+        else:
+            pattern_matching = Symbol_converter.converting_patterns
+
+        out = ''
         for k, v in pattern_matching.items():
-            if re.match(k, symbol):  # TODO fullmatch
-                print(type(v))
-                out = v(symbol_in=symbol)
+            if re.fullmatch(k, symbol):  # TODO fullmatch
+                if isinstance(v, str):
+                    out = v
+                else:
+                    out = v(symbol_in=symbol)
+                break
 
         print(f'[CONVERT] OUT: {out}')
         return out
-        # clef = r'^c*_'
-        # if symbol[0] == 'b':
-        #     if symbol == 'barline':
-        #         return 'b'
-        #     if symbol == 'barline-L1':
-        #         return 'B'
-        # elif symbol == 'fermata.above-S6':
-        #     return 'F'
-
-        # elif symbol[0] == 's':
-        #     sections = re.split('[-_.]', symbol)
-        #     print(sections)
-        #     if sections[1][0] == 's':
-        #         out = 'S'
-
-        return symbol
-
-    @staticmethod
-    def convert_back(symbol: str = '') -> str:
-        ...
-        # if symbol[0] == 'b':
-        #     return 'barline'
-        # elif symbol[0] == 'B':
-        #     return 'barline-L1'
-        # elif symbol[0] == 'F':
-        #     return 'fermata.above-S6'
-
-        # elif symbol[0] == 's':
-        #     ...
-
-        # return symbol
 
 
 def parseargs():
