@@ -18,7 +18,7 @@ class Symbol_converter:
     """
 
     # Separators used in originla dataset
-    SEPARATORS = r'-._'
+    SEPARATORS = r'[\-\.\_]'
 
     # Separator used in new converted dataset
     SEPARATOR = '_'
@@ -40,56 +40,8 @@ class Symbol_converter:
         Common.write_to_file(' '.join(symbols_out), output)
 
     @staticmethod
-    def enlarge(symbol_in: str = '', actions: list = []):
-        """Enlarge symbol back to original encoding
-
-        Actions is list of instructions for individual chars of symbol.
-        Options are:
-            0 - leave it as is
-            str - place string instead of original char
-        """
-        def resolve_int_or_str(action: any, char: str = '') -> str:
-            if isinstance(action, int) and action == 0:
-                return char
-            elif isinstance(action, str):
-                return action
-            else:
-                return ''
-
-        out = ''
-        # actions = [str(a) if isinstance(a, int) else a for a in actions]
-        print(f'Enlarging {symbol_in}')
-
-        for char, action in zip(symbol_in, actions):
-            outout = resolve_int_or_str(action, char)
-            if outout:
-                out += outout
-            elif isinstance(action, dict):
-                for k, v in action.items():
-                    if re.match(k, char):  # TODO Fullmatch
-                        out += resolve_int_or_str(v, char)
-
-        return out
-
-    @staticmethod
-    def shorten(symbol_in: str = '', actions: list = [],
-                encoding: str = 'semantic') -> str:
-        """Shortenes symbol split with r'.-_'.
-
-        Encoding is set for semantic or agnostic.
-        Actions is list of instructions for individual parts of symbol.
-        Options are:
-            0 - leave it as is
-            1 - shorten to only the first char
-            2 - shorten to first two chars
-            -1 - shorten to only last char
-            9 - ignore part
-            r'[0129]sep' - same as previos but add seperator at the end
-
-        All lowercase if encoding is semantic,
-            uppercase if encoding is agnostic.
-        """
-        def resolve_int(action: int, _input: str):
+    def _resolve_action(action: any, _input: str = '') -> str:
+        def resolve_int(action: any, _input: str) -> str:
             if action == 0:
                 return _input
             elif action == 1 and len(_input) > 0:
@@ -99,21 +51,73 @@ class Symbol_converter:
             elif action == -1 and len(_input) > 0:
                 return _input[-1]
             else:
-                print('AAAAAAAAA')
-                print(type(action))
-        out = ''
-        # actions = [str(a) if isinstance(a, int) else a for a in actions]
-        print(symbol_in)
+                raise ValueError(f'Int convert action of unexpected value '
+                                 f'({action}) on input {_input}')
 
-        parts = re.split(r'\.|\-|\_', symbol_in)
-        for part, action in zip(parts, actions):
+        def resolve_int_or_str(action: any, _input: str) -> str:
             if isinstance(action, int):
-                out += resolve_int(action, part)
+                return resolve_int(action, _input)
             elif isinstance(action, str):
-                if re.fullmatch(r'\d', action[0]):
-                    out += resolve_int(int(action[0]), part)
-                    if len(action) > 3 and action[1:] == 'sep':
-                        out += Symbol_converter.SEPARATOR
+                if re.fullmatch(r'-?\dsep', action):
+                    int_action = int(re.split('sep', action)[0])
+                    resolved = resolve_int(int_action, _input)
+                    return resolved + Symbol_converter.SEPARATOR
+                else:
+                    return action
+            return ''
+
+        if isinstance(action, int) or isinstance(action, str):
+            return resolve_int_or_str(action, _input)
+        elif isinstance(action, dict):
+            for k, v in action.items():
+                if re.fullmatch(k, _input):
+                    return resolve_int_or_str(v, _input)
+        return None  # Should cause error
+
+    @staticmethod
+    def enlarge(symbol_in: str = '', actions: list = []):
+        """Enlarge symbol back to original encoding
+
+        Actions is list of instructions for individual chars of symbol.
+        Options are:
+            0 - leave it as is
+            str - place string instead of original char
+            dict - find first key that matches and and do the action in value
+                 - actions inside values are the same as above
+        """
+        print(f'IN: {symbol_in}')
+        out = ''
+        for char, action in zip(symbol_in, actions):
+            out += Symbol_converter._resolve_action(action, char)
+        print(f'[LONGER] OUT: {out}')
+        return out
+
+    @staticmethod
+    def shorten(symbol_in: str = '', actions: list = [],
+                encoding: str = 'semantic',
+                separators: str = SEPARATORS) -> str:
+        """Shortenes symbol split with `Symbol_converter.SEPARATORS`.
+
+        Encoding is set for semantic or agnostic.
+        Actions is list of instructions for individual parts of symbol.
+        Options are:
+            0 - leave it as is
+            1 - shorten to only the first char
+            2 - shorten to first two chars
+            -1 - shorten to only last char
+            r'[012]sep' - same as previos but add seperator at the end
+            dict - find first key that matches and and do the action in value
+                 - actions inside values are the same as above
+
+        All lowercase if encoding is semantic,
+            uppercase if encoding is agnostic.
+        """
+        print(f'IN: {symbol_in}')
+        out = ''
+
+        parts = re.split(separators, symbol_in)
+        for part, action in zip(parts, actions):
+            out += Symbol_converter._resolve_action(action, part)
 
         if out[-1] == Symbol_converter.SEPARATOR:
             out = out[:-1]
@@ -123,39 +127,62 @@ class Symbol_converter:
         elif encoding == 'agnostic':
             out = out.upper()
 
-        print(f'OUT: {out}')
+        print(f'[SHORTER] OUT: {out}')
         return out
 
-    converting_patterns_back = {
-        'b': 'barline',
-        'B': 'barline-L1',
-        'C[CFG]\d':
+    conv_patt_back = {  # Converting patterns BACK
+        # agnostic clefs
+        r'C[CFG]\d':
             partial(enlarge.__func__,
                     actions=['clef.', {c: f'{c}-' for c in 'CFG'},
                              {str(d): f'L{d}' for d in range(10)}]),
+        # agnostic dots
         'DS'+SEPARATOR+r'?\d':
             partial(enlarge.__func__,
                     actions=['dot-', 'S', {SEPARATOR: '-', r'\d': 0}, 0]),
-        'F': 'fermata.above-S6',
+        # semantic multirest
+        r'm\d{1,4}':
+            partial(enlarge.__func__, actions=['multirest-', 0, 0, 0, 0]),
+        # agnostic rest
+        r'R[EHQSTW46]\d':
+            partial(enlarge.__func__,
+                    actions=['rest.',
+                             {'E': 'eighth', 'H': 'half',
+                              'Q': 'quadruple_whole', 'S': 'sixty_fourth',
+                              'T': 'thirty_second', 'W': 'whole',
+                              '4': 'quarter', '6': 'sixteenth'},
+                             {str(d): f'-L{d}' for d in range(10)}]),
 
-
+        # agnostic slur
         'S(S|E)(L|S)'+SEPARATOR+r'?\d':
             partial(enlarge.__func__,
                     actions=['slur.', {'E': 'end-', 'S': 'start-'}, 0,
                              {SEPARATOR: '-', r'\d': 0}, 0])
     }
 
-    converting_patterns = {
+    simple_conv_patt = {}
+
+    conv_patt = {   # Converting patterns
         'barline': 'b',
         'barline-L1': 'B',
-        'clef\.[CFG]-L\d':
+        r'clef\.[CFG]-L\d':
             partial(shorten.__func__, actions=[1, 1, -1], encoding='agnostic'),
-        'dot-S[-\d]{1,2}':
+        r'dot-S[-\d]{1,2}':
             partial(shorten.__func__, actions=[1, '0sep', 0],
                     encoding='agnostic'),
         'fermata.above-S6': 'F',
+        'metersign.C-L3': 'MC',
+        'metersign.C/-L3': 'MD',
+        'multirest-L3': 'M',
+        r'multirest-\d{1,4}':
+            partial(shorten.__func__, actions=[1, 0]),
+        r'rest\.[a-z_]+-L\d':
+            partial(shorten.__func__,
+                    actions=[1, {'quarter': '4', 'sixteenth': '6',
+                                 r'[ehqstw]\S+': 1}, -1],
+                    encoding='agnostic', separators=r'[\.\-]'),
 
-        'slur.(start|end)-\S*':
+        r'slur.(start|end)-\S*':
             partial(shorten.__func__, actions=[1, 1, '0sep', 0],
                     encoding='agnostic')
     }
@@ -191,22 +218,31 @@ class Symbol_converter:
         if Direction is True, convert to smaller
         else convert to larger.
         """
+        if len(Symbol_converter.simple_conv_patt) == 0:
+            print(f'len(conv_patt_back): '
+                  f'{len(Symbol_converter.conv_patt_back)}')
+            simple_conv_patt = {
+                v: k for k, v in Symbol_converter.conv_patt.items()
+                if isinstance(k, str) and isinstance(v, str)
+            }
+            Symbol_converter.conv_patt_back.update(simple_conv_patt)
+            Symbol_converter.simple_conv_patt = simple_conv_patt
+            print(f'len(conv_patt_back): '
+                  f'{len(Symbol_converter.conv_patt_back)}')
 
         if reverse:
-            pattern_matching = Symbol_converter.converting_patterns_back
+            pattern_matching = Symbol_converter.conv_patt_back
         else:
-            pattern_matching = Symbol_converter.converting_patterns
+            pattern_matching = Symbol_converter.conv_patt
 
         out = ''
         for k, v in pattern_matching.items():
-            if re.fullmatch(k, symbol):  # TODO fullmatch
+            if re.fullmatch(k, symbol):
                 if isinstance(v, str):
                     out = v
                 else:
                     out = v(symbol_in=symbol)
                 break
-
-        print(f'[CONVERT] OUT: {out}')
         return out
 
 
