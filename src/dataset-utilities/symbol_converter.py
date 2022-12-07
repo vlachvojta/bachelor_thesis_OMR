@@ -131,11 +131,29 @@ class Symbol_converter:
         return out
 
     conv_patt_back = {  # Converting patterns BACK
+        # agnostic accidental
+        r'A[FNS][LS]\d':
+            partial(enlarge.__func__,
+                    actions=['accidental.',
+                             {'F': 'flat-', 'N': 'natural-', 'S': 'sharp-'},
+                             0, 0]),
+        r'A[FNS][LS]'+SEPARATOR+r'\d':
+            partial(enlarge.__func__,
+                    actions=['accidental.',
+                             {'F': 'flat-', 'N': 'natural-', 'S': 'sharp-'},
+                             0, '-', 0]),
         # agnostic clefs
         r'C[CFG]\d':
             partial(enlarge.__func__,
                     actions=['clef.', {c: f'{c}-' for c in 'CFG'},
                              {str(d): f'L{d}' for d in range(10)}]),
+        # agnostic digits
+        r'D\d[HLS]':
+            partial(enlarge.__func__, actions=[
+                'digit.', 0, {'H': '-L4', 'L': '-L2', 'S': '-S5'}]),
+        r'D\d{2}[HLS]':
+            partial(enlarge.__func__, actions=[
+                'digit.', 0, 0, {'H': '-L4', 'L': '-L2', 'S': '-S5'}]),
         # agnostic dots
         'DS'+SEPARATOR+r'?\d':
             partial(enlarge.__func__,
@@ -154,19 +172,27 @@ class Symbol_converter:
                              {str(d): f'-L{d}' for d in range(10)}]),
 
         # agnostic slur
-        'S(S|E)(L|S)'+SEPARATOR+r'?\d':
+        r'S(S|E)(L|S)\d':
             partial(enlarge.__func__,
-                    actions=['slur.', {'E': 'end-', 'S': 'start-'}, 0,
-                             {SEPARATOR: '-', r'\d': 0}, 0])
+                    actions=['slur.', {'E': 'end-', 'S': 'start-'}, 0, 0]),
+        r'S(S|E)(L|S)'+SEPARATOR+r'\d':
+            partial(enlarge.__func__,
+                    actions=['slur.', {'E': 'end-', 'S': 'start-'}, 0, '-', 0])
     }
 
     simple_conv_patt = {}
 
     conv_patt = {   # Converting patterns
+        r'accidental\.(flat|natural|sharp)-[SL]-?\d':
+            partial(shorten.__func__, actions=[1, 1, '0sep', 0],
+                    encoding='agnostic'),
         'barline': 'b',
         'barline-L1': 'B',
         r'clef\.[CFG]-L\d':
             partial(shorten.__func__, actions=[1, 1, -1], encoding='agnostic'),
+        r'digit\.\d{1,2}-(S5|L2|L4)':
+            partial(shorten.__func__, encoding='agnostic',
+                    actions=[1, 0, {'L2': 'L', 'L4': 'H', 'S5': 1}]),
         r'dot-S[-\d]{1,2}':
             partial(shorten.__func__, actions=[1, '0sep', 0],
                     encoding='agnostic'),
