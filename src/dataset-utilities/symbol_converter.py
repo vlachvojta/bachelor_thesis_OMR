@@ -40,6 +40,10 @@ class Symbol_converter:
         Common.write_to_file(' '.join(symbols_out), output)
 
     @staticmethod
+    def _reverse_dict(data: dict = {}) -> dict:
+        return {v: k for k, v in data.items()}
+
+    @staticmethod
     def _resolve_action(action: any, _input: str = '') -> str:
         def resolve_int(action: any, _input: str) -> str:
             if action == 0:
@@ -70,7 +74,7 @@ class Symbol_converter:
             return resolve_int_or_str(action, _input)
         elif isinstance(action, dict):
             for k, v in action.items():
-                if re.fullmatch(k, _input):
+                if re.fullmatch(k, _input) or k == '':
                     return resolve_int_or_str(v, _input)
         return None  # Should cause error
 
@@ -85,11 +89,11 @@ class Symbol_converter:
             dict - find first key that matches and and do the action in value
                  - actions inside values are the same as above
         """
-        print(f'IN: {symbol_in}')
+        # print(f'IN: {symbol_in}')
         out = ''
         for char, action in zip(symbol_in, actions):
             out += Symbol_converter._resolve_action(action, char)
-        print(f'[LONGER] OUT: {out}')
+        # print(f'[LONGER] OUT: {out}')
         return out
 
     @staticmethod
@@ -112,7 +116,7 @@ class Symbol_converter:
         All lowercase if encoding is semantic,
             uppercase if encoding is agnostic.
         """
-        print(f'IN: {symbol_in}')
+        # print(f'IN: {symbol_in}')
         out = ''
 
         parts = re.split(separators, symbol_in)
@@ -127,8 +131,17 @@ class Symbol_converter:
         elif encoding == 'agnostic':
             out = out.upper()
 
-        print(f'[SHORTER] OUT: {out}')
+        # print(f'[SHORTER] OUT: {out}')
         return out
+
+    length_dict = {
+        'double_whole': 'D', 'eighth': 'E', 'half': 'H',
+        'quadruple_whole': 'Q', 'sixty_fourth': 'S', 'thirty_second': 'T',
+        'whole': 'W', 'quarter': '4', 'sixteenth': '6'}
+    length_dict_back = _reverse_dict.__func__(length_dict)
+
+    length_keys_list = '|'.join(list(length_dict.keys()))
+    length_values_list = '|'.join(list(length_dict.values()))
 
     conv_patt_back = {  # Converting patterns BACK
         # agnostic accidental
@@ -158,17 +171,44 @@ class Symbol_converter:
         'DS'+SEPARATOR+r'?\d':
             partial(enlarge.__func__,
                     actions=['dot-', 'S', {SEPARATOR: '-', r'\d': 0}, 0]),
+        # agnostic gracenote
+        r'G[RB]\d[SL]_?\d':
+            partial(enlarge.__func__,
+                    actions=['gracenote.',
+                             {'R': 'beamedRight', 'B': 'beamedBoth'}, 0,
+                             {'S': '-S', 'L': '-L'},
+                             {SEPARATOR: '-', r'\d': 0}, 0]),
+        r'G[' + length_values_list + r'][SL]_?\d':
+            partial(
+                enlarge.__func__,
+                actions=[
+                    'gracenote.',
+                    length_dict_back,
+                    {'S': '-S', 'L': '-L'}, {SEPARATOR: '-', r'\d': 0}, 0]),
+        # agnostic note
+        r'N[RBL]\d[SL]_?\d':
+            partial(enlarge.__func__,
+                    actions=['note.',
+                             {'R': 'beamedRight', 'B': 'beamedBoth',
+                              'L': 'beamedLeft'}, 0,
+                             {'S': '-S', 'L': '-L'},
+                             {SEPARATOR: '-', r'\d': 0}, 0]),
+        r'N[' + length_values_list + r'][SL]_?\d':
+            partial(
+                enlarge.__func__,
+                actions=[
+                    'note.',
+                    length_dict_back,
+                    {'S': '-S', 'L': '-L'}, {SEPARATOR: '-', r'\d': 0}, 0]),
+
         # semantic multirest
         r'm\d{1,4}':
             partial(enlarge.__func__, actions=['multirest-', 0, 0, 0, 0]),
         # agnostic rest
-        r'R[EHQSTW46]\d':
+        r'R[' + length_values_list + r']\d':
             partial(enlarge.__func__,
                     actions=['rest.',
-                             {'E': 'eighth', 'H': 'half',
-                              'Q': 'quadruple_whole', 'S': 'sixty_fourth',
-                              'T': 'thirty_second', 'W': 'whole',
-                              '4': 'quarter', '6': 'sixteenth'},
+                             length_dict_back,
                              {str(d): f'-L{d}' for d in range(10)}]),
 
         # agnostic slur
@@ -197,6 +237,38 @@ class Symbol_converter:
             partial(shorten.__func__, actions=[1, '0sep', 0],
                     encoding='agnostic'),
         'fermata.above-S6': 'F',
+
+        r'gracenote\.beamedBoth\d-[LS]-?\d':
+            partial(shorten.__func__, encoding='agnostic',
+                    actions=[1, {f'beamedBoth{i}': f'B{i}' for i in range(10)},
+                             '0sep', 0]),
+        r'gracenote\.beamedRight\d-[LS]-?\d':
+            partial(shorten.__func__, encoding='agnostic',
+                    actions=[1,
+                             {f'beamedRight{i}': f'R{i}' for i in range(10)},
+                             '0sep', 0]),
+        r'gracenote\.(' + length_keys_list + r')-[LS]-?\d':
+            partial(shorten.__func__, encoding='agnostic',
+                    actions=[1, length_dict, '0sep', 0],
+                    separators=r'[\.\-]'),
+
+        r'note\.beamedBoth\d-[LS]-?\d':
+            partial(shorten.__func__, encoding='agnostic',
+                    actions=[1, {f'beamedBoth{i}': f'B{i}' for i in range(10)},
+                             '0sep', 0]),
+        r'note\.beamedRight\d-[LS]-?\d':
+            partial(shorten.__func__, encoding='agnostic',
+                    actions=[1,
+                             {f'beamedRight{i}': f'R{i}' for i in range(10)},
+                             '0sep', 0]),
+        r'note\.beamedLeft\d-[LS]-?\d':
+            partial(shorten.__func__, encoding='agnostic',
+                    actions=[1, {f'beamedLeft{i}': f'L{i}' for i in range(10)},
+                             '0sep', 0]),
+        r'note\.(' + length_keys_list + r')-[LS]-?\d':
+            partial(shorten.__func__, actions=[1, length_dict, '0sep', 0],
+                    encoding='agnostic', separators=r'[\.\-]'),
+
         'metersign.C-L3': 'MC',
         'metersign.C/-L3': 'MD',
         'multirest-L3': 'M',
@@ -245,16 +317,12 @@ class Symbol_converter:
         else convert to larger.
         """
         if len(Symbol_converter.simple_conv_patt) == 0:
-            print(f'len(conv_patt_back): '
-                  f'{len(Symbol_converter.conv_patt_back)}')
             simple_conv_patt = {
                 v: k for k, v in Symbol_converter.conv_patt.items()
                 if isinstance(k, str) and isinstance(v, str)
             }
             Symbol_converter.conv_patt_back.update(simple_conv_patt)
             Symbol_converter.simple_conv_patt = simple_conv_patt
-            print(f'len(conv_patt_back): '
-                  f'{len(Symbol_converter.conv_patt_back)}')
 
         if reverse:
             pattern_matching = Symbol_converter.conv_patt_back

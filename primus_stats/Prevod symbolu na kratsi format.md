@@ -21,27 +21,31 @@
 * digit -> r'D\d{2}[HLS]'
 * dot -> OK
 * fermata -> F
-* gracenote
+* gracenote -> r'G(B\d|R\d|[DEHQST46])[SL]_?\d'
 * metersign -> r'M[CD]'
 * multirest -> M
-* note
+* note -> r'N(B\d|R\d|L\d|[DEHQST46])[SL]_?\d'
 * rest -> r'R[EHQSTW46]\d'
-* slur -> 'S(S|E)(L|S).?\d':
+* slur -> 'S(S|E)(L|S).?\d'
 
-### rest
-rest.eighth-L3 -> RE3
-rest.half-L3 -> RH3
-**rest.quadruple_whole-L3** -> RQ3
-**rest.quarter-L3** -> R43
-**rest.sixteenth-L3** -> R63
-**rest.sixty_fourth-L3** -> RS3
-rest.thirty_second-L3 -> RT3 
-rest.whole-L4 -> RW4
+### agnostic length:
+eighth -> E
+half -> H
+**quadruple_whole -> Q**
+**quarter -> 4**
+**sixteenth -> 6**
+**sixty_fourth -> S**
+thirty_second -> T 
+whole -> W
 
 ### digit
-r'digit\.\d{1,2}-(S5|L[2-4])'
-L4 -> H (higher time signature symbol)
-L2 -> L (lower time signature symbol)
-S5 -> S (digits above note staff)
+* L4 -> H (higher time signature symbol)
+* L2 -> L (lower time signature symbol)
+* S5 -> S (digits above note staff)
 
+### gracenote
+* beamedBoth\d -> B\d
+* beamedRight\d -> R\d
+
+### notes
 
