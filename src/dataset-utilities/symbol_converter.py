@@ -62,10 +62,18 @@ class Symbol_converter:
             if isinstance(action, int):
                 return resolve_int(action, _input)
             elif isinstance(action, str):
-                if re.fullmatch(r'-?\dsep', action):
-                    int_action = int(re.split('sep', action)[0])
-                    resolved = resolve_int(int_action, _input)
-                    return resolved + Symbol_converter.SEPARATOR
+                if re.fullmatch(r'-?\d(sep|up|low)', action):
+                    int_action = int(re.split(r'(sep|up|low)', action)[0])
+                    out = resolve_int(int_action, _input)
+                    str_action = re.split(r'\d', action)[-1]
+                    if str_action == 'sep':
+                        return out + Symbol_converter.SEPARATOR
+                    elif str_action == 'up':
+                        return out.upper()
+                    elif str_action == 'low':
+                        return out.lower()
+                    else:
+                        return out
                 else:
                     return action
             return ''
@@ -155,6 +163,9 @@ class Symbol_converter:
                     actions=['accidental.',
                              {'F': 'flat-', 'N': 'natural-', 'S': 'sharp-'},
                              0, '-', 0]),
+        # semantic clefs
+        r'c[cfg]\d':
+            partial(enlarge.__func__, actions=['clef-', '0up', 0]),
         # agnostic clefs
         r'C[CFG]\d':
             partial(enlarge.__func__,
@@ -228,7 +239,9 @@ class Symbol_converter:
                     encoding='agnostic'),
         'barline': 'b',
         'barline-L1': 'B',
-        r'clef\.[CFG]-L\d':
+        r'clef-[CFG]\d':    # semantic clef
+            partial(shorten.__func__, actions=[1, 0]),
+        r'clef\.[CFG]-L\d':  # agnostic clef
             partial(shorten.__func__, actions=[1, 1, -1], encoding='agnostic'),
         r'digit\.\d{1,2}-(S5|L2|L4)':
             partial(shorten.__func__, encoding='agnostic',
