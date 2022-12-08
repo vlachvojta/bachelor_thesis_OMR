@@ -1,3 +1,4 @@
 {
-    "clef": ["cc1", "cc2", "cc3", "cc4", "cc5", "cf3", "cf4", "cf5", "cg1", "cg2"]
+    "clef": ["cc1", "cc2", "cc3", "cc4", "cc5", "cf3", "cf4", "cf5", "cg1", "cg2"],
+    "keySignature": ["kam", "kabm", "kbm", "kbbm", "kc#m", "kcm", "kdm", "kdbm", "kem", "kebm", "kf#m", "kfm", "kgm", "kgbm"]
 }

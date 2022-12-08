@@ -44,46 +44,50 @@ class Symbol_converter:
         return {v: k for k, v in data.items()}
 
     @staticmethod
-    def _resolve_action(action: any, _input: str = '') -> str:
-        def resolve_int(action: any, _input: str) -> str:
-            if action == 0:
-                return _input
-            elif action == 1 and len(_input) > 0:
-                return _input[0]
-            elif action == 2 and len(_input) > 1:
-                return _input[:2]
-            elif action == -1 and len(_input) > 0:
-                return _input[-1]
-            else:
-                raise ValueError(f'Int convert action of unexpected value '
-                                 f'({action}) on input {_input}')
+    def _resolve_int_action(action: any, _input: str) -> str:
+        if action == 0:
+            return _input
+        elif action == 1 and len(_input) > 0:
+            return _input[0]
+        elif action == 2 and len(_input) > 1:
+            return _input[:2]
+        elif action == -1 and len(_input) > 0:
+            return _input[-1]
+        else:
+            raise ValueError(f'Int convert action of unexpected value '
+                             f'({action}) on input {_input}')
 
-        def resolve_int_or_str(action: any, _input: str) -> str:
-            if isinstance(action, int):
-                return resolve_int(action, _input)
-            elif isinstance(action, str):
-                if re.fullmatch(r'-?\d(sep|up|low)', action):
-                    int_action = int(re.split(r'(sep|up|low)', action)[0])
-                    out = resolve_int(int_action, _input)
-                    str_action = re.split(r'\d', action)[-1]
-                    if str_action == 'sep':
-                        return out + Symbol_converter.SEPARATOR
-                    elif str_action == 'up':
-                        return out.upper()
-                    elif str_action == 'low':
-                        return out.lower()
-                    else:
-                        return out
+    @staticmethod
+    def _resolve_int_or_str_action(action: any, _input: str) -> str:
+        if isinstance(action, int):
+            return Symbol_converter._resolve_int_action(action, _input)
+        elif isinstance(action, str):
+            if re.fullmatch(r'-?\d(sep|up|low)', action):
+                int_action = int(re.split(r'(sep|up|low)', action)[0])
+                out = Symbol_converter._resolve_int_action(int_action,
+                                                           _input)
+                str_action = re.split(r'\d', action)[-1]
+                if str_action == 'sep':
+                    return out + Symbol_converter.SEPARATOR
+                elif str_action == 'up':
+                    return out.upper()
+                elif str_action == 'low':
+                    return out.lower()
                 else:
-                    return action
-            return ''
+                    return out
+            else:
+                return action
+        return ''
 
+    @staticmethod
+    def _resolve_action(action: any, _input: str = '') -> str:
         if isinstance(action, int) or isinstance(action, str):
-            return resolve_int_or_str(action, _input)
+            return Symbol_converter._resolve_int_or_str_action(action, _input)
         elif isinstance(action, dict):
             for k, v in action.items():
                 if re.fullmatch(k, _input) or k == '':
-                    return resolve_int_or_str(v, _input)
+                    return Symbol_converter._resolve_int_or_str_action(
+                        v, _input)
         return None  # Should cause error
 
     @staticmethod
@@ -196,6 +200,11 @@ class Symbol_converter:
                     'gracenote.',
                     length_dict_back,
                     {'S': '-S', 'L': '-L'}, {SEPARATOR: '-', r'\d': 0}, 0]),
+        # semantic keySignature
+        r'k[a-g]m':
+            partial(enlarge.__func__, actions=['keySignature-', '0up', '0up']),
+        r'k[a-g][#b]m':
+            partial(enlarge.__func__, actions=['keySignature-', '0up', 0, '0up']),
         # agnostic note
         r'N[RBL]\d[SL]_?\d':
             partial(enlarge.__func__,
@@ -234,11 +243,15 @@ class Symbol_converter:
     simple_conv_patt = {}
 
     conv_patt = {   # Converting patterns
+        'barline': 'b',
+        'barline-L1': 'B',
+        'fermata.above-S6': 'F',
+        'metersign.C-L3': 'MC',
+        'metersign.C/-L3': 'MD',
+        'multirest-L3': 'M',
         r'accidental\.(flat|natural|sharp)-[SL]-?\d':
             partial(shorten.__func__, actions=[1, 1, '0sep', 0],
                     encoding='agnostic'),
-        'barline': 'b',
-        'barline-L1': 'B',
         r'clef-[CFG]\d':    # semantic clef
             partial(shorten.__func__, actions=[1, 0]),
         r'clef\.[CFG]-L\d':  # agnostic clef
@@ -249,8 +262,6 @@ class Symbol_converter:
         r'dot-S[-\d]{1,2}':
             partial(shorten.__func__, actions=[1, '0sep', 0],
                     encoding='agnostic'),
-        'fermata.above-S6': 'F',
-
         r'gracenote\.beamedBoth\d-[LS]-?\d':
             partial(shorten.__func__, encoding='agnostic',
                     actions=[1, {f'beamedBoth{i}': f'B{i}' for i in range(10)},
@@ -264,7 +275,8 @@ class Symbol_converter:
             partial(shorten.__func__, encoding='agnostic',
                     actions=[1, length_dict, '0sep', 0],
                     separators=r'[\.\-]'),
-
+        r'keySignature-[A-G][#b]?M':
+            partial(shorten.__func__, actions=[1, 0]),
         r'note\.beamedBoth\d-[LS]-?\d':
             partial(shorten.__func__, encoding='agnostic',
                     actions=[1, {f'beamedBoth{i}': f'B{i}' for i in range(10)},
@@ -282,9 +294,6 @@ class Symbol_converter:
             partial(shorten.__func__, actions=[1, length_dict, '0sep', 0],
                     encoding='agnostic', separators=r'[\.\-]'),
 
-        'metersign.C-L3': 'MC',
-        'metersign.C/-L3': 'MD',
-        'multirest-L3': 'M',
         r'multirest-\d{1,4}':
             partial(shorten.__func__, actions=[1, 0]),
         r'rest\.[a-z_]+-L\d':

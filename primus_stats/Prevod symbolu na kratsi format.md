@@ -2,9 +2,9 @@
 
 ## Semantic encoding types:
 * barline -> b
-* clef
+* clef -> OK
 * gracenote
-* keySignature
+* keySignature -> r'k[a-g][#b]?m'
 * multirest -> m\d{1,4}
 * note
 * rest
