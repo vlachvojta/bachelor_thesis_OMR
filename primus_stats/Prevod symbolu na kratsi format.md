@@ -7,12 +7,9 @@
 * keySignature -> r'k[a-g][#b]?m'
 * multirest -> m\d{1,4}
 * note
-* rest
+* rest -> OK
 * tie
 * timeSignature
-
-### Note
-- vzdy note_vyska... ?
 
 ## Agnostic encoding types
 * accidental -> r'r'A[FNS][LS]_?\d''
@@ -46,6 +43,3 @@ whole -> W
 ### gracenote
 * beamedBoth\d -> B\d
 * beamedRight\d -> R\d
-
-### notes
-
