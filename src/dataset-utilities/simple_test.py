@@ -24,6 +24,7 @@ def main():
         ["clef-C1", "clef-C2", "clef-C3", "clef-C4", "clef-C5", "clef-F3", "clef-F4", "clef-F5", "clef-G1", "clef-G2"], 
         ["keySignature-AM", "keySignature-AbM", "keySignature-BM", "keySignature-BbM", "keySignature-C#M", "keySignature-CM", "keySignature-DM", "keySignature-DbM", "keySignature-EM", "keySignature-EbM", "keySignature-F#M", "keySignature-FM", "keySignature-GM", "keySignature-GbM"], 
         ["rest-eighth", "rest-eighth.", "rest-eighth..", "rest-eighth._fermata", "rest-eighth_fermata", "rest-half", "rest-half.", "rest-half._fermata", "rest-half_fermata", "rest-quadruple_whole", "rest-quarter", "rest-quarter.", "rest-quarter..", "rest-quarter.._fermata", "rest-quarter._fermata", "rest-quarter_fermata", "rest-sixteenth", "rest-sixteenth.", "rest-sixteenth_fermata", "rest-sixty_fourth", "rest-thirty_second", "rest-whole", "rest-whole.", "rest-whole_fermata"],
+        ["tie"], 
         ["metersign.C-L3", "metersign.C/-L3"],
         ]
 

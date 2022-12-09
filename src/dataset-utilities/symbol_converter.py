@@ -65,7 +65,8 @@ class Symbol_converter:
                              f'({action}) on input {_input}')
 
     @staticmethod
-    def _resolve_int_or_str_action(action: any, _input: str) -> str:
+    def _resolve_int_or_str_action(action: any, _input: str,
+                                   separator: str = SEPARATOR) -> str:
         if isinstance(action, int):
             return Symbol_converter._resolve_int_action(action, _input)
         elif isinstance(action, str):
@@ -77,7 +78,7 @@ class Symbol_converter:
                                                            _input)
                 str_action = re.split(r'\d', action)[-1]
                 if str_action == 'sep':
-                    return out + Symbol_converter.SEPARATOR
+                    return out + separator
                 elif str_action == 'up':
                     return out.upper()
                 elif str_action == 'low':
@@ -89,21 +90,24 @@ class Symbol_converter:
         return ''
 
     @staticmethod
-    def _resolve_action(action: any, _input: str = '') -> str:
+    def _resolve_action(action: any, _input: str = '',
+                        separator: str = SEPARATOR) -> str:
         # debug_mode = False
         # if _input == 'rest-eighth.': debug_mode = True
-        print(f'action: {action}, input: {_input}', flush=True)
+        # print(f'action: {action}, input: {_input}', flush=True)
         if isinstance(action, int) or isinstance(action, str):
-            return Symbol_converter._resolve_int_or_str_action(action, _input)
+            return Symbol_converter._resolve_int_or_str_action(action, _input,
+                                                               separator)
         elif isinstance(action, dict):
             for k, v in action.items():
                 if re.fullmatch(k, _input) or k == '':
                     return Symbol_converter._resolve_int_or_str_action(
-                        v, _input)
+                        v, _input, separator)
         return None  # Should cause error
 
     @staticmethod
-    def enlarge(symbol_in: str = '', actions: list = []):
+    def enlarge(symbol_in: str = '', actions: list = [],
+                separator: str = SEPARATOR):
         """Enlarge symbol back to original encoding
 
         Actions is list of instructions for individual chars of symbol.
@@ -116,7 +120,7 @@ class Symbol_converter:
         # print(f'IN: {symbol_in}')
         out = ''
         for char, action in zip(symbol_in, actions):
-            out += Symbol_converter._resolve_action(action, char)
+            out += Symbol_converter._resolve_action(action, char, separator)
         # print(f'[LONGER] OUT: {out}')
         return out
 
@@ -140,12 +144,12 @@ class Symbol_converter:
         All lowercase if encoding is semantic,
             uppercase if encoding is agnostic.
         """
-        print(f'\nIN: {symbol_in}')
+        # print(f'\nIN: {symbol_in}')
         out = ''
 
         parts = re.split(separators, symbol_in)
         for part, action in zip(parts, actions):
-            print(f'part: {part}, action: {action}')
+            # print(f'part: {part}, action: {action}')
             out += Symbol_converter._resolve_action(action, part)
 
         if out[-1] == Symbol_converter.SEPARATOR:
@@ -213,7 +217,8 @@ class Symbol_converter:
         "rest-thirty_second": 'rt',
         "rest-whole": 'rw',
         "rest-whole.": 'rw.',
-        "rest-whole_fermata": 'rwf'}
+        "rest-whole_fermata": 'rwf',
+        'tie': 't'}
 
     conv_patt_reg = {   # Converting patterns with regexes
         r'accidental\.(flat|natural|sharp)-[SL]-?\d':
@@ -229,6 +234,11 @@ class Symbol_converter:
         r'dot-S[-\d]{1,2}':
             partial(shorten.__func__, actions=[1, '0sep', 0],
                     encoding='agnostic'),
+        # semantic gracenote
+        r'gracenote-[A-G][#b]?\d_' + length_keys_list + r'\.?':
+            partial(shorten.__func__, actions=[1, 0, length_inits_dict,
+                                               other_part_length_or_dot]),
+        # agnostic gracenote
         r'gracenote\.beamedBoth\d-[LS]-?\d':
             partial(shorten.__func__, encoding='agnostic',
                     actions=[1, {f'beamedBoth{i}': f'B{i}' for i in range(10)},
@@ -326,6 +336,15 @@ class Symbol_converter:
         'DS'+SEPARATOR+r'?\d':
             partial(enlarge.__func__,
                     actions=['dot-', 'S', {SEPARATOR: '-', r'\d': 0}, 0]),
+        # semantic gracenote
+        # r'g[a-g][#b]?\d' + length_values_list + '.?':
+        r'g[a-g]\d' + length_values_list + r'\.?':
+            partial(enlarge.__func__,
+                    actions=['gracenote-', 0, '0sep', length_dict_back, 0],
+                    separator='_'),
+        r'g[a-g][#b]\d' + length_values_list + r'\.?':
+            partial(enlarge.__func__,
+                    actions=['gracenote-', 0, 0, 0, length_dict_back, 0]),
         # agnostic gracenote
         r'G[RB]\d[SL]_?\d':
             partial(enlarge.__func__,
@@ -424,12 +443,12 @@ class Symbol_converter:
             pattern_matching_reg = Symbol_converter.conv_patt_reg
 
         if symbol in list(pattern_matching_str.keys()):
-            print('\tFound match in str')
             return pattern_matching_str[symbol]
 
         for k, v in pattern_matching_reg.items():
             if re.fullmatch(k, symbol):
                 return v(symbol_in=symbol)
+        return ''
 
 
 def parseargs():
