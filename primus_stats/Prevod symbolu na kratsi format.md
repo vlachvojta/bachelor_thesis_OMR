@@ -3,12 +3,12 @@
 ## Semantic encoding types:
 * barline -> b
 * clef -> OK
-* gracenote
+* gracenote -> OK
 * keySignature -> r'k[a-g][#b]?m'
 * multirest -> m\d{1,4}
-* note
+* note -> OK
 * rest -> OK
-* tie
+* tie -> OK
 * timeSignature
 
 ## Agnostic encoding types

@@ -161,6 +161,7 @@ class Symbol_converter:
             out = out.upper()
 
         # print(f'[SHORTER] OUT: {out}')
+        print(f'"{symbol_in}": "{out}",')
         return out
 
     length_dict = {
@@ -430,7 +431,7 @@ class Symbol_converter:
         if Direction is True, convert to smaller
         else convert to larger.
         """
-        print(f'IN: {symbol}')
+        # print(f'IN: {symbol}')
         if len(Symbol_converter.conv_patt_back_str) == 0:
             Symbol_converter.conv_patt_back_str = {
                 v: k for k, v in Symbol_converter.conv_patt_str.items()}
