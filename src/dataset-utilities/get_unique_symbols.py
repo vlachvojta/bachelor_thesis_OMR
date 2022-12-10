@@ -4,78 +4,140 @@ import argparse
 import re
 import sys
 import os
+from common import Common
+import time
 
 
 class Get_unique_symbols:
     """Open file(s) and extract all unique music symbol ids."""
 
     file_names = []
-    data = {}
 
-    def __init__(self, dir: str = '', ext: str = '', files: list = []):
-        self.file_names = self.get_file_names(dir, ext)
+    # Dictionary of Pandas series. Key = symbol type
+    unique_symbols = {}
 
-    def get_file_names(self, dir, ext) -> list:
-        """Get file names from directory with given extension
+    def __init__(self, files: list = [], exts: list = 'semantic',
+                 folders: str = ['.'], recursive: bool = False,
+                 database: str = 'all_unique_symbols.json',
+                 input_file: str = 'files.txt'):
+        # if recursive:
+        #     print("Recursive lookup has NOT been implemented yet!!!",
+        #           file=sys.stderr)
+        # self.file_names = Common.get_existing_file_names(files, dirs,
+        #                                                  exts, recursive)
+        print('Hello from GET_UNIQUE_SYMBOLS')
+        self.load_start_data(database)
+        loaded_symbols_sum = Common.sum_lists_in_dict(self.unique_symbols)
 
-        Or all files in indirectory, if ext is empty."""
-        if not dir:
-            return []
+        for folder in folders:
+            files += Common.get_files(folder, exts)
 
-        os.listdir(dir)
+        files += Common.get_lines(input_file)
+        files = list(set(files))
+        self.file_names = Common.check_existing_files(files)
+
+        # self.unique_symbols['files'] = self.file_names
+        print(f'Getting data from {len(self.file_names)} files '
+              f'(every dot is 1000 parsed file).')
+
+        for i, file in enumerate(self.file_names):
+            if i % 1000 == 0:
+                print('.', end='')
+                sys.stdout.flush()
+            self.get_symbols_from_file(file)
+        print('')
+
+        total_symbols = Common.sum_lists_in_dict(self.unique_symbols)
+        new_symbols_count = total_symbols - loaded_symbols_sum
+        print(f'{new_symbols_count} new symbols discovered. '
+              f'({total_symbols} total)')
+
+    def load_start_data(self, file):
+        db = Common.read_file(file)
+        # print(type(db))
+        # print(type(db[list(db.keys())[0]]))
+        # print(db[list(db.keys())[0]])
+
+        # Check if data has correct format
+        if isinstance(db, dict):
+            types = [k for k in list(db.keys()) if not isinstance(db[k], list)]
+            if types == []:
+                for k, v in db.items():
+                    self.unique_symbols[k] = set(v)
 
     def get_symbols_from_file(self, file: str):
-        print('getting things from file', file)
-
-        data = self.read_file(file)
-        if not data:
+        """Get symbols, save or append to `self.unique_symbols`."""
+        file_data = Common.read_file(file)
+        if not file_data:
             return
 
-        symbols = re.split(r'\s', data)
+        symbols = re.split(r'\s', file_data)
+
+        unique_symbols = {}
 
         for sym in symbols:
             if not sym:
                 continue
 
-            type = re.split(r'-|\.', sym)[0]
+            col = re.split(r'-|\.', sym)[0]
 
-            if type in list(self.data.keys()):
-                self.data[type].add(sym)
+            if col in list(unique_symbols.keys()):
+                unique_symbols[col].add(sym)
             else:
-                self.data[type] = {sym}
+                unique_symbols[col] = {sym}
 
-        return
+        for col in list(unique_symbols.keys()):
+            if col in self.unique_symbols.keys():
+                try:
+                    self.unique_symbols[col].update(unique_symbols[col])
+                except AttributeError:
+                    self.unique_symbols[col] = set(self.unique_symbols[col])
+                    self.unique_symbols[col].update(unique_symbols[col])
+            else:
+                self.unique_symbols[col] = unique_symbols[col]
 
-    def read_file(self, file: str):
-        """Read file, method assumes, file exists."""
-        with open(file) as f:
-            data = f.read()
-        return data
+    def finalize(self, file='stdout'):
+        for k, v in self.unique_symbols.items():
+            self.unique_symbols[k] = list(sorted(v))
+
+        if file == 'stdout':
+            print('\n' + '========================' * 3 + '\n')
+            self.print_symbols()
+        else:
+            Common.save_dict_as_json(self.unique_symbols, file)
 
     def print_symbols(self):
-        self.print_dir(self.data)
-
-    def print_dir(self, data: dict):
-        print('{')
-        print(list(data.keys()))
-        for key in list(data.keys()):
-            print(f'\t{key}: {data[key]}')
-        print('}')
+        Common.print_dict(self.unique_symbols, files=True)
 
 
 def parseargs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-f", "--file", action='append',
-        help="File to read symbols from, you can add more files")
+        "-f", "--files", nargs='*', default=[],
+        help=("Files to read symbols from, you can add more files.\n" +
+              "USE FULL FILE PATH (relative or absolute)"))
     parser.add_argument(
-        "-e", "--ext", default='semantic', action='append',
-        help=(f"Set file extension for files in given folder\n" +
-              f"Use in combination with --directory."))
+        "-e", "--extensions", nargs='*', default=['semantic'],
+        help=("Set file extensions for files in given folder\n" +
+              "Use in combination with --directories."))
     parser.add_argument(
-        "-d", "--dir", default='', action='append',
-        help=(f"Directory where to look for files with correct extension\n" +
-              f"Use in combination with --ext."))
+        "-F", "--folders", nargs='*', default=['.'],
+        help=("Directories where to look for files with given extensions. \n" +
+              "Use in combination with --extensions."))
+    # parser.add_argument(
+    #     "-r", "--recursive", default=False, action='store_true',
+    #     help=("Activate recursive search in given directory.\n" +
+    #           "If not set, use only files in given directory"))
+    parser.add_argument(
+        "-d", "--database", default="all_unique_symbols.json",
+        help="Database with already found unique_symbols.")
+    parser.add_argument(
+        "-o", "--output", default='stdout',
+        help="Set output file with extension. Output format is JSON")
+    parser.add_argument(
+        "-i", "--input_file", default="files.txt",
+        help="File with list of all files to search through.")
+
     # parser.add_argument(
     #     "-o", "--out", default='',
     #     help="Set output file, stdout by default")
@@ -86,13 +148,21 @@ def main():
     """Main function for simple testing"""
     args = parseargs()
 
-    gus = Get_unique_symbols(dir=args.dir, ext=args.ext, files=args.file)
+    start = time.time()
+    gus = Get_unique_symbols(
+        files=args.files,
+        exts=args.extensions,
+        folders=args.folders,
+        database=args.database,
+        input_file=args.input_file)
+    # dirs=args.directories,
+    # exts=args.extensions)
 
-    for f in args.file:
-        gus.get_symbols_from_file(f)
-
+    gus.finalize(args.output)
     # gus.print_symbols(args.out)
-    gus.print_symbols()
+
+    end = time.time()
+    print(f'Total time: {end - start}')
 
 
 if __name__ == "__main__":
