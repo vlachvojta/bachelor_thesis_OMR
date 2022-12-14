@@ -16,15 +16,10 @@ class Get_unique_symbols:
     # Dictionary of Pandas series. Key = symbol type
     unique_symbols = {}
 
-    def __init__(self, files: list = [], exts: list = 'semantic',
-                 folders: str = ['.'], recursive: bool = False,
+    def __init__(self, files: list = [], exts: list = ['semantic'],
+                 folders: list = ['.'], recursive: bool = False,
                  database: str = 'all_unique_symbols.json',
                  input_file: str = 'files.txt'):
-        # if recursive:
-        #     print("Recursive lookup has NOT been implemented yet!!!",
-        #           file=sys.stderr)
-        # self.file_names = Common.get_existing_file_names(files, dirs,
-        #                                                  exts, recursive)
         print('Hello from GET_UNIQUE_SYMBOLS')
         self.load_start_data(database)
         loaded_symbols_sum = Common.sum_lists_in_dict(self.unique_symbols)
@@ -54,9 +49,6 @@ class Get_unique_symbols:
 
     def load_start_data(self, file):
         db = Common.read_file(file)
-        # print(type(db))
-        # print(type(db[list(db.keys())[0]]))
-        # print(db[list(db.keys())[0]])
 
         # Check if data has correct format
         if isinstance(db, dict):
@@ -70,6 +62,9 @@ class Get_unique_symbols:
         file_data = Common.read_file(file)
         if not file_data:
             return
+
+        if len(re.split('\n', file_data)) > 1:
+            print(f'MULTIPLE LINES in {file}')
 
         symbols = re.split(r'\s', file_data)
 
@@ -114,7 +109,8 @@ def parseargs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-f", "--files", nargs='*', default=[],
-        help=("Files to read symbols from, you can add more files.\n" +
+        help=("Files to read symbols from, you can add more files\n" +
+              "or use bash regex expr.\n" +
               "USE FULL FILE PATH (relative or absolute)"))
     parser.add_argument(
         "-e", "--extensions", nargs='*', default=['semantic'],

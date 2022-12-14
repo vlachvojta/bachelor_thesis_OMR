@@ -2,6 +2,7 @@
 
 
 import pathlib
+import re
 import os
 import sys
 import json
@@ -37,7 +38,11 @@ class Common:
     @staticmethod
     def check_existing_files(files: list = []):
         """Return only existing file"""
-        return [file for file in files if os.path.exists(file)]
+        def file_is_visible(file: str = '') -> bool:
+            return re.split(os.sep, file)[-1][0] != '.'
+
+        return [file for file in files
+                if os.path.exists(file) and file_is_visible(file)]
 
     @staticmethod
     def get_existing_file_names(files, dirs, exts, recursive):
@@ -54,7 +59,6 @@ class Common:
         for dir in dirs:
             print(dir)
             print(os.listdir(dir))
-            # TODO Continue implementing here.
 
         return existing_files
 
@@ -97,10 +101,8 @@ class Common:
 
     @staticmethod
     def get_files(folder: str = '.', exts: list = ['semantic']) -> list:
-        pjoin = os.path.join
 
         print(f'looking for all files in {folder}')
-        # start = time.time()
         files = []
         dirs = []
         for f in Common.full_list(folder):
@@ -108,13 +110,12 @@ class Common:
                 dirs.append(f)
             elif os.path.isfile(f) and Common.right_file_ext(f, exts):
                 files.append(f)
-        # end = time.time()
-        # print(f'looking done, it took {end - start}')
 
         assert len(dirs) > 0
 
         if dirs:
-            print(f'Looking for files in {len(dirs)} (every dot is 1000 dirs)')
+            print(f'Looking for files in {len(dirs)} folders.\n'
+                  f'(every dot is 1000 folders)')
             for i, dir in enumerate(dirs):
                 if i % 1000 == 0:
                     print('.', end='')
@@ -148,7 +149,51 @@ class Common:
 
     @staticmethod
     def serialize_dict_to_list(data: dict = {}) -> list:
-        result = []
-        for v in data.values():
-            result += v
-        return result
+        return data.values()
+        # result = []
+        # for v in data.values():
+        #     result += v
+        # return result
+
+    @staticmethod
+    def get_complete_group_names(files: list = [], exts: list = []) -> list:
+        """Get list of all files, check if for every file name
+        all extensions are present.
+        Return list of complete file groups."""
+        def cut_ext(file: str = '') -> str:
+            return '.'.join(re.split(r'\.', file)[:-1])
+
+        def get_ext(file: str = '') -> str:
+            return re.split(r'\.', file)[-1]
+
+        # print('GET_COMPLETE_GROUPS_NAMES')
+        # print('========================')
+
+        files = sorted(files)
+        file_groups = []
+
+        for i, file in enumerate(files):
+            # print(f'file: {file}')
+            # if len(file_groups) > 0: print(file_groups[-1][0])
+            # print(f'cut_ext: {cut_ext(file)}')
+            # print(f'get_ext: {get_ext(file)}')
+
+            if len(file_groups) > 0 and file_groups[-1][0] == cut_ext(file):
+                file_groups[-1].append(get_ext(file))
+                # print('appending new ext')
+            else:
+                file_groups.append([cut_ext(file), get_ext(file)])
+                # print('appending new file')
+        # print(file_groups)
+
+        complete_file_groups = []
+        for file_group in file_groups:
+            if len(set(file_group[1:])) == len(exts):
+                complete_file_groups.append(file_group[0])
+            else:
+                print(f'{file_group[0]} is incomplete, because {file_group}')
+        # print('========================')
+        # print(f'complete_file_groups: {complete_file_groups}')
+        # print('========================')
+
+        return complete_file_groups
