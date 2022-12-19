@@ -6,7 +6,8 @@ import sys
 import os
 from common import Common
 import time
-import symbol_converter
+from symbol_converter import Symbol_converter
+import shutil
 
 
 class Files_copier:
@@ -19,6 +20,8 @@ class Files_copier:
     max_img = [0, 0]
     height = 0
     width = 0
+
+    sc = None   # symbol_convrter instance
 
     def __init__(self, exts: list = ['semantic', 'agnostic', 'png'],
                  folders: list = ['.'],
@@ -56,6 +59,8 @@ class Files_copier:
         self.max_img = self.get_max_img_resolution(self.file_groups)
         print(f'FC: MAX_res: {self.max_img}')
 
+        self.sc = Symbol_converter()
+
         for i, file_group in enumerate(self.file_groups):
             self.write_group(file_group, i)
             self.file_translator.update({f'{i:06}': file_group})
@@ -79,10 +84,18 @@ class Files_copier:
 
             if re.match(r'jpg|png', ext):
                 self.write_img(input_file, output_file)
-            else:
+            elif re.match(r'agnostic|semantic', ext):
                 data = Common.read_file(input_file)
-                # Convert text data here if needed
-                Common.write_to_file(data, output_file)
+
+                symbols = re.split(r'\s', data)
+                symbols = [s for s in symbols if s != '']
+                converted_symbols = self.sc.convert_list(symbols)
+                output = ' '.join(converted_symbols)
+
+                Common.write_to_file(output, output_file)
+            else:
+                print(f'FC [Warning] File of unknown type: {ext}')
+                shutil.copy(input_file, output_file)
 
     def write_img(self, input_file: str, output_file: str) -> None:
         data = Common.read_file(input_file)

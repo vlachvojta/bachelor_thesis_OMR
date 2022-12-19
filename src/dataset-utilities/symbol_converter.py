@@ -18,7 +18,7 @@ class Symbol_converter:
     dictionary = {}
 
     def __init__(self, dictionary_file: str = 'translator.json',
-                 input_files: list = [], output: str = [],
+                 input_files: list = [], output: str = 'stdout',
                  reverse: bool = False):
         print('Hello form SYMBOL_CONVERTER')
         print(f'dictionary: {dictionary_file}, input_files {input_files}, '
@@ -34,7 +34,10 @@ class Symbol_converter:
 
         symbols_out = self.convert_list(symbols_in, reverse)
 
-        Common.write_to_file(' '.join(symbols_out), output)
+        if output == 'stdout':
+            print(' '.join(symbols_out))
+        else:
+            Common.write_to_file(' '.join(symbols_out), output)
 
     def load_symbols_from_files(self, files: list = []) -> list:
         symbols_in = []
@@ -74,7 +77,7 @@ class Symbol_converter:
         try:
             return dictionary[symbol]
         except KeyError:
-            print(f'[INFO] Neexistující konverze pro symbol {symbol}.',
+            print(f'[INFO] Neexistující konverze pro symbol ({symbol})',
                   file=sys.stderr)
             return ''
 
