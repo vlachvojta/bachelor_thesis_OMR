@@ -213,7 +213,7 @@ class Common:
     def get_img_resolution(file_name: str) -> int:
         return cv.imread(file_name).shape[0:2]
 
-    def add_black_border(file_data, new_height: int = 0, new_width: int = 0):
+    def add_black_border(img, new_height: int = 0, new_width: int = 0):
         """if new params are 0 or smaller than actual size, do nothing."""
         def calculate_border_sizes(in_res: int, new_res: int):
             """in_res is resolution of input image, new_res is parent param"""
@@ -228,7 +228,7 @@ class Common:
 
         BLACK = [0, 0, 0]
 
-        in_res = file_data.shape[0:2]
+        in_res = img.shape[0:2]
         # border_height = new_height - in_res[0]
         out_heights = calculate_border_sizes(in_res[0], new_height)
 
@@ -238,9 +238,27 @@ class Common:
             border_width = 0
         # out_widths = calculate_border_sizes(in_res[1], new_width)
 
-        file_data = cv.copyMakeBorder(
-            file_data, out_heights[0], out_heights[1],
+        img = cv.copyMakeBorder(
+            img, out_heights[0], out_heights[1],
             0, border_width,
             cv.BORDER_CONSTANT, value=BLACK)
 
-        return file_data
+        return img
+
+    def resize_img(img, height=0, width=0, inter=cv.INTER_AREA):
+        dim = (height, width)
+        (h, w) = img.shape[:2]
+
+        if width == 0 and height == 0:
+            return img
+
+        if width == 0:
+            ratio = height / float(h)
+            dim = (int(w * ratio), height)
+        elif height == 0:
+            ratio = width / float(w)
+            dim = (width, int(h * ratio))
+
+        resized = cv.resize(img, dim, interpolation=inter)
+
+        return resized

@@ -17,14 +17,19 @@ class Files_copier:
     exts = []
     output = ''
     max_img = [0, 0]
+    height = 0
+    width = 0
 
     def __init__(self, exts: list = ['semantic', 'agnostic', 'png'],
                  folders: list = ['.'],
                  output: str = 'output_folder',
-                 copy_names: bool = False) -> None:
+                 height: int = 0,
+                 width: int = 0) -> None:
         print('FC: Hello from FILES_COPIER (FC)')
         self.output = output
         self.exts = exts
+        self.height = height
+        self.width = width
 
         if not os.path.exists(output):
             os.mkdir(output)
@@ -86,8 +91,15 @@ class Files_copier:
         assert img_res[1] <= self.max_img[1]
 
         if (img_res[0] < self.max_img[0] or
-                img_res[1] < self.max_img[0]):
-            data = Common.add_black_border(data, self.max_img[0], 0)
+                img_res[1] < self.max_img[1]):
+
+            data = Common.resize_img(data, self.height, self.width)
+
+            # ? resize all images to match max_img height but keep ratio
+            # data = Common.resize_img(data, self.max_img[0])
+
+            # ? Add padding to both top and bottom
+            # data = Common.add_black_border(data, self.max_img[0], 0)
 
             # ? For padding width of images do this instead of the line above
             # data = Common.add_black_border(data,
@@ -136,8 +148,16 @@ def parseargs():
         "-o", "--output_folder", default='output_folder',
         help="Set output file with extension. Output format is JSON")
     parser.add_argument(
-        "-c", "--copy_names", action="store_true", default='False',
-        help="Set output file with extension. Output format is JSON")
+        "-H", "--image_height", default='100', type=int,
+        help=("Set to resize all images to given height." +
+              "If not set and weigth is, keep ratio."))
+    parser.add_argument(
+        "-W", "--image_width", default='0', type=int,
+        help=("Set to resize all images to given width." +
+              "If not set and height is, keep ratio."))
+    # parser.add_argument(
+    #     "-c", "--copy_names", action="store_true", default='False',
+    #     help="Set output file with extension. Output format is JSON")
     # parser.add_argument(
     #     "-i", "--input_file", default="files.txt",
     #     help="File with list of all files to search through.")
@@ -157,7 +177,8 @@ def main():
         exts=args.extensions,
         folders=args.src_folders,
         output=args.output_folder,
-        copy_names=args.copy_names)
+        height=args.image_height,
+        width=args.image_width)
     # database=args.database,
     # dirs=args.directories,
     # exts=args.extensions)
