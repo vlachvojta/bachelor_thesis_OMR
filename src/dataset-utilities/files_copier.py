@@ -6,6 +6,7 @@ import sys
 import os
 from common import Common
 import time
+import symbol_converter
 
 
 class Files_copier:
@@ -15,11 +16,13 @@ class Files_copier:
     file_translator = {}
     exts = []
     output = ''
+    max_img = [0, 0]
 
-    def __init__(self, exts: list = ['semantic', 'png'], folders: list = ['.'],
+    def __init__(self, exts: list = ['semantic', 'agnostic', 'png'],
+                 folders: list = ['.'],
                  output: str = 'output_folder',
                  copy_names: bool = False) -> None:
-        print('Hello from FILES_COPIER')
+        print('FC: Hello from FILES_COPIER (FC)')
         self.output = output
         self.exts = exts
 
@@ -41,9 +44,12 @@ class Files_copier:
 
         print(f'Found {len(self.file_groups)} complete file groups ')
         diff = len(self.file_names) - (len(self.file_groups) * len(exts))
-        if diff:
-            print(f'{diff} files are in incomplete group.')
+        if diff > 0:
+            print(f'\t{diff} files are in incomplete group.')
         print(f'(every dot is 1000 parsed files.)')
+
+        self.max_img = self.get_max_img_resolution(self.file_groups)
+        print(f'FC: MAX_res: {self.max_img}')
 
         for i, file_group in enumerate(self.file_groups):
             self.write_group(file_group, i)
@@ -53,20 +59,61 @@ class Files_copier:
                 sys.stdout.flush()
         print('')
 
-        Common.save_dict_as_json(self.file_translator,
-                                 os.path.join(output, '0_file_translator.json'))
-
-        # total_symbols = Common.sum_lists_in_dict(self.unique_symbols)
-        # new_symbols_count = total_symbols - loaded_symbols_sum
-        # print(f'{new_symbols_count} new symbols discovered. '
-        #       f'({total_symbols} total)')
+        file_translator_path = os.path.join(output, '0_file_translator.json')
+        Common.save_dict_as_json(self.file_translator, file_translator_path)
+        print(f'Dictionary with filenames written to: {file_translator_path}')
 
     def write_group(self, file_group: str = '', i: int = 0) -> None:
-        ...
-        # for ext in self.exts:
-            # read file from: file_group + ext
-            # write it to: self.output + i + ext (os.path.join nebo něco)
-            # self.read_write_file(file_group + ext, i + ext)
+        """Get file group name, save it to output folder with every given ext
+
+        File group name is file name without extension but with full path
+        """
+        for ext in self.exts:
+            input_file = f'{file_group}.{ext}'
+            output_file = os.path.join(self.output, f'{i:06}.{ext}')
+
+            if re.match(r'jpg|png', ext):
+                self.write_img(input_file, output_file)
+            else:
+                data = Common.read_file(input_file)
+                # Convert text data here if needed
+                Common.write_to_file(data, output_file)
+
+    def write_img(self, input_file: str, output_file: str) -> None:
+        data = Common.read_file(input_file)
+        img_res = data.shape[0:2]
+        assert img_res[0] <= self.max_img[0]
+        assert img_res[1] <= self.max_img[1]
+
+        if (img_res[0] < self.max_img[0] or
+                img_res[1] < self.max_img[0]):
+            data = Common.add_black_border(data, self.max_img[0], 0)
+
+            # ? For padding width of images do this instead of the line above
+            # data = Common.add_black_border(data,
+            #                                self.max_img[0],
+            #                                self.max_img[1])
+
+        Common.write_to_file(data, output_file)
+
+    def get_max_img_resolution(self, file_groups: list = []) -> list:
+        """Every file in list, add img extension, open with `cv2`, find max.
+
+        Return max resolution found in format: `[height, width]`
+        """
+        max_height = 0
+        max_width = 0
+        exts = [e for e in self.exts if re.fullmatch(r'png|jpg', e)]
+
+        for file_group in file_groups:
+            for ext in exts:
+                file_name = f'{file_group}.{ext}'
+                height, width = Common.get_img_resolution(file_name)
+
+                max_height = height if height > max_height else max_height
+                max_width = width if width > max_width else max_width
+
+        return [max_height, max_width]
 
 
 def parseargs():
@@ -77,7 +124,8 @@ def parseargs():
     #           "or use bash regex expr.\n" +
     #           "USE FULL FILE PATH (relative or absolute)"))
     parser.add_argument(
-        "-e", "--extensions", nargs='*', default=['semantic', 'png'],
+        "-e", "--extensions", nargs='*',
+        default=['semantic', 'agnostic', 'png'],
         help=("Set file extensions for files in given folder\n" +
               "Use in combination with --directories."))
     parser.add_argument(

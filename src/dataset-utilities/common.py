@@ -7,6 +7,7 @@ import os
 import sys
 import json
 import time
+import cv2 as cv
 
 
 class Common:
@@ -70,11 +71,15 @@ class Common:
     @staticmethod
     def write_to_file(data, file) -> None:
         """Caller is responsible for what is sent to which type of file."""
-        with open(file, 'w') as f:
-            file_extension = file.split('.')[-1]
-            if file_extension == 'json':
+        file_extension = file.split('.')[-1]
+
+        if file_extension == 'json':
+            with open(file, 'w') as f:
                 json.dump(data, f)
-            else:
+        elif re.fullmatch(r'png|jpg', file_extension):
+            cv.imwrite(file, data)
+        else:
+            with open(file, 'w') as f:
                 f.write(data)
 
     @staticmethod
@@ -84,10 +89,14 @@ class Common:
             return
 
         file_extension = file.split('.')[-1]
-        with open(file) as f:
-            if file_extension == 'json':
+
+        if file_extension == 'json':
+            with open(file) as f:
                 data = json.load(f)
-            else:
+        elif re.fullmatch(r'png|jpg', file_extension):
+            data = cv.imread(file)
+        else:
+            with open(file) as f:
                 data = f.read()
         return data
 
@@ -102,7 +111,7 @@ class Common:
     @staticmethod
     def get_files(folder: str = '.', exts: list = ['semantic']) -> list:
 
-        print(f'looking for all files in {folder}')
+        print(f'Looking for all files in {folder}')
         files = []
         dirs = []
         for f in Common.full_list(folder):
@@ -197,3 +206,41 @@ class Common:
         # print('========================')
 
         return complete_file_groups
+
+    # ======================== Image stats and manipulation ==================
+
+    @staticmethod
+    def get_img_resolution(file_name: str) -> int:
+        return cv.imread(file_name).shape[0:2]
+
+    def add_black_border(file_data, new_height: int = 0, new_width: int = 0):
+        """if new params are 0 or smaller than actual size, do nothing."""
+        def calculate_border_sizes(in_res: int, new_res: int):
+            """in_res is resolution of input image, new_res is parent param"""
+            out_res = [0, 0]
+            if new_res > in_res:
+                border_res = (new_res - in_res)
+                if border_res % 2 == 1:
+                    out_res = [(border_res // 2) + 1, border_res // 2]
+                else:
+                    out_res = [(border_res // 2)] * 2
+            return out_res
+
+        BLACK = [0, 0, 0]
+
+        in_res = file_data.shape[0:2]
+        # border_height = new_height - in_res[0]
+        out_heights = calculate_border_sizes(in_res[0], new_height)
+
+        if new_width > in_res[1]:
+            border_width = new_width - in_res[1]
+        else:
+            border_width = 0
+        # out_widths = calculate_border_sizes(in_res[1], new_width)
+
+        file_data = cv.copyMakeBorder(
+            file_data, out_heights[0], out_heights[1],
+            0, border_width,
+            cv.BORDER_CONSTANT, value=BLACK)
+
+        return file_data
