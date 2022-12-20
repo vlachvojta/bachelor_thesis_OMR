@@ -8,6 +8,7 @@ from common import Common
 import time
 from symbol_converter import Symbol_converter
 import shutil
+import pandas as pd
 
 
 class Files_copier:
@@ -17,6 +18,7 @@ class Files_copier:
     output = ''
     height = 0
     width = 0
+    update_files = False
 
     file_groups = []
     file_groups_img_widths = {}
@@ -26,15 +28,15 @@ class Files_copier:
     sc = None   # symbol_convrter instance
 
     def __init__(self, exts: list = ['semantic', 'agnostic', 'png'],
-                 folders: list = ['.'],
-                 output: str = 'output_folder',
-                 height: int = 0,
-                 width: int = 0) -> None:
+                 folders: list = ['.'], output: str = 'output_folder',
+                 height: int = 0, width: int = 0,
+                 update_files: bool = False) -> None:
         print('FC: Hello from FILES_COPIER (FC)')
         self.output = output
         self.exts = exts
         self.height = height
         self.width = width
+        self.update_files = update_files
 
         if not os.path.exists(output):
             os.mkdir(output)
@@ -58,10 +60,12 @@ class Files_copier:
             print(f'\t{diff} files are in incomplete group.')
         print(f'(every dot is 1000 parsed files.)')
 
+        print(f'FC: getting max img resolution...')
         self.max_img = self.get_max_img_resolution(self.file_groups)
         print(f'FC: MAX_res: {self.max_img}')
 
-        self.file_groups = list(self.file_groups_img_widths.values())
+        print(f'FC: after sort, there is {len(self.file_groups)} '
+              f'file_groups to convert')
         self.sc = Symbol_converter()
 
         for i, file_group in enumerate(self.file_groups):
@@ -85,12 +89,17 @@ class Files_copier:
             input_file = f'{file_group}.{ext}'
             output_file = os.path.join(self.output, f'{i:06}.{ext}')
 
+            if not self.update_files and os.path.exists(output_file):
+                continue
+
             if re.match(r'jpg|png', ext):
                 data = Common.read_file(input_file)
                 output = self.write_img(data)
                 Common.write_to_file(output, output_file)
             elif re.match(r'agnostic|semantic', ext):
                 data = Common.read_file(input_file)
+                if data is None:
+                    print(input_file)
                 output = self.convert_symbols(data)
                 Common.write_to_file(output, output_file)
             else:
@@ -118,7 +127,9 @@ class Files_copier:
             #                                self.max_img[1])
         return data
 
-    def convert_symbols(self, data) -> str:
+    def convert_symbols(self, data: str) -> str:
+        assert isinstance(data, str)
+
         symbols = re.split(r'\s', data)
         symbols = [s for s in symbols if s != '']
 
@@ -135,7 +146,7 @@ class Files_copier:
         max_height = 0
         max_width = 0
         exts = [e for e in self.exts if re.fullmatch(r'png|jpg', e)]
-        file_groups_img_widths = {}
+        img_widths = []
 
         for file_group in file_groups:
             for ext in exts:
@@ -146,15 +157,17 @@ class Files_copier:
                     # calculate width after resizing height
                     ratio = self.height / float(height)
                     out_width = int(width * ratio)
-                    # save to dict (k: width afet, v: file_group)
-                    file_groups_img_widths.update({out_width: file_group})
+
+                    # save to dict (v: file_group, k: width afet)
+                    img_widths.append(out_width)
 
                 max_height = height if height > max_height else max_height
                 max_width = width if width > max_width else max_width
 
-        sorted_keys = sorted(list(file_groups_img_widths.keys()))
-        _ = {k: file_groups_img_widths[k] for k in sorted_keys}
-        self.file_groups_img_widths = _
+        df = pd.DataFrame({'file_groups': file_groups, 'widths': img_widths},
+                          dtype=(str, int))
+        df = df.sort_values(by='widths', ascending=False).reset_index()
+        self.file_groups = df['file_groups'].tolist()
 
         return [max_height, max_width]
 
@@ -186,6 +199,10 @@ def parseargs():
         "-W", "--image_width", default='0', type=int,
         help=("Set to resize all images to given width." +
               "If not set and height is, keep ratio."))
+    parser.add_argument(
+        "-u", "--update_files", default=False, action='store_true',
+        help=("Set to resize all images to given width." +
+              "If not set and height is, keep ratio."))
     # parser.add_argument(
     #     "-c", "--copy_names", action="store_true", default='False',
     #     help="Set output file with extension. Output format is JSON")
@@ -209,7 +226,8 @@ def main():
         folders=args.src_folders,
         output=args.output_folder,
         height=args.image_height,
-        width=args.image_width)
+        width=args.image_width,
+        update_files=args.update_files)
     # database=args.database,
     # dirs=args.directories,
     # exts=args.extensions)
