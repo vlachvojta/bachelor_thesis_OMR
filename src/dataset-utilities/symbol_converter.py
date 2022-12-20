@@ -20,24 +20,25 @@ class Symbol_converter:
     def __init__(self, dictionary_file: str = 'translator.json',
                  input_files: list = [], output: str = 'stdout',
                  reverse: bool = False):
-        print('Hello form SYMBOL_CONVERTER')
-        print(f'dictionary: {dictionary_file}, input_files {input_files}, '
+        print('\tSC: Hello form SYMBOL_CONVERTER (SC)')
+        print(f'\tSC: dictionary: {dictionary_file}, input_files {input_files}, '
               f'output: {output}, reverse: {reverse}')
 
         self.dictionary = Common.read_file(dictionary_file)
 
-        input_files = Common.check_existing_files(input_files)
+        if len(input_files) > 0:
+            input_files = Common.check_existing_files(input_files)
 
-        print(f'Loading symbols from {len(input_files)} file(s).')
-        symbols_in = self.load_symbols_from_files(input_files)
-        print(f'{len(symbols_in)} symbols loaded.')
+            print(f'\tSC: Loading symbols from {len(input_files)} file(s).')
+            symbols_in = self.load_symbols_from_files(input_files)
+            print(f'\tSC: {len(symbols_in)} symbols loaded.')
 
-        symbols_out = self.convert_list(symbols_in, reverse)
+            symbols_out = self.convert_list(symbols_in, reverse)
 
-        if output == 'stdout':
-            print(' '.join(symbols_out))
-        else:
-            Common.write_to_file(' '.join(symbols_out), output)
+            if output == 'stdout':
+                print(' '.join(symbols_out))
+            else:
+                Common.write_to_file(' '.join(symbols_out), output)
 
     def load_symbols_from_files(self, files: list = []) -> list:
         symbols_in = []
@@ -77,7 +78,7 @@ class Symbol_converter:
         try:
             return dictionary[symbol]
         except KeyError:
-            print(f'[INFO] Neexistující konverze pro symbol ({symbol})',
+            print(f'\tSC: [INFO] Neexistující konverze pro symbol ({symbol})',
                   file=sys.stderr)
             return ''
 

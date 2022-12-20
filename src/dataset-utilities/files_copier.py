@@ -12,14 +12,16 @@ import shutil
 
 class Files_copier:
 
-    file_names = []
-    file_groups = []
-    file_translator = {}
     exts = []
+    file_names = []
     output = ''
-    max_img = [0, 0]
     height = 0
     width = 0
+
+    file_groups = []
+    file_groups_img_widths = {}
+    file_translator = {}
+    max_img = [0, 0]
 
     sc = None   # symbol_convrter instance
 
@@ -59,6 +61,7 @@ class Files_copier:
         self.max_img = self.get_max_img_resolution(self.file_groups)
         print(f'FC: MAX_res: {self.max_img}')
 
+        self.file_groups = list(self.file_groups_img_widths.values())
         self.sc = Symbol_converter()
 
         for i, file_group in enumerate(self.file_groups):
@@ -129,14 +132,32 @@ class Files_copier:
         max_height = 0
         max_width = 0
         exts = [e for e in self.exts if re.fullmatch(r'png|jpg', e)]
+        file_groups_img_widths = {}
 
         for file_group in file_groups:
             for ext in exts:
                 file_name = f'{file_group}.{ext}'
                 height, width = Common.get_img_resolution(file_name)
 
+                if self.height > 0 and self.width == 0:
+                    # calculate width after resizing height
+                    ratio = self.height / float(height)
+                    out_width = int(width * ratio)
+                    # save to dict (k: width afet, v: file_group)
+                    file_groups_img_widths.update({out_width: file_group})
+
                 max_height = height if height > max_height else max_height
                 max_width = width if width > max_width else max_width
+
+        sorted_keys = sorted(list(file_groups_img_widths.keys()))
+        _ = {k: file_groups_img_widths[k] for k in sorted_keys}
+        self.file_groups_img_widths = _
+        print(self.file_groups_img_widths)
+
+        # _ = dict(sorted(file_groups_img_widths.items(),
+        #                 key=lambda item: item[1]))
+        # self.file_groups_img_widths = _
+        # print(self.file_groups_img_widths)
 
         return [max_height, max_width]
 
