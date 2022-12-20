@@ -164,9 +164,9 @@ class Files_copier:
                 max_height = height if height > max_height else max_height
                 max_width = width if width > max_width else max_width
 
-        df = pd.DataFrame({'file_groups': file_groups, 'widths': img_widths},
-                          dtype=(str, int))
-        df = df.sort_values(by='widths', ascending=False).reset_index()
+        df = pd.DataFrame({'file_groups': file_groups, 'widths': img_widths})
+        df['widths'] = df['widths'].astype('category')
+        df = df.sort_values(by='widths', ascending=True).reset_index()
         self.file_groups = df['file_groups'].tolist()
 
         return [max_height, max_width]

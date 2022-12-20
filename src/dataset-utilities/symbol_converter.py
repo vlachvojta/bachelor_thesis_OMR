@@ -21,8 +21,8 @@ class Symbol_converter:
                  input_files: list = [], output: str = 'stdout',
                  reverse: bool = False):
         print('\tSC: Hello form SYMBOL_CONVERTER (SC)')
-        print(f'\tSC: dictionary: {dictionary_file}, input_files {input_files}, '
-              f'output: {output}, reverse: {reverse}')
+        print(f'\tSC: dictionary: {dictionary_file}, input_files {input_files}'
+              f', output: {output}, reverse: {reverse}')
 
         self.dictionary = Common.read_file(dictionary_file)
 
