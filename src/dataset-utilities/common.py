@@ -128,16 +128,22 @@ class Common:
             print(f'Looking for files in {len(dirs)} folders.\n'
                   f'(every dot is 1000 folders)')
             for i, dir in enumerate(dirs):
-                if i % 1000 == 0:
-                    print('.', end='')
-                    sys.stdout.flush()
-                # if i > 5000:
-                #     break
+                Common.print_dots(i)
                 files += [
                     f for f in Common.full_list(dir)
                     if os.path.isfile(f) and Common.right_file_ext(f, exts)]
         print('')
         return files
+
+    @staticmethod
+    def print_dots(i: int = 0, threshold1: int = 1_000,
+                   threshold2: int = 20_000) -> None:
+        """Print dots and flush for every n-th i."""
+        if i % threshold1 == 0:
+            print('.', end='')
+            if i > 0 and i % threshold2 == 0:
+                print('')
+            sys.stdout.flush()
 
     @staticmethod
     def full_list(folder):

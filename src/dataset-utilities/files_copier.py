@@ -69,11 +69,9 @@ class Files_copier:
         self.sc = Symbol_converter()
 
         for i, file_group in enumerate(self.file_groups):
+            Common.print_dots(i)
             self.write_group(file_group, i)
             self.file_translator.update({f'{i:06}': file_group})
-            if i % 1000 == 0:
-                print('.', end='')
-                sys.stdout.flush()
         print('')
 
         file_translator_path = os.path.join(output, '0_file_translator.json')
@@ -148,7 +146,8 @@ class Files_copier:
         exts = [e for e in self.exts if re.fullmatch(r'png|jpg', e)]
         img_widths = []
 
-        for file_group in file_groups:
+        for i, file_group in enumerate(file_groups):
+            Common.print_dots(i)
             for ext in exts:
                 file_name = f'{file_group}.{ext}'
                 height, width = Common.get_img_resolution(file_name)
@@ -163,6 +162,7 @@ class Files_copier:
 
                 max_height = height if height > max_height else max_height
                 max_width = width if width > max_width else max_width
+        print('')
 
         df = pd.DataFrame({'file_groups': file_groups, 'widths': img_widths})
         df['widths'] = df['widths'].astype('category')
