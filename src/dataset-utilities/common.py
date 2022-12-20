@@ -76,7 +76,9 @@ class Common:
         if file_extension == 'json':
             with open(file, 'w') as f:
                 json.dump(data, f)
-        elif re.fullmatch(r'png|jpg', file_extension):
+        elif file_extension == 'png':
+            cv.imwrite(file, data, [cv.IMWRITE_PNG_COMPRESSION, 9])
+        elif file_extension == 'jpg':
             cv.imwrite(file, data)
         else:
             with open(file, 'w') as f:

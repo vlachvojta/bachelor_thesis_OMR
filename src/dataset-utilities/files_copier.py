@@ -108,7 +108,6 @@ class Files_copier:
 
         if (img_res[0] < self.max_img[0] or
                 img_res[1] < self.max_img[1]):
-
             data = Common.resize_img(data, self.height, self.width)
 
             # ? resize all images to match max_img height but keep ratio
@@ -152,12 +151,6 @@ class Files_copier:
         sorted_keys = sorted(list(file_groups_img_widths.keys()))
         _ = {k: file_groups_img_widths[k] for k in sorted_keys}
         self.file_groups_img_widths = _
-        print(self.file_groups_img_widths)
-
-        # _ = dict(sorted(file_groups_img_widths.items(),
-        #                 key=lambda item: item[1]))
-        # self.file_groups_img_widths = _
-        # print(self.file_groups_img_widths)
 
         return [max_height, max_width]
 
@@ -221,7 +214,7 @@ def main():
     # gus.print_symbols(args.out)
 
     end = time.time()
-    print(f'Total time: {end - start}')
+    print(f'Total time: {end - start:.2f} s')
 
 
 if __name__ == "__main__":
