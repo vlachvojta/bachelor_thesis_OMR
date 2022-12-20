@@ -13,5 +13,8 @@ convert_symbols:
 unique_symbols_test:
 	$(PY) $(GUS) -f test_data/000051650-1_1_1*
 
+convert_dataset:
+	./files_copier.py -F ../../../datasets/primus_full_untouched/* -o ../../../datasets/primus_full_converted/ -H 100
+
 clean:
 	rm -rf __pycache__
