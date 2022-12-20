@@ -86,22 +86,18 @@ class Files_copier:
             output_file = os.path.join(self.output, f'{i:06}.{ext}')
 
             if re.match(r'jpg|png', ext):
-                self.write_img(input_file, output_file)
+                data = Common.read_file(input_file)
+                output = self.write_img(data)
+                Common.write_to_file(output, output_file)
             elif re.match(r'agnostic|semantic', ext):
                 data = Common.read_file(input_file)
-
-                symbols = re.split(r'\s', data)
-                symbols = [s for s in symbols if s != '']
-                converted_symbols = self.sc.convert_list(symbols)
-                output = ' '.join(converted_symbols)
-
+                output = self.convert_symbols(data)
                 Common.write_to_file(output, output_file)
             else:
                 print(f'FC [Warning] File of unknown type: {ext}')
                 shutil.copy(input_file, output_file)
 
-    def write_img(self, input_file: str, output_file: str) -> None:
-        data = Common.read_file(input_file)
+    def write_img(self, data) -> None:
         img_res = data.shape[0:2]
         assert img_res[0] <= self.max_img[0]
         assert img_res[1] <= self.max_img[1]
@@ -120,8 +116,16 @@ class Files_copier:
             # data = Common.add_black_border(data,
             #                                self.max_img[0],
             #                                self.max_img[1])
+        return data
 
-        Common.write_to_file(data, output_file)
+    def convert_symbols(self, data) -> str:
+        symbols = re.split(r'\s', data)
+        symbols = [s for s in symbols if s != '']
+
+        converted_symbols = self.sc.convert_list(symbols)
+        assert len(symbols) == len(converted_symbols)
+
+        return ' '.join(converted_symbols)
 
     def get_max_img_resolution(self, file_groups: list = []) -> list:
         """Every file in list, add img extension, open with `cv2`, find max.
