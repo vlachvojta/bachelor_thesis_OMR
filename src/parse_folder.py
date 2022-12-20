@@ -3,10 +3,20 @@
 # Starting code downloaded from https://github.com/DCGM/pero-ocr/blob/master/user_scripts/parse_folder.py
 # Authors on github: ibenes, michal-hradis, OldaKodym, xkissm00, kohuthonza
 
+import lmdb
+import numpy as np
+import cv2
+import argparse
+import re
+import sys
+import os
+from common import Common
+import time
+from symbol_converter import Symbol_converter
 
-class LMDB_writer(object):
+
+class LMDB_writer_from_PERO(object):
     def __init__(self, path):
-        import lmdb
         gb100 = 100000000000
         self.env_out = lmdb.open(path, map_size=gb100)
 
@@ -17,7 +27,9 @@ class LMDB_writer(object):
         for line in all_lines:
             if line.transcription:
                 key = f'{file_id}-{line.id}.jpg'
-                img = cv2.imencode('.jpg', line.crop.astype(np.uint8), [int(cv2.IMWRITE_JPEG_QUALITY), 95])[1].tobytes()
+                img = cv2.imencode(
+                    '.jpg', line.crop.astype(np.uint8),
+                    [int(cv2.IMWRITE_JPEG_QUALITY), 95])[1].tobytes()
                 records_to_write[key] = img
 
         with self.env_out.begin(write=True) as txn_out:
@@ -26,7 +38,73 @@ class LMDB_writer(object):
                 c_out.put(key.encode(), records_to_write[key])
 
 
-""" 
+class LMDB_generator:
+
+    exts1 = []
+    exts2 = []
+    in_folders = []
+    output = ''
+
+    def __init__(self, exts1: list = ['semantic', 'agnostic'],
+                 exts2: list = ['png'], in_folders: list = ['.'],
+                 output: str = ''):
+        self.exts1 = exts1
+        self.exts2 = exts2
+        self.in_folders = in_folders
+        self.output = output
+
+        if not os.path.exists(output):
+            os.mkdir(output)
+
+    def __call__(self) -> None:
+        print('asdfasdf')
+
+
+def parseargs():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "-e", "--extensions1", nargs='*',
+        default=['semantic', 'agnostic'],
+        help=("Set file extensions for files to the 1st lmdb output"))
+    parser.add_argument(
+        "-E", "--extensions2", nargs='*',
+        default=['png'],
+        help=("Set file extensions for files to the 2nd lmdb output"))
+    parser.add_argument(
+        "-F", "--src_folders", nargs='*', default=['.'],
+        help=("Directories where to look for files with given extensions. \n" +
+              "Use in combination with --extensions."))
+    parser.add_argument(
+        "-o", "--output_folder", default='output_folder',
+        help="Set output file with extension. Output format is JSON")
+
+    return parser.parse_args()
+
+
+def main():
+    """Main function for simple testing"""
+    args = parseargs()
+
+    start = time.time()
+    # fc = Files_copier(
+    convertor = LMDB_generator(
+        exts1=args.extensions1,
+        exts2=args.extensions2,
+        in_folders=args.src_folders,
+        output=args.output_folder)
+
+    convertor()
+
+    end = time.time()
+    print(f'Total time: {end - start:.2f} s')
+
+
+if __name__ == "__main__":
+    main()
+
+
+"""
 import numpy as np
 import os
 import configparser
