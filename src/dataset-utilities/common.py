@@ -85,7 +85,7 @@ class Common:
                 f.write(data)
 
     @staticmethod
-    def read_file(file: str):
+    def read_file(file: str, lmdb: bool = False):
         """Read file, if file extension == 'json', read as json"""
         if not os.path.exists(file):
             return
@@ -97,9 +97,15 @@ class Common:
                 data = json.load(f)
         elif re.fullmatch(r'png|jpg', file_extension):
             data = cv.imread(file)
+            if lmdb:
+                data = cv.imencode(
+                    '.png', data,
+                    [int(cv.IMWRITE_JPEG_QUALITY), 95])[1].tobytes()
         else:
             with open(file) as f:
                 data = f.read()
+                if lmdb:
+                    data = data.encode()
         return data
 
     @staticmethod

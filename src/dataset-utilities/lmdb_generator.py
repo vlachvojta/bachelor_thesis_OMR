@@ -64,19 +64,28 @@ class LMDB_generator:
             self.in_folders, self.exts2, False)
 
         assert len(files1) // len(self.exts1) == len(files2) // len(self.exts2)
+
         self.files_to_lmdb(files1, os.path.join(self.output, '1.lmdb'))
         self.files_to_lmdb(files2, os.path.join(self.output, '2.lmdb'))
 
     def files_to_lmdb(self, files: list = [], output: str = 'output.lmdb'):
+        print(f'Writing files to {output} (every dot is 1000 files)')
+
         self.db = lmdb.open(output, map_size=self.gb100)
 
-        for file in files:
-            ...
-            # read file
+        for i, file in enumerate(files):
+            Common.print_dots(i)
+            file_name = re.split('/', file)[-1]
+            file_id = re.split(r'\.', file_name)[0]
+            file_ext = re.split(r'\.', file_name)[-1]
 
-            # add to db
-            # with self.db.begin(write=True) as txn:
-            #     txn.put('{:08}'.format(0), im_data.SerializeToString())
+            key = f'{file_id}-000000.{file_ext}'
+            data = Common.read_file(file, lmdb=True)
+
+            with self.db.begin(write=True) as txn_out:
+                c_out = txn_out.cursor()
+                c_out.put(key.encode(), data)
+        print('')
 
 
 def parseargs():
