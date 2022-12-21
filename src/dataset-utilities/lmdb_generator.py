@@ -12,30 +12,29 @@ import sys
 import os
 from common import Common
 import time
-from symbol_converter import Symbol_converter
 
 
-class LMDB_writer_from_PERO(object):
-    def __init__(self, path):
-        gb100 = 100000000000
-        self.env_out = lmdb.open(path, map_size=gb100)
+# class LMDB_writer_from_PERO(object):
+#     def __init__(self, path):
+#         gb100 = 100000000000
+#         self.env_out = lmdb.open(path, map_size=gb100)
 
-    def __call__(self, page_layout: PageLayout, file_id):
-        all_lines = list(page_layout.lines_iterator())
-        all_lines = sorted(all_lines, key=lambda x: x.id)
-        records_to_write = {}
-        for line in all_lines:
-            if line.transcription:
-                key = f'{file_id}-{line.id}.jpg'
-                img = cv2.imencode(
-                    '.jpg', line.crop.astype(np.uint8),
-                    [int(cv2.IMWRITE_JPEG_QUALITY), 95])[1].tobytes()
-                records_to_write[key] = img
+#     def __call__(self, page_layout: PageLayout, file_id):
+#         all_lines = list(page_layout.lines_iterator())
+#         all_lines = sorted(all_lines, key=lambda x: x.id)
+#         records_to_write = {}
+#         for line in all_lines:
+#             if line.transcription:
+#                 key = f'{file_id}-{line.id}.jpg'
+#                 img = cv2.imencode(
+#                     '.jpg', line.crop.astype(np.uint8),
+#                     [int(cv2.IMWRITE_JPEG_QUALITY), 95])[1].tobytes()
+#                 records_to_write[key] = img
 
-        with self.env_out.begin(write=True) as txn_out:
-            c_out = txn_out.cursor()
-            for key in records_to_write:
-                c_out.put(key.encode(), records_to_write[key])
+#         with self.env_out.begin(write=True) as txn_out:
+#             c_out = txn_out.cursor()
+#             for key in records_to_write:
+#                 c_out.put(key.encode(), records_to_write[key])
 
 
 class LMDB_generator:
@@ -45,6 +44,8 @@ class LMDB_generator:
     in_folders = []
     output = ''
 
+    gb100 = 100000000000
+
     def __init__(self, exts1: list = ['semantic', 'agnostic'],
                  exts2: list = ['png'], in_folders: list = ['.'],
                  output: str = ''):
@@ -53,11 +54,29 @@ class LMDB_generator:
         self.in_folders = in_folders
         self.output = output
 
-        if not os.path.exists(output):
-            os.mkdir(output)
-
     def __call__(self) -> None:
-        print('asdfasdf')
+        if not os.path.exists(self.output):
+            os.mkdir(self.output)
+
+        files1 = Common.get_files_from_folders(
+            self.in_folders, self.exts1, False)
+        files2 = Common.get_files_from_folders(
+            self.in_folders, self.exts2, False)
+
+        assert len(files1) // len(self.exts1) == len(files2) // len(self.exts2)
+        self.files_to_lmdb(files1, os.path.join(self.output, '1.lmdb'))
+        self.files_to_lmdb(files2, os.path.join(self.output, '2.lmdb'))
+
+    def files_to_lmdb(self, files: list = [], output: str = 'output.lmdb'):
+        self.db = lmdb.open(output, map_size=self.gb100)
+
+        for file in files:
+            ...
+            # read file
+
+            # add to db
+            # with self.db.begin(write=True) as txn:
+            #     txn.put('{:08}'.format(0), im_data.SerializeToString())
 
 
 def parseargs():
@@ -88,13 +107,13 @@ def main():
 
     start = time.time()
     # fc = Files_copier(
-    convertor = LMDB_generator(
+    generator = LMDB_generator(
         exts1=args.extensions1,
         exts2=args.extensions2,
         in_folders=args.src_folders,
         output=args.output_folder)
 
-    convertor()
+    generator()
 
     end = time.time()
     print(f'Total time: {end - start:.2f} s')
@@ -345,7 +364,6 @@ def main():
     if page_parser.decoder:
         logger.info(page_parser.decoder.decoding_summary())
     logger.info(f'AVERAGE PROCESSING TIME {(time.time() - t_start) / len(ids_to_process)}')
-
 
 if __name__ == "__main__":
     main()
