@@ -111,9 +111,18 @@ class Common:
             return []
 
     @staticmethod
-    def get_files(folder: str = '.', exts: list = ['semantic']) -> list:
+    def get_files_from_folders(folders: list = ['.'],
+                               exts: list = ['semantic'],
+                               go_deeper: bool = True) -> list:
+        files = []
+        for folder in folders:
+            files += Common.get_files(folder, exts, go_deeper)
+        return files
 
-        print(f'Looking for all files in {folder}')
+    @staticmethod
+    def get_files(folder: str = '.', exts: list = ['semantic'],
+                  go_deeper: bool = True) -> list:
+        print(f'looking for all files in {folder} with extenstions {exts}')
         files = []
         dirs = []
         for f in Common.full_list(folder):
@@ -122,7 +131,8 @@ class Common:
             elif os.path.isfile(f) and Common.right_file_ext(f, exts):
                 files.append(f)
 
-        assert len(dirs) > 0
+        if not go_deeper:
+            return files
 
         if dirs:
             print(f'Looking for files in {len(dirs)} folders.\n'
