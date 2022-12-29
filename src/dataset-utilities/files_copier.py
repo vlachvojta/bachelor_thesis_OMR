@@ -27,7 +27,7 @@ class Files_copier:
 
     sc = None   # symbol_convrter instance
 
-    def __init__(self, exts: list = ['semantic', 'agnostic', 'png'],
+    def __init__(self, exts: list = ['agnostic', 'png'],
                  folders: list = ['.'], output: str = 'output_folder',
                  height: int = 0, width: int = 0,
                  update_files: bool = False) -> None:
@@ -181,7 +181,7 @@ def parseargs():
     #           "USE FULL FILE PATH (relative or absolute)"))
     parser.add_argument(
         "-e", "--extensions", nargs='*',
-        default=['semantic', 'agnostic', 'png'],
+        default=['agnostic', 'png'],
         help=("Set file extensions for files in given folder\n" +
               "Use in combination with --directories."))
     parser.add_argument(

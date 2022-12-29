@@ -16,7 +16,7 @@ class Symbol_converter:
 
     dictionary = {}
 
-    def __init__(self, dictionary_file: str = 'translator.json',
+    def __init__(self, dictionary_file: str = 'translator.agnostic.json',
                  input_files: list = [], output: str = 'stdout',
                  reverse: bool = False):
         print('\tSC: Hello form SYMBOL_CONVERTER (SC)')
