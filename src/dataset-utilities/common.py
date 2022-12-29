@@ -1,17 +1,20 @@
 #!/usr/bin/python3.8
+# -*- coding: utf-8 -*-
+"""Module contains one class called Common for common tasks with dataset,
+files, folders and symbols.
+"""
 
-
-import pathlib
 import re
 import os
 import sys
 import json
-import time
 import cv2 as cv
 
 
 class Common:
-    """Class for common tasks with dataset."""
+    """Class for common tasks with dataset,
+    files, folders and symbols.
+    """
 
     @staticmethod
     def print_dict(data: dict, files: bool = False):
