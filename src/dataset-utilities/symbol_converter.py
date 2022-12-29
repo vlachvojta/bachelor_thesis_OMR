@@ -3,7 +3,6 @@
 import argparse
 import re
 import sys
-import os
 from common import Common
 import time
 
