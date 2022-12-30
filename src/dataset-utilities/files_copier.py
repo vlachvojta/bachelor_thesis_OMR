@@ -144,6 +144,8 @@ class Files_copier:
         max_height = 0
         max_width = 0
         exts = [e for e in self.exts if re.fullmatch(r'png|jpg', e)]
+        if exts == []:
+            return [0, 0]
         img_widths = []
 
         for i, file_group in enumerate(file_groups):
