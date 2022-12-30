@@ -35,7 +35,9 @@ class Sym_conv:
 
         assert self.len_before == len(self.out)
 
-        pyperclip.copy(json.dumps(self.out))
+        new_out = {k: self.out[k] for k in sorted(self.out.keys())}
+
+        pyperclip.copy(json.dumps(new_out))
         Sym_conv.print_dict(self.out)
 
         print(f'{len(identical_list)} symbols stil to convert ' +
@@ -53,7 +55,7 @@ class Sym_conv:
     def print_dict(data: dict = {}) -> None:
         keys = sorted(data.keys())
         for k in keys:
-            print(f'{k}: {data[k]},')
+            print(f'"{k}": "{data[k]}",')
 
     @staticmethod
     def get_identical_list(list1: list = [], list2: list = []) -> int:
@@ -78,6 +80,7 @@ def main():
     # general symbol type
     convertor._replace_dict(
         {
+            'barline-L1': '|',
             'accidental.flat-': 'b',
             'accidental.sharp-': '#',
             'accidental.natural-': '\\',
@@ -94,11 +97,22 @@ def main():
             'multirest-L3': 'm',
             'slur.start-': 's',
             'slur.end-': 'e',
+            'rest.': 'r',
             '-L': 'L',
-            '-S': 'S',
-            'barline-L1': '|'
+            '-S': 'S'
         }
     )
+
+    # Symbol positions
+    pos_lines = {f'L{i}': f'/{i * 2}' for i in range(10)}
+    pos_neg_lines = {f'L-{i}': f'/-{i * 2}' for i in range(4)}
+    pos_spaces = {f'S{i}': f'/{(i * 2) - 1}' for i in range(10)}
+    pos_neg_spaces = {f'S-{i}': f'/-{(i * 2) + 1}' for i in range(1, 4)}
+
+    convertor._replace_dict(pos_lines)
+    convertor._replace_dict(pos_neg_lines)
+    convertor._replace_dict(pos_spaces)
+    convertor._replace_dict(pos_neg_spaces)
 
     # symbol (notes, gracenotes, rest...) lengths
     convertor._replace_dict({
@@ -116,17 +130,6 @@ def main():
         'sixty_fourth': 's',
         'whole': 'W'
         })
-
-    # Symbol positions
-    pos_lines = {f'L{i}': f'{i * 2}' for i in range(10)}
-    pos_neg_lines = {f'L-{i}': f'-{i * 2}' for i in range(4)}
-    pos_spaces = {f'S{i}': f'{(i * 2) - 1}' for i in range(10)}
-    pos_neg_spaces = {f'S-{i}': f'-{(i * 2) + 1}' for i in range(1, 4)}
-
-    convertor._replace_dict(pos_lines)
-    convertor._replace_dict(pos_neg_lines)
-    convertor._replace_dict(pos_spaces)
-    convertor._replace_dict(pos_neg_spaces)
 
     convertor.finalize()
 
