@@ -24,6 +24,8 @@ class Files_copier:
     file_groups_img_widths = {}
     file_translator = {}
     max_img = [0, 0]
+    FILE_TRANSLATOR_NAME = '0_file_translator.json'
+    FILE_TRANSLATOR_PATH = ''
 
     sc = None   # symbol_convrter instance
 
@@ -37,22 +39,16 @@ class Files_copier:
         self.height = height
         self.width = width
         self.update_files = update_files
+        self.FILE_TRANSLATOR_PATH = os.path.join(
+            output,
+            self.FILE_TRANSLATOR_NAME)
+
+        old_file_translator = self.get_old_file_translator()
 
         if not os.path.exists(output):
             os.mkdir(output)
 
-        files = []
-        for folder in folders:
-            files += Common.get_files(folder, exts)
-
-        files = list(set(files))
-        self.file_names = Common.check_existing_files(files)
-
-        print(f'Found {len(self.file_names)} files with one of '
-              f'{len(exts)} extensions.')
-
-        self.file_groups = Common.get_complete_group_names(self.file_names,
-                                                           exts)
+        self.file_groups = self.get_file_groups(folders, exts)
 
         print(f'Found {len(self.file_groups)} complete file groups ')
         diff = len(self.file_names) - (len(self.file_groups) * len(exts))
@@ -64,19 +60,32 @@ class Files_copier:
         self.max_img = self.get_max_img_resolution(self.file_groups)
         print(f'FC: MAX_res: {self.max_img}')
 
+        self.check_fgroups_identcal(old_file_translator.values(),
+                                    self.file_groups)
+
         print(f'FC: after sort, there is {len(self.file_groups)} '
               f'file_groups to convert')
         self.sc = Symbol_converter()
 
-        for i, file_group in enumerate(self.file_groups):
+        if old_file_translator == {}:
+            file_translator = {i: fgroup for i, fgroup
+                               in enumerate(self.file_groups)}
+            self.write_all_groups(file_translator)
+        else:
+            self.write_all_groups({int(k): v for k, v
+                                  in old_file_translator.items()})
+
+        Common.save_dict_as_json(self.file_translator,
+                                 self.FILE_TRANSLATOR_PATH)
+        print(f'Dictionary with filenames written to: '
+              f'{self.FILE_TRANSLATOR_PATH}')
+
+    def write_all_groups(self, keys_fgroups: dict) -> None:
+        for i, file_group in keys_fgroups.items():
             Common.print_dots(i)
             self.write_group(file_group, i)
             self.file_translator.update({f'{i:06}': file_group})
         print('')
-
-        file_translator_path = os.path.join(output, '0_file_translator.json')
-        Common.save_dict_as_json(self.file_translator, file_translator_path)
-        print(f'Dictionary with filenames written to: {file_translator_path}')
 
     def write_group(self, file_group: str = '', i: int = 0) -> None:
         """Get file group name, save it to output folder with every given ext
@@ -124,6 +133,36 @@ class Files_copier:
             #                                self.max_img[0],
             #                                self.max_img[1])
         return data
+
+    def check_fgroups_identcal(self, old, new) -> None:
+        old = sorted(old)
+        new = sorted(new)
+
+        if not old == new:
+            print('OLD != NEW')
+            print(f'\tnew len: {len(old)}\n'
+                  f'\told len: {len(new)}')
+            raise AssertionError
+
+    def get_old_file_translator(self):
+        old_file_translator = {}
+        if (os.path.exists(self.output) and
+                os.path.exists(self.FILE_TRANSLATOR_PATH)):
+            old_file_translator = Common.read_file(self.FILE_TRANSLATOR_PATH)
+        return old_file_translator
+
+    def get_file_groups(self, folders, exts) -> list:
+        files = []
+        for folder in folders:
+            files += Common.get_files(folder, exts)
+
+        files = list(set(files))
+        self.file_names = Common.check_existing_files(files)
+
+        print(f'Found {len(self.file_names)} files with one of '
+              f'{len(exts)} extensions.')
+
+        return Common.get_complete_group_names(self.file_names, exts)
 
     def convert_symbols(self, data: str) -> str:
         assert isinstance(data, str)
