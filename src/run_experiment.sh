@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
 
 module add python36-modules-gcc
-# apt-get install python3-venv
 python3.6 -m venv .venv
 source .venv/bin/activate
 
 pip3.6 install -r requirements.txt
 echo "Packages installed!"
 
-PERO_PATH="/storage/brno2/home/xvlach22/bp_omr/code_from_others/pero/"
-PERO_OCR_PATH="/storage/brno2/home/xvlach22/bp_omr/code_from_others/pero-ocr"
-# SAFE_GPU="/home/vlachvojta/skola/BP/code_from_others/sage_gpu"
-export PYTHONPATH=$PERO_PATH:$PERO_OCR_PATH # :$SAFE_GPU
+HOME="~"
+PERO_PATH=$HOME"/code_from_others/pero/"
+PERO_OCR_PATH=$HOME"/code_from_others/pero-ocr"
+export PYTHONPATH=$PERO_PATH:$PERO_OCR_PATH
 export PATH=$PATH:$PYTHONPATH
 
-SCRIPT="/storage/brno2/home/xvlach22/bp_omr/code_from_others/pero/pytorch_ctc/train_pytorch_ocr.py"
+SCRIPT=$HOME"/code_from_others/pero/pytorch_ctc/train_pytorch_ocr.py"
 LENGTH=1700
-LMDB=./primus_100.lmdb
+LMDB=$HOME"/datasets/images.lmdb"
 #NET=NET_SIMPLE_BC_3_BLC_2_BFC_24
 #NET=NET_RES_D3_BFC_24_BN
 #NET=NET_RES_D3_BFC_24_MI

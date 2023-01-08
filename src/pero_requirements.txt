@@ -1,8 +1,8 @@
 arabic-reshaper>=2.1.0
 future
 imageio
-Levenshtein>0.20.0
-lmdb>1.1.0
+Levenshtein>=0.20.0
+lmdb>=1.1.0
 networkx
 numpy
 nvidia-cublas-cu11>=11.10.3.66
