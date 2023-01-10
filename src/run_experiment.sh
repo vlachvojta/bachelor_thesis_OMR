@@ -27,7 +27,8 @@ NET=VGG_LSTM_B64_L17_S4_CB4
 DATA_TYPE=all
 TRANSFORMER=
 #'--data-manipulator UNIVERSAL_PRINT'
-START='--start-iteration 20700'
+START='' # '--start-iteration 20700'
+FONT=$HOME/"ubuntu_fonts/Ubuntu-Regular.ttf"
 
 pip3.6 install arabic-reshaper
 pip3.6 install lmdb
@@ -39,8 +40,6 @@ pip3.6 install nvidia-cuda-nvrtc-cu11
 pip3.6 install nvidia-cuda-runtime-cu11
 pip3.6 install torchvision==0.2.2
 
-echo "=============== running train script ============="
-
 python3.6 -u $SCRIPT $START  \
     --trn-data $DATA_TRN \
     --tst-data $DATA_TST \
@@ -50,5 +49,5 @@ python3.6 -u $SCRIPT $START  \
     --max-buffer-size=1024000000 --max-buffered-lines=10000 \
     --dropout-rate 0.05 --learning-rate 0.0001 --batch-size 24  --view-step 500  \
     --test --checkpoint-dir checkpoints -c all \
+    --font $FONT \
     --show-trans --test --warm-up-iterations 500 2>&1 | tee -a log_x.txt
-
