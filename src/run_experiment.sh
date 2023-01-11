@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 
+export EXPERIMENT="230111_there_is_no_more_try_just_do"
+echo "SCRATCH: "$SCRATCH
+cd $SCRATCH
+cp -r /storage/brno2/home/xvlach22/bp_omr/datasets $SCRATCH/datasets
+mkdir $SCRATCH/experiments
+cp -r /storage/brno2/home/xvlach22/bp_omr/experiments/$EXPERIMENT $SCRATCH/experiments/$EXPERIMENT
+cp -r /storage/brno2/home/xvlach22/bp_omr/ubuntu_fonts $SCRATCH/ubuntu_fonts
+cp -r /storage/brno2/home/xvlach22/bp_omr/code_from_others $SCRATCH/code_from_others
+cd experiments/$EXPERIMENT
+chmod u+x run_experiment.sh
+trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; clean_scratch' EXIT TERM
 module add python36-modules-gcc
-# python3.6 -m venv .venv
-# source .venv/bin/activate
 
-pip3.6 install --upgrade pip
-pip3.6 install -r pero_requirements.txt
-echo "Packages installed!"
+pip3.6 install --upgrade pip 1>/dev/null
+# pip3.6 install -r pero_requirements.txt 1>/dev/null
 
 HOME=$SCRATCH
 PERO_PATH=$HOME"/code_from_others/pero/"
@@ -30,15 +38,18 @@ TRANSFORMER=
 START='' # '--start-iteration 20700'
 FONT=$HOME/"ubuntu_fonts/Ubuntu-Regular.ttf"
 
-pip3.6 install arabic-reshaper
-pip3.6 install lmdb
-pip3.6 install safe-gpu
-pip3.6 install shapely imgaug lxml Levenshtein rapidfuzz typing-extensions
-pip3.6 install nvidia-cublas-cu11
-pip3.6 install nvidia-cudnn-cu11
-pip3.6 install nvidia-cuda-nvrtc-cu11
-pip3.6 install nvidia-cuda-runtime-cu11
-pip3.6 install torchvision==0.2.2
+pip3.6 install arabic-reshaper 1>/dev/null
+pip3.6 install lmdb 1>/dev/null
+pip3.6 install safe-gpu 1>/dev/null
+pip3.6 install shapely imgaug lxml Levenshtein rapidfuzz typing-extensions 1>/dev/null
+# pip3.6 install nvidia-cublas-cu11 1>/dev/null
+# pip3.6 install nvidia-cudnn-cu11 1>/dev/null
+# pip3.6 install nvidia-cuda-nvrtc-cu11 1>/dev/null
+# pip3.6 install nvidia-cuda-runtime-cu11 1>/dev/null
+pip3.6 install torchvision==0.2.2 1>/dev/null
+# pip3.6 install torch==1.8.0+cu111 torchvision==0.2.2+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
+echo "python modules installed"
+echo "============== Running training script =============="
 
 python3.6 -u $SCRIPT $START  \
     --trn-data $DATA_TRN \
