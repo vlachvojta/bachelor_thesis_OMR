@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/scratch.ssd/xvlach22/job_13951172.meta-pbs.metacentrum.cz/code_from_others/pero/pytorch_ctc/train_pytorch_ocr.py", line 882, in <module>
+    main()
+  File "/scratch.ssd/xvlach22/job_13951172.meta-pbs.metacentrum.cz/code_from_others/pero/pytorch_ctc/train_pytorch_ocr.py", line 240, in main
+    nonparam_train_all=args.nonparam_train_all,
+  File "/scratch.ssd/xvlach22/job_13951172.meta-pbs.metacentrum.cz/code_from_others/pero/pytorch_ctc/train_pytorch_ocr.py", line 659, in init_model_wrapper
+    model = model.to(device)
+  File "/afs/.ics.muni.cz/software/python36-modules/gcc/lib/python3.6/site-packages/torch/nn/modules/module.py", line 673, in to
+    return self._apply(convert)
+  File "/afs/.ics.muni.cz/software/python36-modules/gcc/lib/python3.6/site-packages/torch/nn/modules/module.py", line 387, in _apply
+    module._apply(fn)
+  File "/afs/.ics.muni.cz/software/python36-modules/gcc/lib/python3.6/site-packages/torch/nn/modules/module.py", line 387, in _apply
+    module._apply(fn)
+  File "/afs/.ics.muni.cz/software/python36-modules/gcc/lib/python3.6/site-packages/torch/nn/modules/module.py", line 387, in _apply
+    module._apply(fn)
+  File "/afs/.ics.muni.cz/software/python36-modules/gcc/lib/python3.6/site-packages/torch/nn/modules/rnn.py", line 186, in _apply
+    self.flatten_parameters()
+  File "/afs/.ics.muni.cz/software/python36-modules/gcc/lib/python3.6/site-packages/torch/nn/modules/rnn.py", line 176, in flatten_parameters
+    self.batch_first, bool(self.bidirectional))  # type: ignore
+RuntimeError: cuDNN error: CUDNN_STATUS_NOT_INITIALIZED
