@@ -36,7 +36,7 @@ qsub -I -l select=1:ncpus=2:ngpus=1:mem=20gb:scratch_local=20gb:cluster=grimbold
 ### job setter
 export EXPERIMENT="230109_first_try" && cd $SCRATCH && cp -r /storage/brno2/home/xvlach22/bp_omr/* $SCRATCH && cd experiments/$EXPERIMENT && chmod u+x run_experiment.sh && trap 'cp -r $SCRATCH/experiments /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; clean_scratch' EXIT TERM && module add python36-modules-gcc
 **OR**
-cp /storage/brno2/home/xvlach22/bp_omr/experiments/230111_there_is_no_more_try_just_do/run_experiment.sh run_experiment.sh && chmod u+x run_experiment.sh
+cp /storage/brno2/home/xvlach22/bp_omr/experiments/230112_safe_gpu_semi_auto/run_experiment.sh run_experiment.sh && chmod u+x run_experiment.sh
 
 **+**
 ./run_experiment.sh
@@ -60,7 +60,10 @@ torch>=1.10.2 NEBO 1.8.0 aaa
 ## How server work CuDNN or not
 black1  OK
 grimbold OK
+glados10-13 OK
+konos   OK
 
+glados1-7 NOP
 adan1-61 NOP
 gita1-7 NOP
 zia3    NOP
