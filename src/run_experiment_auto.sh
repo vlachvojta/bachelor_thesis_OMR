@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#PBS -l select=1:ncpus=2:ngpus=1:mem=20gb:scratch_local=20gb:cluster=grimbold
+#PBS -l select=1:ncpus=2:ngpus=1:mem=20gb:scratch_local=20gb
 #PBS -q gpu
 #PBS -N 230112_first_auto_try
 #PBS -l walltime=0:30:0
@@ -15,7 +15,7 @@ cp -r /storage/brno2/home/xvlach22/bp_omr/ubuntu_fonts $SCRATCH/ubuntu_fonts
 cp -r /storage/brno2/home/xvlach22/bp_omr/code_from_others $SCRATCH/code_from_others
 cd experiments/$EXPERIMENT
 # chmod u+x run_experiment.sh
-trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; clean_scratch' EXIT TERM
+trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
 module add python36-modules-gcc
 
 pip3.6 install --upgrade pip 1>/dev/null
@@ -54,6 +54,7 @@ pip3.6 install shapely imgaug lxml Levenshtein rapidfuzz typing-extensions 1>/de
 pip3.6 install torchvision==0.2.2 1>/dev/null
 # pip3.6 install torch==1.8.0+cu111 torchvision==0.2.2+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
 echo "python modules installed"
+pwd
 echo "============== Running training script =============="
 
 python3.6 -u $SCRIPT $START  \
@@ -67,3 +68,7 @@ python3.6 -u $SCRIPT $START  \
     --test --checkpoint-dir checkpoints -c all \
     --font $FONT \
     --show-trans --test --warm-up-iterations 500 2>&1 | tee -a log_x.txt
+
+cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
+clean_scratch
+exit
