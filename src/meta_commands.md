@@ -18,6 +18,8 @@
 - [get-job-history](https://wiki.metacentrum.cz/wiki/PBS_get_job_history)
 - [Command builder qsub](https://metavo.metacentrum.cz/pbsmon2/qsub_pbspro)
 - [Python modules](https://metavo.metacentrum.cz/pbsmon2/qsub_pbspro)
+- [Working with data](https://wiki.metacentrum.cz/wiki/Working_with_data)
+- [How NOT to take down metacentre](https://www.cesnet.cz/wp-content/uploads/2021/04/Vorel_MC_2021.pdf)
 
 ## Commands
 - metacentrum FE login
