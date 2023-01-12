@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-#PBS -l select=1:ncpus=2:ngpus=1:mem=20gb:scratch_local=20gb
+#PBS -l select=1:ncpus=2:ngpus=1:mem=15gb:scratch_local=10gb:cluster=konos
 #PBS -q gpu
-#PBS -N 230112_first_auto_try
-#PBS -l walltime=1:0:0
+#PBS -N 230112_sagnostic_all_nighter
+#PBS -l walltime=2:0:0
 #PBS -m abe
 
-export EXPERIMENT="230112_first_auto_try"
+export EXPERIMENT="230112_sagnostic_all_nighter"
 echo "SCRATCH: "$SCRATCH
 cd $SCRATCH
 cp -r /storage/brno2/home/xvlach22/bp_omr/datasets $SCRATCH/datasets
@@ -15,7 +15,7 @@ cp -r /storage/brno2/home/xvlach22/bp_omr/ubuntu_fonts $SCRATCH/ubuntu_fonts
 cp -r /storage/brno2/home/xvlach22/bp_omr/code_from_others $SCRATCH/code_from_others
 cd experiments/$EXPERIMENT
 # chmod u+x run_experiment.sh
-trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy/$EXPERIMENT ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
+trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
 module add python36-modules-gcc
 
 pip3.6 install --upgrade pip 1>/dev/null
@@ -40,7 +40,7 @@ NET=VGG_LSTM_B64_L17_S4_CB4
 DATA_TYPE=all
 TRANSFORMER=
 #'--data-manipulator UNIVERSAL_PRINT'
-START='' # '--start-iteration 20700'
+START='--start-iteration 1500'
 FONT=$HOME/"ubuntu_fonts/Ubuntu-Regular.ttf"
 
 pip3.6 install arabic-reshaper 1>/dev/null
@@ -65,11 +65,11 @@ python3.6 -u $SCRIPT $START  \
     --max-line-width ${LENGTH} --max-iterations 400000 \
     --max-buffer-size=1024000000 --max-buffered-lines=10000 \
     --dropout-rate 0.05 --learning-rate 0.0001 --batch-size 24  \
-    --view-step 250  --save-step 250\
+    --view-step 500  --save-step 500 \
     --test --checkpoint-dir checkpoints -c all \
     --font $FONT \
     --show-trans --test --warm-up-iterations 500 2>&1 | tee -a log_x.txt
 
-cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy/$EXPERIMENT
+cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
 clean_scratch
 exit
