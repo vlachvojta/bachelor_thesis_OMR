@@ -2,7 +2,7 @@
 #PBS -l select=1:ncpus=2:ngpus=1:mem=20gb:scratch_local=20gb
 #PBS -q gpu
 #PBS -N 230112_first_auto_try
-#PBS -l walltime=0:30:0
+#PBS -l walltime=1:0:0
 #PBS -m abe
 
 export EXPERIMENT="230112_first_auto_try"
@@ -15,7 +15,7 @@ cp -r /storage/brno2/home/xvlach22/bp_omr/ubuntu_fonts $SCRATCH/ubuntu_fonts
 cp -r /storage/brno2/home/xvlach22/bp_omr/code_from_others $SCRATCH/code_from_others
 cd experiments/$EXPERIMENT
 # chmod u+x run_experiment.sh
-trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
+trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy/$EXPERIMENT ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
 module add python36-modules-gcc
 
 pip3.6 install --upgrade pip 1>/dev/null
@@ -30,8 +30,8 @@ export PATH=$PATH:$PYTHONPATH
 SCRIPT=$HOME"/code_from_others/pero/pytorch_ctc/train_pytorch_ocr.py"
 LENGTH=1700
 LMDB=$HOME"/datasets/images.lmdb"
-DATA_TRN=$HOME"/datasets/data.trn"
-DATA_TST=$HOME"/datasets/data.tst"
+DATA_TRN=$HOME"/datasets/data_2.trn"
+DATA_TST=$HOME"/datasets/data_2.tst"
 #NET=NET_SIMPLE_BC_3_BLC_2_BFC_24
 #NET=NET_RES_D3_BFC_24_BN
 #NET=NET_RES_D3_BFC_24_MI
@@ -62,13 +62,14 @@ python3.6 -u $SCRIPT $START  \
     --tst-data $DATA_TST \
     -l $LMDB \
     -n $NET $TRANSFORMER \
-    --max-line-width ${LENGTH} --max-iterations 700000 \
+    --max-line-width ${LENGTH} --max-iterations 400000 \
     --max-buffer-size=1024000000 --max-buffered-lines=10000 \
-    --dropout-rate 0.05 --learning-rate 0.0001 --batch-size 24  --view-step 500  \
+    --dropout-rate 0.05 --learning-rate 0.0001 --batch-size 24  \
+    --view-step 250  --save-step 250\
     --test --checkpoint-dir checkpoints -c all \
     --font $FONT \
     --show-trans --test --warm-up-iterations 500 2>&1 | tee -a log_x.txt
 
-cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
+cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy/$EXPERIMENT
 clean_scratch
 exit
