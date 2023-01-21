@@ -71,7 +71,7 @@ def parseargs():
         help=("Output folder."))
     parser.add_argument(
         "-n", "--name", nargs='?',
-        help=("Output folder."))
+        help=("Name of generated chart file + chart heading."))
     return parser.parse_args()
 
 
