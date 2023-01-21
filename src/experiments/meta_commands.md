@@ -8,6 +8,8 @@
     - [clean\_scratch](#clean_scratch)
     - [Other commands](#other-commands)
   - [Which clusters work CuDNN error and which don't](#which-clusters-work-cudnn-error-and-which-dont)
+  - [Test\_serr](#test_serr)
+    - [Job starter](#job-starter)
 
 ## Links
 - [Begginers guide](https://wiki.metacentrum.cz/wiki/Beginners_guide)
@@ -91,3 +93,11 @@ NOP:
 - gita1-7     NOP
 - luna        NOP
 - zia3        NOP
+
+## Test_serr
+
+### Job starter
+
+export EXPERIMENT="230119_counting_serr" && cd $SCRATCH && module add python36-modules-gcc && pip3.6 install --upgrade pip 1>/dev/null
+
+trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
