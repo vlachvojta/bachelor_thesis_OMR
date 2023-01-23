@@ -22,9 +22,22 @@ class Log_visualizer:
 
         log = Common.read_file(file)
         cerrs = Log_visualizer.get_cerrs(log)
-        print(cerrs)
+        print(f'cerrs[0:10]: {list(cerrs.values())[0:10]}')
 
         Log_visualizer.chart(cerrs, output, name)
+
+        Log_visualizer.write_cerrs(cerrs, output, name)
+
+        # print mean
+        mean = np.mean(list(cerrs.values())[10:])
+        print(f'mean of cerrs[10:] is: {mean}')
+
+    @staticmethod
+    def write_cerrs(cerrs: dict = {}, output: str = '',
+                    name: str = 'fig_01') -> None:
+        name = os.path.join(output, f'{name}.json')
+        Common.write_to_file(cerrs, name)
+        print(f'json written to: {name}')
 
     @staticmethod
     def get_cerrs(input: str = '') -> dict:
@@ -46,7 +59,7 @@ class Log_visualizer:
         return cerrs
 
     @staticmethod
-    def chart(data: dict = {}, output: str = "", name: str = "") -> None:
+    def chart(data: dict = {}, output: str = "", name: str = "fig_01") -> None:
         iterations = np.array(sorted(data.keys()))
         cerrs = np.array([data[k] for k in sorted(data.keys())])
 
@@ -55,10 +68,7 @@ class Log_visualizer:
         plt.xlabel('Iteration')
         plt.ylabel('Character error [%]')
 
-        if name:
-            plt.savefig(os.path.join(output, f'{name}.png'))
-        else:
-            plt.savefig(os.path.join(output, 'fig_01.png'))
+        plt.savefig(os.path.join(output, f'{name}.png'))
 
 
 def parseargs():
