@@ -52,7 +52,7 @@
   - qsub -l walltime=2:0:0 -q gpu@cerit-pbs.cerit-sc.cz -l select=1:ncpus=2:ngpus=1:mem=12gb:scratch_ssd=10gb:cluster=black run_experiment_auto.sh
 - with GPU+SSD+Grimbold cluster
   - qsub -I -l select=1:ncpus=2:ngpus=1:mem=20gb:scratch_local=20gb:cluster=grimbold -q gpu -l walltime=1:0:0
-- with GPU+KONS cluster
+- with GPU+KONOS cluster
   - qsub -I -l walltime=2:0:0 -q gpu -l select=1:ncpus=2:ngpus=1:mem=12gb:scratch_local=10gb:cluster=konos
   - OR nonInteractive:
   - qsub -l walltime=2:0:0 -q gpu -l select=1:ncpus=2:ngpus=1:mem=12gb:scratch_local=10gb:cluster=konos run_experiment_auto.sh
