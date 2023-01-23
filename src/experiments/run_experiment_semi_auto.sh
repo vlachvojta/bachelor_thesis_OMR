@@ -47,6 +47,7 @@ pip3.6 install shapely imgaug lxml Levenshtein rapidfuzz typing-extensions 1>/de
 # pip3.6 install nvidia-cuda-nvrtc-cu11 1>/dev/null
 # pip3.6 install nvidia-cuda-runtime-cu11 1>/dev/null
 pip3.6 install torchvision==0.2.2 1>/dev/null
+pip3.6 install jiwer
 # pip3.6 install torch==1.8.0+cu111 torchvision==0.2.2+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
 echo "python modules installed"
 echo "============== Running training script =============="

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-#PBS -l select=1:ncpus=2:ngpus=1:mem=15gb:scratch_local=10gb:cluster=konos
-#PBS -q gpu
-#PBS -N 230112_sagnostic_all_nighter
-#PBS -l walltime=2:0:0
+#PBS -l select=1:ncpus=2:ngpus=1:mem=15gb:scratch_local=10gb:cluster=black
+#PBS -q gpu@cerit-pbs.cerit-sc.cz
+#PBS -l walltime=0:30:0
 #PBS -m abe
+#PBS -N 230123_sagnostic_WER_test
 
-export EXPERIMENT="230112_sagnostic_all_nighter"
+export EXPERIMENT="230123_sagnostic_WER_test"
+NGPU=1
+
 echo "SCRATCH: "$SCRATCH
 cd $SCRATCH
 cp -r /storage/brno2/home/xvlach22/bp_omr/datasets $SCRATCH/datasets
@@ -40,7 +42,7 @@ NET=VGG_LSTM_B64_L17_S4_CB4
 DATA_TYPE=all
 TRANSFORMER=
 #'--data-manipulator UNIVERSAL_PRINT'
-START='--start-iteration 1500'
+START='' #'--start-iteration 30000'
 FONT=$HOME/"ubuntu_fonts/Ubuntu-Regular.ttf"
 
 pip3.6 install arabic-reshaper 1>/dev/null
@@ -51,6 +53,7 @@ pip3.6 install shapely imgaug lxml Levenshtein rapidfuzz typing-extensions 1>/de
 # pip3.6 install nvidia-cudnn-cu11 1>/dev/null
 # pip3.6 install nvidia-cuda-nvrtc-cu11 1>/dev/null
 # pip3.6 install nvidia-cuda-runtime-cu11 1>/dev/null
+pip3.6 install jiwer 1>/dev/null
 pip3.6 install torchvision==0.2.2 1>/dev/null
 # pip3.6 install torch==1.8.0+cu111 torchvision==0.2.2+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
 echo "python modules installed"
@@ -67,7 +70,7 @@ python3.6 -u $SCRIPT $START  \
     --dropout-rate 0.05 --learning-rate 0.0001 --batch-size 24  \
     --view-step 500  --save-step 500 \
     --test --checkpoint-dir checkpoints -c all \
-    --font $FONT \
+    --font $FONT --n-gpu $NGPU \
     --show-trans --test --warm-up-iterations 500 2>&1 | tee -a log_x.txt
 
 cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
