@@ -33,33 +33,40 @@ DECODE_PY=$PERO_PATH"/karelb-ocr-scripts/decode_logits.py"
 
 # Python script arguments
 NET=VGG_LSTM_B64_L17_S4_CB4
-CHECKPOINT="checkpoint_030000.pth"
 CHECKPOINT_PATH=$HOME"/experiments/"$EXPERIMENT"/checkpoints/"
-OCR_JSON=$CHECKPOINT_PATH"/out.json"
-OCR_MODEL=$CHECKPOINT_PATH"/out.pt"
-PICKLE=$CHECKPOINT_PATH"/pickle_out.pkl"
-DECODED="checkpoint_030000.out"
+TMP=$HOME"/experiments/"$EXPERIMENT"/tmp/"
+OCR_JSON=$TMP"out.json"
+OCR_MODEL=$TMP"out.pt"
+PICKLE=$TMP"/pickle_out.pkl"
+CONFIDENCE=$TMP"/confidence.del"
 
-# Run scripts
-# echo "====runnning export_model.py===="
-# python3 $EXPORT_PY  \
-#     --path $CHECKPOINT_PATH$CHECKPOINT --net $NET  \
-#     --line-height 100 --line-vertical-scale 2705  \
-#     --output-json-path $OCR_JSON \
-#     --output-model-path $OCR_MODEL  \
-#     --trace --device cpu
+for checkpoint in `ls $CHECKPOINT_PATH/checkpoint_*.pth`; do
+    echo ""
+    echo "=================================== $checkpoint"
+    if [ -f $checkpoint.out ]; then
+        echo "File $checkpoint.out already exists"
+    else
+        echo "----runnning export_model.py----"
+        python3 $EXPORT_PY  \
+            --path $CHECKPOINT_PATH$checkpoint --net $NET  \
+            --line-height 100 --line-vertical-scale 2705  \
+            --output-json-path $OCR_JSON \
+            --output-model-path $OCR_MODEL  \
+            --trace --device cpu
 
-# echo "====runnning get_folder_logits.py===="
-# python3 $GET_LOGITS_PY  \
-#     --ocr-json $OCR_JSON  --input $LMDB  \
-#     --lines $DATA_TST  --output $PICKLE
+        echo "----runnning get_folder_logits.py----"
+        python3 $GET_LOGITS_PY  \
+            --ocr-json $OCR_JSON  --input $LMDB  \
+            --lines $DATA_TST  --output $PICKLE
 
-echo "====runnning decode_logtis.py===="
-python3 "$DECODE_PY" \
-    --ocr-json "$OCR_JSON" \
-    --input "$PICKLE" \
-    --report-eta --best $DECODED --greedy \
-    --confidence $CHECKPOINT_PATH"/del.confidence"
-# What do you mean WHERE (with best and confidence args)
+        echo "----runnning decode_logtis.py----"
+        python3 "$DECODE_PY" \
+            --ocr-json "$OCR_JSON" \
+            --input "$PICKLE" \
+            --report-eta --best $DECODED --greedy \
+            --confidence $CHECKPOINT_PATH"/del.confidence"
+
+    fi
+done
 
 # TODO evaluate $DECODED with $DATA_TST
