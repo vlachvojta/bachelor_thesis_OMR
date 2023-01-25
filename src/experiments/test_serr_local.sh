@@ -41,6 +41,7 @@ PICKLE=$TMP"/pickle_out.pkl"
 CONFIDENCE=$TMP"/confidence.del"
 
 for checkpoint in `ls $CHECKPOINT_PATH/checkpoint_*.pth`; do
+    SECONDS=0  # start meassuring time
     echo ""
     echo "=================================== $checkpoint"
     if [ -f $checkpoint.out ]; then
@@ -63,9 +64,9 @@ for checkpoint in `ls $CHECKPOINT_PATH/checkpoint_*.pth`; do
         python3 "$DECODE_PY" \
             --ocr-json "$OCR_JSON" \
             --input "$PICKLE" \
-            --report-eta --best $DECODED --greedy \
-            --confidence $CHECKPOINT_PATH"/del.confidence"
-
+            --report-eta --best $checkpoint.out --greedy \
+            --confidence $CONFIDENCE
+        echo "This checkpoint took: $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
     fi
 done
 

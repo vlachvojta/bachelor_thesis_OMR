@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-EXPERIMENT="230124_sagnostic_counting_serr"
+EXPERIMENT="230125_sagnostic_counting_serr"
 cd $SCRATCH
 echo "SCRATCH: "$SCRATCH
 cp -r /storage/brno2/home/xvlach22/bp_omr/datasets $SCRATCH/datasets
@@ -9,7 +9,10 @@ cp -r /storage/brno2/home/xvlach22/bp_omr/experiments/$EXPERIMENT $SCRATCH/exper
 cp -r /storage/brno2/home/xvlach22/bp_omr/ubuntu_fonts $SCRATCH/ubuntu_fonts
 cp -r /storage/brno2/home/xvlach22/bp_omr/code_from_others $SCRATCH/code_from_others
 cd experiments/$EXPERIMENT
+mkdir tmp
 # chmod u+x run_experiment.sh
+
+trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
 
 module add python36-modules-gcc
 pip3.6 install --upgrade pip 1>/dev/null
@@ -31,36 +34,52 @@ DECODE_PY=$PERO_PATH"/karelb-ocr-scripts/decode_logits.py"
 
 # Python script arguments
 NET=VGG_LSTM_B64_L17_S4_CB4
-CHECKPOINT="checkpoint_050500.pth"
 CHECKPOINT_PATH=$HOME"/experiments/"$EXPERIMENT"/checkpoints/"
-OCR_JSON=$CHECKPOINT_PATH"/out.json"
-OCR_MODEL=$CHECKPOINT_PATH"/out.pt"
-PICKLE=$CHECKPOINT_PATH"/pickle_out.pkl"
-DECODED=$CHECKPOINT_PATH$CHECKPOINT".out"
+TMP=$HOME"/experiments/"$EXPERIMENT"/tmp/"
+OCR_JSON=$TMP"/out.json"
+OCR_MODEL=$TMP"/out.pt"
+PICKLE=$TMP"/pickle_out.pkl"
+CONFIDENCE=$TMP"/confidence.del"
 
 pip3.6 install safe_gpu lmdb opencv-python scipy brnolm 1>/dev/null
 pip3.6 install torchvision==0.2.2 1>/dev/null
 
-# Run scripts
-echo "====runnning export_model.py===="
-python3.6 -u $EXPORT_PY  \
-    --path $CHECKPOINT_PATH$CHECKPOINT --net $NET  \
-    --line-height 100 --line-vertical-scale 2705  \
-    --output-json-path $OCR_JSON \
-    --output-model-path $OCR_MODEL  \
-    --trace
+for checkpoint in `ls $CHECKPOINT_PATH/checkpoint_*.pth`; do
+    SECONDS=0  # start meassuring time
+    echo ""
+    echo "=================================== $checkpoint"
+    if [ -f $checkpoint.out ]; then
+        echo "File $checkpoint.out already exists"
+    else
+        echo "----runnning export_model.py----"
+        python3.6 -u $EXPORT_PY  \
+            --path $CHECKPOINT_PATH$CHECKPOINT --net $NET  \
+            --line-height 100 --line-vertical-scale 2705  \
+            --output-json-path $OCR_JSON \
+            --output-model-path $OCR_MODEL  \
+            --trace
+    
+        echo "----runnning get_folder_logits.py----"
+        python3.6 -u $GET_LOGITS_PY  \
+            --ocr-json $OCR_JSON --input $LMDB  \
+            --lines $DATA_TST --output $PICKLE
 
-echo "====runnning get_folder_logits.py===="
-python3.6 -u $GET_LOGITS_PY  \
-    --ocr-json $OCR_JSON  --input $LMDB  \
-    --lines $DATA_TST  --output $PICKLE
+        echo "----runnning decode_logtis.py----"
+        python3.6 -u $DECODE_PY \
+            --ocr-json $OCR_JSON \
+            --input $PICKLE \
+            --report-eta --best $checkpoint.out --greedy \
+            --confidence $CONFIDENCE
 
-echo "====runnning decode_logtis.py===="
-python3.6 -u $DECODE_PY \
-    --ocr-json $OCR_JSON \
-    --input $PICKLE \
-    --report-eta --best $DECODED --greedy \
-    --confidence $CHECKPOINT_PATH"/del.confidence"
-# What do you mean WHERE (with best and confidence args)
+        cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
+        echo ""
+        echo "data saved to scratch_copy"
+        echo "This checkpoint took: $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
+    fi
+done
+
+cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
+clean_scratch
+exit
 
 # TODO evaluate $DECODED with $DATA_TST
