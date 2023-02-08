@@ -44,23 +44,6 @@ class Evaulate_predictions:
 
         plt.savefig('SAgnostic Symnbol Error.png')
 
-        # ground_truth = ground_truth[:5]
-        # file = file[:5]
-        # wers = []
-        # for gt, pred in zip(ground_truth, file):
-        #     print(f'{gt}')
-        #     print(f'{pred}')
-        #     print(f'wer: {jiwer.wer(gt, pred)*100:.2f}%')
-        #     wers.append(jiwer.wer(gt, pred))
-        # # print(ground_truth[5])
-        # # print(file[5])
-        # print('wer mean: ')
-        # print(np.mean(wers))
-        # print('wer auto: ')
-        # print(jiwer.wer(ground_truth, file))
-
-        # print(f'wer: {jiwer.wer(ground_truth[4], file[4])*100:.2f}%')
-
 
 def parseargs():
     parser = argparse.ArgumentParser()
