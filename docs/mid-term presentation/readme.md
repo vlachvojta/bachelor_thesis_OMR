@@ -1,3 +1,9 @@
+# Mid-term presentation
+
+[Link to a live presentation](https://docs.google.com/presentation/d/1aT_Eq2Or9vAO4O3kFiqfxICEC6_77S_oAfVrPHhSceI/edit?usp=sharing)
+
+Follows: first draft of presentation
+
 # Nastrel prezentace semestralniho projektu
 ## Pokyny
 - 4 minuty prezentace + 4 minuty diskuze
