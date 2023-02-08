@@ -10,6 +10,8 @@
   - [Which clusters work CuDNN error and which don't](#which-clusters-work-cudnn-error-and-which-dont)
   - [Test\_serr](#test_serr)
     - [Job starter](#job-starter)
+      - [OR (idk)](#or-idk)
+  - [Test decode serr and stuff](#test-decode-serr-and-stuff)
 
 ## Links
 - [Begginers guide](https://wiki.metacentrum.cz/wiki/Beginners_guide)
@@ -101,3 +103,8 @@ NOP:
 export EXPERIMENT="230119_counting_serr" && cd $SCRATCH && module add python36-modules-gcc && pip3.6 install --upgrade pip 1>/dev/null
 
 trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
+#### OR (idk)
+cp /storage/brno2/home/xvlach22/bp_omr/experiments/230123_sagnostic_WER_test/run_experiment_auto_black.sh run_experiment_auto.sh && chmod u+x run_experiment_auto.sh && ./run_experiment_auto.sh
+
+## Test decode serr and stuff
+cp /storage/brno2/home/xvlach22/bp_omr/experiments/230125_sagnostic_counting_serr/test_serr.sh.sh test_serr.sh && chmod u+x test_serr.sh && ./test_serr.sh
