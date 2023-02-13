@@ -76,7 +76,7 @@ for checkpoint in `ls $CHECKPOINT_PATH/checkpoint_*.pth`; do
         python3.6 -u $DECODE_PY \
             --ocr-json $OCR_JSON \
             --input $PICKLE \
-            --report-eta --best $checkpoint".out" --greedy \
+            --best $checkpoint".out" --greedy \
             --confidence $CONFIDENCE
 
         cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
@@ -90,5 +90,4 @@ cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/exper
 clean_scratch
 exit
 
-# TODO shorten log_x.txt
 # TODO evaluate $DECODED with $DATA_TST
