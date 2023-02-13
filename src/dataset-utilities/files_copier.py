@@ -1,4 +1,10 @@
 #!/usr/bin/python3.8
+"""Script for first operations with primus dataset.
+
+Script was used to reorganize files with option to convert symbols
+to shorter forms
+"""
+
 
 import argparse
 import re
@@ -13,12 +19,14 @@ import pandas as pd
 
 class Files_copier:
 
+    # arguments
     exts = []
     file_names = []
     output = ''
     height = 0
     width = 0
     update_files = False
+    convert_symbols = False
 
     file_groups = []
     file_groups_img_widths = {}
@@ -27,12 +35,12 @@ class Files_copier:
     FILE_TRANSLATOR_NAME = '0_file_translator.json'
     FILE_TRANSLATOR_PATH = ''
 
-    sc = None   # symbol_convrter instance
+    sc = None   # symbol_converter instance
 
-    def __init__(self, exts: list = ['agnostic', 'png'],
+    def __init__(self, exts: list = ['agnostic', 'semantic', 'png'],
                  folders: list = ['.'], output: str = 'output_folder',
-                 height: int = 0, width: int = 0,
-                 update_files: bool = False) -> None:
+                 height: int = 0, width: int = 0, update_files: bool = False, 
+                 convert_symbols: bool = False) -> None:
         print('FC: Hello from FILES_COPIER (FC)')
         self.output = output
         self.exts = exts
@@ -42,6 +50,7 @@ class Files_copier:
         self.FILE_TRANSLATOR_PATH = os.path.join(
             output,
             self.FILE_TRANSLATOR_NAME)
+        self.convert_symbols = convert_symbols
 
         old_file_translator = self.get_old_file_translator()
 
@@ -56,16 +65,18 @@ class Files_copier:
             print(f'\t{diff} files are in incomplete group.')
         print(f'(every dot is 1000 parsed files.)')
 
-        print(f'FC: getting max img resolution...')
-        self.max_img = self.get_max_img_resolution(self.file_groups)
-        print(f'FC: MAX_res: {self.max_img}')
+        # print(f'Getting max img resolution...')
+        # self.max_img = self.get_max_img_resolution(self.file_groups)
+        # print(f'MAX_res: {self.max_img}')
 
         self.check_fgroups_identcal(old_file_translator.values(),
                                     self.file_groups)
 
-        print(f'FC: after sort, there is {len(self.file_groups)} '
+        print(f'After sort, there is {len(self.file_groups)} '
               f'file_groups to convert')
-        self.sc = Symbol_converter()
+
+        if self.convert_symbols:
+            self.sc = Symbol_converter()
 
         if old_file_translator == {}:
             file_translator = {i: fgroup for i, fgroup
@@ -107,16 +118,17 @@ class Files_copier:
                 data = Common.read_file(input_file)
                 if data is None:
                     print(input_file)
-                output = self.convert_symbols(data)
-                Common.write_to_file(output, output_file)
+                if self.convert_symbols and self.sc is not None:
+                    data = self.convert_symbols_function(data)
+                Common.write_to_file(data, output_file)
             else:
-                print(f'FC [Warning] File of unknown type: {ext}')
+                print(f'[Warning] File of unknown type: {ext}')
                 shutil.copy(input_file, output_file)
 
     def write_img(self, data) -> None:
         img_res = data.shape[0:2]
-        assert img_res[0] <= self.max_img[0]
-        assert img_res[1] <= self.max_img[1]
+        # assert img_res[0] <= self.max_img[0]
+        # assert img_res[1] <= self.max_img[1]
 
         if (img_res[0] < self.max_img[0] or
                 img_res[1] < self.max_img[1]):
@@ -164,7 +176,7 @@ class Files_copier:
 
         return Common.get_complete_group_names(self.file_names, exts)
 
-    def convert_symbols(self, data: str) -> str:
+    def convert_symbols_function(self, data: str) -> str:
         assert isinstance(data, str)
 
         symbols = re.split(r'\s', data)
@@ -215,14 +227,9 @@ class Files_copier:
 
 def parseargs():
     parser = argparse.ArgumentParser()
-    # parser.add_argument(
-    #     "-f", "--files", nargs='*', default=[],
-    #     help=("Files to read symbols from, you can add more files\n" +
-    #           "or use bash regex expr.\n" +
-    #           "USE FULL FILE PATH (relative or absolute)"))
     parser.add_argument(
         "-e", "--extensions", nargs='*',
-        default=['agnostic', 'png'],
+        default=['agnostic', 'semantic'],  # TODO return to default ['agnostic', 'semantic', 'png']
         help=("Set file extensions for files in given folder\n" +
               "Use in combination with --directories."))
     parser.add_argument(
@@ -242,17 +249,12 @@ def parseargs():
               "If not set and height is, keep ratio."))
     parser.add_argument(
         "-u", "--update_files", default=False, action='store_true',
-        help=("Set to resize all images to given width." +
-              "If not set and height is, keep ratio."))
-    # parser.add_argument(
-    #     "-c", "--copy_names", action="store_true", default='False',
-    #     help="Set output file with extension. Output format is JSON")
-    # parser.add_argument(
-    #     "-i", "--input_file", default="files.txt",
-    #     help="File with list of all files to search through.")
-    # parser.add_argument(
-    #     "-o", "--out", default='',
-    #     help="Set output file, stdout by default")
+        help=("Set true to update existin files in output_folder with "
+              "new files from src_folder"))
+    parser.add_argument(
+        "-c", "--convert-symbols", default=False, action='store_true',
+        help=("Set true to convert symbols to shorter form using "
+              "symbol_converter module"))
     return parser.parse_args()
 
 
@@ -261,20 +263,14 @@ def main():
     args = parseargs()
 
     start = time.time()
-    # fc = Files_copier(
     Files_copier(
         exts=args.extensions,
         folders=args.src_folders,
         output=args.output_folder,
         height=args.image_height,
         width=args.image_width,
-        update_files=args.update_files)
-    # database=args.database,
-    # dirs=args.directories,
-    # exts=args.extensions)
-
-    # gus.finalize(args.output)
-    # gus.print_symbols(args.out)
+        update_files=args.update_files,
+        convert_symbols=args.convert_symbols)
 
     end = time.time()
     print(f'Total time: {end - start:.2f} s')
