@@ -1,3 +1,8 @@
+"""NOT A STAND-ALONE script... 
+    It was used Manually as a in-line script for simpler creation 
+    of symbol conversion dictionary.
+"""
+
 # %%
 import json
 import pyperclip

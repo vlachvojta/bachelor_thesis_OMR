@@ -131,7 +131,7 @@ class Common:
     @staticmethod
     def get_files(folder: str = '.', exts: list = ['semantic'],
                   go_deeper: bool = True) -> list:
-        print(f'looking for all files in {folder} with extenstions {exts}')
+        print(f'looking for all files in {folder} with extensions {exts}')
         files = []
         dirs = []
         for f in Common.full_list(folder):

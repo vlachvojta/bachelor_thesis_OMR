@@ -47,7 +47,7 @@ class LMDB_generator:
 
     gb100 = 100000000000
 
-    def __init__(self, exts1: list = ['semantic', 'agnostic'],
+    def __init__(self, exts1: list = ['agnostic'],
                  exts2: list = ['png'], in_folders: list = ['.'],
                  output: str = '', ignore_texts: bool = False,
                  ignore_images: bool = False):
@@ -131,15 +131,17 @@ def parseargs():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "-e", "--extensions1", nargs='*', default=['agnostic'],
-        help="Set file extensions for files to be saved as text lmdb. ")
+        "-e", "--extensions-text", nargs='*', default=['agnostic'],
+        help="Set file extensions for text files to be saved as text lmdb. ")
     parser.add_argument(
-        "-E", "--extensions2", nargs='*', default=['png'],
-        help="Set file extensions for files to be saved as byte-form lmdb.")
+        "-E", "--extensions-images", nargs='*', default=['png'],
+        help=("Set file extensions for image files "
+              "to be saved as byte-form lmdb."))
     parser.add_argument(
         "-F", "--src_folders", nargs='*', default=['.'],
-        help=("Directories where to look for files with given extensions. \n" +
-              "Use in combination with --extensions."))
+        help=("Directories where to look for files with given extensions. "
+              "Use in combination with"
+              " --extensions-text + --extensions-images."))
     parser.add_argument(
         "-o", "--output_folder", default='output_folder',
         help="Set output file with extension. Output format is JSON")
@@ -160,8 +162,8 @@ def main():
 
     start = time.time()
     generator = LMDB_generator(
-        exts1=args.extensions1,
-        exts2=args.extensions2,
+        exts1=args.extensions_text,
+        exts2=args.extensions2_images,
         in_folders=args.src_folders,
         output=args.output_folder,
         ignore_texts=args.ignore_texts,
