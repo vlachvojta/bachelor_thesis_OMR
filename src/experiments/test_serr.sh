@@ -17,7 +17,7 @@ cd experiments/$EXPERIMENT
 mkdir tmp
 # chmod u+x run_experiment.sh
 
-trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
+trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/ ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
 
 module add python36-modules-gcc
 pip3.6 install --upgrade pip 1>/dev/null
@@ -52,7 +52,7 @@ ls $CHECKPOINT_PATH/checkpoint_*.pth | tee -a log_x.txt
 pip3.6 install safe_gpu lmdb opencv-python scipy brnolm 1>/dev/null
 pip3.6 install torchvision==0.2.2 1>/dev/null
 
-for checkpoint in `ls $CHECKPOINT_PATH/checkpoint_*.pth`; do
+for checkpoint in `ls -r $CHECKPOINT_PATH/checkpoint_*.pth`; do
     SECONDS=0  # start meassuring time
     echo ""
     echo "=================================== $checkpoint"
@@ -79,14 +79,14 @@ for checkpoint in `ls $CHECKPOINT_PATH/checkpoint_*.pth`; do
             --best $checkpoint".out" --greedy \
             --confidence $CONFIDENCE
 
-        cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
+        cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/
         echo ""
-        echo "data saved to scratch_copy"
+        echo "data saved back to a data server"
         echo "This checkpoint took: $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
     fi
 done 2>&1 | tee -a log_x.txt
 
-cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
+cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/
 clean_scratch
 exit
 
