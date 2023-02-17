@@ -138,18 +138,18 @@ def parseargs():
         help=("Set file extensions for image files "
               "to be saved as byte-form lmdb."))
     parser.add_argument(
-        "-F", "--src_folders", nargs='*', default=['.'],
+        "-F", "--src-folders", nargs='*', default=['.'],
         help=("Directories where to look for files with given extensions. "
               "Use in combination with"
               " --extensions-text + --extensions-images."))
     parser.add_argument(
-        "-o", "--output_folder", default='output_folder',
+        "-o", "--output-folder", default='output_folder',
         help="Set output file with extension. Output format is JSON")
     parser.add_argument(
-        "-t", "--ignore_texts", default=False, action="store_true",
+        "-t", "--ignore-texts", default=False, action="store_true",
         help="Ignore texts, don't generate text lmdb for files with exts1.")
     parser.add_argument(
-        "-i", "--ignore_images", default=False, action="store_true",
+        "-i", "--ignore-images", default=False, action="store_true",
         help=("Ignore images, " +
               "don't generate byte-form lmdb for files with exts2"))
 
@@ -163,7 +163,7 @@ def main():
     start = time.time()
     generator = LMDB_generator(
         exts1=args.extensions_text,
-        exts2=args.extensions2_images,
+        exts2=args.extensions_images,
         in_folders=args.src_folders,
         output=args.output_folder,
         ignore_texts=args.ignore_texts,
