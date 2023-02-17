@@ -73,6 +73,6 @@ python3.6 -u $SCRIPT $START  \
     --font $FONT --n-gpu $NGPU \
     --show-trans --test --warm-up-iterations 500 2>&1 | tee -a log_x.txt
 
-cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy
+cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/
 clean_scratch
 exit
