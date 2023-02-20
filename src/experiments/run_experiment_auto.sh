@@ -15,6 +15,7 @@ mkdir $SCRATCH/experiments
 cp -r /storage/brno2/home/xvlach22/bp_omr/experiments/$EXPERIMENT $SCRATCH/experiments/$EXPERIMENT
 cp -r /storage/brno2/home/xvlach22/bp_omr/ubuntu_fonts $SCRATCH/ubuntu_fonts
 cp -r /storage/brno2/home/xvlach22/bp_omr/code_from_others $SCRATCH/code_from_others
+cp -r /storage/brno2/home/xvlach22/bp_omr/bp-git $SCRATCH/bp-git
 cd experiments/$EXPERIMENT
 # chmod u+x run_experiment.sh
 trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/ ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
@@ -46,7 +47,7 @@ DATA_TYPE=all
 TRANSFORMER=
 #'--data-manipulator UNIVERSAL_PRINT'
 START_ITER=`python3 $GET_LAST_POINT_PY checkpoints/`
-START="--start-iteration "$START_ITER
+START="--start-iteration 0"$START_ITER
 FONT=$HOME/"ubuntu_fonts/Ubuntu-Regular.ttf"
 
 pip3.6 install arabic-reshaper 1>/dev/null
