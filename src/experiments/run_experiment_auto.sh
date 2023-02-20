@@ -29,6 +29,9 @@ PERO_OCR_PATH=$HOME"/code_from_others/pero-ocr"
 export PYTHONPATH=$PERO_PATH:$PERO_OCR_PATH
 export PATH=$PATH:$PYTHONPATH
 
+SRC=$HOME"/bp-git/src"
+GET_LAST_POINT_PY=$SRC"/experiments/find_last_checkpoint.py"
+
 SCRIPT=$HOME"/code_from_others/pero/pytorch_ctc/train_pytorch_ocr.py"
 LENGTH=1700
 LMDB=$HOME"/datasets/images.lmdb"
@@ -42,7 +45,8 @@ NET=VGG_LSTM_B64_L17_S4_CB4
 DATA_TYPE=all
 TRANSFORMER=
 #'--data-manipulator UNIVERSAL_PRINT'
-START='' #'--start-iteration 30000'
+START_ITER=`python3 $GET_LAST_POINT_PY checkpoints/`
+START="--start-iteration "$START_ITER
 FONT=$HOME/"ubuntu_fonts/Ubuntu-Regular.ttf"
 
 pip3.6 install arabic-reshaper 1>/dev/null
