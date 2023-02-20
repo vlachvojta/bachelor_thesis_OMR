@@ -9,7 +9,6 @@ Usage: $python3 find_last_checkpoint.py experiment/checkpoints
 import re
 import os
 import argparse
-import time
 
 
 def parseargs():
@@ -23,6 +22,10 @@ def main():
     """Main function for simple testing"""
     args = parseargs()
 
+    if not os.path.exists(args.directory):
+        print('0')
+        return
+
     file = [file for file in os.listdir(args.directory)
             if re.fullmatch(r"checkpoint_\d+\.pth", file)][-1]
 
@@ -33,6 +36,7 @@ def main():
         print(int(number))
     except ValueError:
         print('0')
+    return
 
 
 if __name__ == "__main__":
