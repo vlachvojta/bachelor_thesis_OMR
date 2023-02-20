@@ -5,7 +5,7 @@
 #PBS -l walltime=6:0:0
 #PBS -m abe
 
-EXPERIMENT="TODO_EXPERIMENT_NAME_1/2"
+EXPERIMENT="TODO_EXPERIMENT_NAME_2/2"
 cd $SCRATCH
 echo "SCRATCH: "$SCRATCH
 cp -r /storage/brno2/home/xvlach22/bp_omr/datasets $SCRATCH/datasets

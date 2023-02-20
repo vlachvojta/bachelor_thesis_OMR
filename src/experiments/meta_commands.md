@@ -86,6 +86,7 @@ OK:
 - black1      cerit
 - grimbold    meta
 - (glados10-13 OK)
+- elmo3   **NOT INVESTIGATED FURTHURE**
 
 NOP:
 - glados1-7   NOP
