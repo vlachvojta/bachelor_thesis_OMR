@@ -2,7 +2,7 @@
 """Simple script to evaluate predictions from trained models
 Example run:
 $ python3.8 evaluate_predictions.py -ground-truth data.tst \
-        --input-files checkpoint*.pth.out 
+        --input-files checkpoint*.pth.out
 """
 
 import argparse
@@ -37,7 +37,15 @@ class Evaulate_predictions:
             if len(ground_truth) != len(file):
                 continue
 
+            # TODO kontroluj ID řádků pro každý řádek
+            gt_first_ID = re.split(r'\s+', ground_truth[0])[0]
+            pred_first_ID = re.split(r'\s+', file[0])[0]
+            if not gt_first_ID == pred_first_ID:
+                print('NOT MATCHING line IDs, Aborting')
+                exit()
+
             wer = jiwer.wer(ground_truth, file) * 100
+            # print(f'\t{jiwer.wer(ground_truth[0], file[0])},\n\tgt: {ground_truth[0]},\n\tpred: {file[0]}')
             cerr = self.get_cerr_mean(ground_truth, file)
 
             iteration = int(re.findall(r"\d+", file_name)[-1])
@@ -55,7 +63,6 @@ class Evaulate_predictions:
 
         plt.savefig(name + '.png')
         # TODO save also text log to output_folder
-
 
     def get_cerr_mean(self, truth, result) -> float:
         # TODO Count Levenshtein distance
