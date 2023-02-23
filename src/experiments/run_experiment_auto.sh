@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-#PBS -l select=1:ncpus=2:ngpus=1:mem=15gb:scratch_local=10gb:cluster=black
+#PBS -l select=1:ncpus=1:ngpus=1:mem=15gb:scratch_local=10gb:cluster=black
 #PBS -q gpu@cerit-pbs.cerit-sc.cz
-#PBS -l walltime=0:30:0
+#PBS -l walltime=2:0:0
 #PBS -m abe
 #PBS -N 230123_sagnostic_WER_test
 
@@ -27,7 +27,8 @@ pip3.6 install --upgrade pip 1>/dev/null
 HOME=$SCRATCH
 PERO_PATH=$HOME"/code_from_others/pero/"
 PERO_OCR_PATH=$HOME"/code_from_others/pero-ocr"
-export PYTHONPATH=$PERO_PATH:$PERO_OCR_PATH
+BP_GIT_EXP=$HOME"/bp-git/src/experiments"
+export PYTHONPATH=$PERO_PATH:$PERO_OCR_PATH:$BP_GIT_EXP
 export PATH=$PATH:$PYTHONPATH
 
 SRC=$HOME"/bp-git/src"
@@ -36,8 +37,8 @@ GET_LAST_POINT_PY=$SRC"/experiments/find_last_checkpoint.py"
 SCRIPT=$HOME"/code_from_others/pero/pytorch_ctc/train_pytorch_ocr.py"
 LENGTH=1700
 LMDB=$HOME"/datasets/images.lmdb"
-DATA_TRN=$HOME"/datasets/data_2.trn"
-DATA_TST=$HOME"/datasets/data_2.tst"
+DATA_TRN=$HOME"/datasets/data_SSemantic.trn"
+DATA_TST=$HOME"/datasets/data_SSemantic.tst"
 #NET=NET_SIMPLE_BC_3_BLC_2_BFC_24
 #NET=NET_RES_D3_BFC_24_BN
 #NET=NET_RES_D3_BFC_24_MI
@@ -73,7 +74,7 @@ python3.6 -u $SCRIPT $START  \
     --max-line-width ${LENGTH} --max-iterations 400000 \
     --max-buffer-size=1024000000 --max-buffered-lines=10000 \
     --dropout-rate 0.05 --learning-rate 0.0001 --batch-size 24  \
-    --view-step 500  --save-step 500 \
+    --view-step 500 \
     --test --checkpoint-dir checkpoints -c all \
     --font $FONT --n-gpu $NGPU \
     --show-trans --test --warm-up-iterations 500 2>&1 | tee -a log_x.txt

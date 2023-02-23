@@ -4,17 +4,38 @@ to compute Word Error sing jiwer library,
 in the second example exports simple chart from given wer data"""
 
 # %%
-from jiwer import wer
+import jiwer
 import Levenshtein
+import numpy as np
 
-in_orig = ['g/4 b/6 b/ g/4 b/6 b/7 3/8 8/4 NR1/8 #/1 NB1/1 NL1/4 |',
-           'g/4 b/6 b/ g/4 b/6 b/7 3/8 8/4 NR1/8 #/1 NB1/1 NL1/4 |']
-in_diff = ['g/4 b/6 b/ g/4 b/6 b/7 3/8 8/4 NR1/8 #/1 NB1/1 NL1/5 |',
-           'g/4 b/6 b/ g/4 b/6 b/7 3/8 8/4 NR1/8 #/1 NB1/1 NL1/4 |']
 
-print(f'{wer(in_orig, in_diff) * 100:.2f}')
-dist = Levenshtein.distance(in_orig, in_diff)
-print(f'Levenshtein: ({dist}) {dist / len(in_orig) * 100:.2f} %')
+def Levenshtein_list(orig: list, diff: list):
+    # Count Levenshtein distance but on list of strings
+    cer_list = []
+
+    for orig, diff in zip(in_orig, in_diff):
+        distance = Levenshtein.distance(orig, diff)
+        cer_list.append(distance)
+        print(distance)
+    return np.mean(cer_list)
+
+
+in_orig = ['g/4 b/6 b/ g/4 b/6 b/7 3/8 8/4 NR1/8 #/1 ',
+           'g/4 b/6 b/ g/4 b/6 b/7 3/8 8/4 NR1/8 #/1 ']
+in_diff = ['g/4 b/6 b/ g/4 b/6 b/7 3/8 8/4 NR1/8 #/1 ',
+           'asdf asdf ']
+
+print(f'wer: {jiwer.wer(in_orig, in_diff) * 100:.2f} %')
+
+for orig, diff in zip(in_orig, in_diff):
+    print(f'wer_ones: {jiwer.wer(orig, diff) * 100:.2f} %')
+    print(f'{len(orig)}')
+
+dist = Levenshtein_list(in_orig, in_diff)
+# dist = Levenshtein.distance(in_orig[0], in_diff[0])
+print(f'Levenshtein: ({dist}) {dist / len(in_orig[0]) * 100:.2f} %')
+
+
 
 # %%  Export chart img from wer data
 
