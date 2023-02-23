@@ -73,7 +73,7 @@ python3.6 -u $SCRIPT $START  \
     --max-line-width ${LENGTH} --max-iterations 400000 \
     --max-buffer-size=1024000000 --max-buffered-lines=10000 \
     --dropout-rate 0.05 --learning-rate 0.0001 --batch-size 24  \
-    --view-step 500  --save-step 500 \
+    --view-step 500 \
     --test --checkpoint-dir checkpoints -c all \
     --font $FONT --n-gpu $NGPU \
     --show-trans --test --warm-up-iterations 500 2>&1 | tee -a log_x.txt

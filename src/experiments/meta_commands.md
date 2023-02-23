@@ -63,7 +63,7 @@
 ### job setter
 - export EXPERIMENT="230109_first_try" && cd \$SCRATCH && cp -r /storage/brno2/home/xvlach22/bp_omr/\* \$SCRATCH && cd experiments/$EXPERIMENT && chmod u+x run_experiment.sh && trap 'cp -r $SCRATCH/experiments /storage/brno2/home/xvlach22/bp_omr/experiments/scratch_copy ; clean_scratch' EXIT TERM && module add python36-modules-gcc
 - **OR the semi auto:**
-- cp /storage/brno2/home/xvlach22/bp_omr/experiments/230112_safe_gpu_semi_auto/run_experiment.sh run_experiment.sh && chmod u+x run_experiment.sh
+- cp /storage/brno2/home/xvlach22/bp_omr/experiments/$EXPERIMENT/run_experiment.sh run_experiment.sh && chmod u+x run_experiment.sh
 - **+**
 - ./run_experiment.sh
 
