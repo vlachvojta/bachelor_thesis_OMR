@@ -36,7 +36,7 @@ class CustomWer:
             return False
 
     def __call__(self) -> float:
-        """Return final WER for all lines."""
+        """Return final WER for all lines in percents."""
         try:
             return (float(self.sub + self.dele + self.ins) /
                     float(self.hits + self.sub + self.dele) * 100)

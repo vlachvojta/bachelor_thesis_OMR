@@ -57,7 +57,6 @@ class EvaulateCheckpoints:
                 print('NOT MATCHING line IDs, Aborting')
                 sys.exit()
 
-
             wer = jiwer.wer(ground_truth, file) * 100
             # FAKE wer with np.mean
             wer_list = []
@@ -69,8 +68,9 @@ class EvaulateCheckpoints:
 
             # Custom wer with continues counting
             my_wer = CustomWer()
-            for gt, line in zip(ground_truth, file):
-                my_wer.add_line(gt, line)
+            my_wer.add_line(ground_truth, file)
+            # for gt, line in zip(ground_truth, file):
+            #     my_wer.add_line(gt, line)
             print(f'wer_custom: {my_wer()}')
 
             # print(f'\t{jiwer.wer(ground_truth[0], file[0])},\n\tgt: {ground_truth[0]},\n\tpred: {file[0]}')
