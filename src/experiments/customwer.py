@@ -17,8 +17,8 @@ class CustomWer:
         self.ins = 0
         self.sub = 0
 
-    def add_wer(self, gt, pred) -> bool:
-        """Add line to count WER from"""
+    def add_line(self, gt, pred) -> bool:
+        """Add line or list of lines to count WER from."""
         measures = jiwer.compute_measures(gt, pred)
 
         if ('deletions' in measures and
@@ -35,12 +35,7 @@ class CustomWer:
             print('ERROR: unsuccessfull wer measurement')
             return False
 
-    def add_wer_list(self, gt_list, pred_list):
-        """Add list of lines to count WER from"""
-        for gt, pred in zip(gt_list, pred_list):
-            self.add_wer(gt, pred)
-
-    def final_wer(self):
+    def __call__(self) -> float:
         """Return final WER for all lines."""
         try:
             return (float(self.sub + self.dele + self.ins) /
@@ -48,4 +43,4 @@ class CustomWer:
         except ZeroDivisionError as error:
             print(f'ERROR: ZeroDivisionError: unsuccessfull final wer '
                   f'calculations {str(error)}')
-            return 0
+            return 0.0
