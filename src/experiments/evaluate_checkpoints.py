@@ -13,6 +13,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import jiwer
+from customwer import CustomWer
 
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
@@ -54,7 +55,8 @@ class EvaulateCheckpoints:
             pred_first_ID = re.split(r'\s+', file[0])[0]
             if not gt_first_ID == pred_first_ID:
                 print('NOT MATCHING line IDs, Aborting')
-                exit()
+                sys.exit()
+
 
             wer = jiwer.wer(ground_truth, file) * 100
             # FAKE wer with np.mean
@@ -64,6 +66,12 @@ class EvaulateCheckpoints:
 
             wer_fake = np.mean(wer_list)
             print(f'wer_fake: {wer_fake}')
+
+            # Custom wer with continues counting
+            my_wer = CustomWer()
+            for gt, line in zip(ground_truth, file):
+                my_wer.add_line(gt, line)
+            print(f'wer_custom: {my_wer()}')
 
             # print(f'\t{jiwer.wer(ground_truth[0], file[0])},\n\tgt: {ground_truth[0]},\n\tpred: {file[0]}')
             cerr = self.get_cerr_mean(ground_truth, file)
