@@ -26,11 +26,21 @@ def main():
         print('0')
         return
 
-    file = [file for file in os.listdir(args.directory)
-            if re.fullmatch(r"checkpoint_\d+\.pth", file)][-1]
+    # print(f'found {len(os.listdir(args.directory))} files in directory')
 
-    number = re.split(r'\.', file)[0]
-    number = re.split(r'\_', number)[1]
+    files = [file for file in os.listdir(args.directory)
+            if re.fullmatch(r"checkpoint_\d+\.pth", file)]
+    
+    file_nums = []
+    for file in files:
+        file_name = re.split(r'\.', file)[0]
+        file_number = file_name[11:]
+        file_nums.append(file_number)
+    
+    number = max(file_nums)
+
+    # number = re.split(r'\.', file)[0]
+    # number = re.split(r'\_', number)[1]
 
     try:
         print(int(number))
