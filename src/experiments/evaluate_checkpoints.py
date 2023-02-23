@@ -1,29 +1,42 @@
 #!/usr/bin/python3.8
-"""Simple script to evaluate predictions from trained models
+"""Simple script to evaluate checkpoint outputs created while training newer version of PERO
 Example run:
-$ python3.8 evaluate_predictions.py -ground-truth data.tst \
-        --input-files checkpoint*.pth.out
+$ python3.8 evaluate_checkpoints.py --ground-truth data.tst \
+        --checkpoint-folder checkpoints
 """
 
 import argparse
 import re
+import sys
 import os
-from common import Common
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 import jiwer
 
 
-class Evaulate_predictions:
-    def __init__(self, ground_truth: str, input_files: list = [],
-                 output_file: str = 'evaulated.txt',
-                 name: str = 'Evaluated_checkpoints') -> None:
+rel_dir = os.path.dirname(os.path.relpath(__file__))
+sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
+from common import Common  # noqa: E402
 
+
+class EvaulateCheckpoints:
+    """Evaluate checkpoints is simple class to evaluate folder
+    of training outputs and export to json and chart.
+    """
+    def __init__(self, input_files: list, ground_truth: str,
+                 name: str = 'Evaluated_checkpoints',
+                 checkpoint_folder: str = '.',
+                 output_folder: str = 'eval_out') -> None:
+
+        print(f'input_files: {input_files}')
+
+        # Read Ground_truth
         ground_truth = Common.read_file(ground_truth)
         ground_truth = [line for line in re.split(r'\n', ground_truth)
                         if not line == '']
 
+        # Check input files
         input_files = [file for file in input_files if os.path.isfile(file)]
 
         wers = []
@@ -44,6 +57,14 @@ class Evaulate_predictions:
                 exit()
 
             wer = jiwer.wer(ground_truth, file) * 100
+            # FAKE wer with np.mean
+            wer_list = []
+            for gt, pred in zip(ground_truth, file):
+                wer_list.append(jiwer.wer(gt, pred) * 100)
+
+            wer_fake = np.mean(wer_list)
+            print(f'wer_fake: {wer_fake}')
+
             # print(f'\t{jiwer.wer(ground_truth[0], file[0])},\n\tgt: {ground_truth[0]},\n\tpred: {file[0]}')
             cerr = self.get_cerr_mean(ground_truth, file)
 
@@ -60,8 +81,13 @@ class Evaulate_predictions:
         plt.xlabel('Iteration')
         plt.ylabel('Symbol error rate [%]')
 
-        plt.savefig(name + '.png')
-        # TODO save also text log to output_folder
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+
+        plt.savefig(os.path.join(output_folder, name + '.png'))
+        # TODO save also JSON log to output_folder
+
+        print(f'Stuff saved to {output_folder}')
 
     def get_cerr_mean(self, truth, result) -> float:
         # TODO Count Levenshtein distance
@@ -69,20 +95,23 @@ class Evaulate_predictions:
 
 
 def parseargs():
+    """Parse arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input-files", nargs='+',
-        help=("Input prediction files to evaluate."))
-    # TODO implement output_folder instead of output_file
+        "-f", "--checkpoint-folder", type=str, default='.',
+        help="Folder where to look for checkpoint outputs.")
     parser.add_argument(
-        "-o", "--output-file", default='evaulated.txt',
-        help=("Output folder to write evaluations to."))
+        "-i", "--input-files", nargs='+',
+        help="Folder where to look for checkpoint outputs.")
+    parser.add_argument(
+        "-o", "--output-folder", type=str, default='eval_out',
+        help="Output folder to write outputs to.")
     parser.add_argument(
         "-g", "--ground-truth", required=True,
-        help=("Ground truth to compare files with."))
+        help="Ground truth to compare files with.")
     parser.add_argument(
-        "-n", "--name", nargs='?', type=str, default='Evaluated_checkpoints',
-        help=("Name of generated chart file + chart heading."))
+        "-n", "--name", type=str, default='Evaluated_checkpoints',
+        help="Name of generated files + chart heading.")
     return parser.parse_args()
 
 
@@ -92,9 +121,10 @@ def main():
 
     start = time.time()
 
-    Evaulate_predictions(
+    EvaulateCheckpoints(
+        checkpoint_folder=args.checkpoint_folder,
         input_files=args.input_files,
-        output_file=args.output_file,
+        output_folder=args.output_folder,
         ground_truth=args.ground_truth,
         name=args.name)
 
