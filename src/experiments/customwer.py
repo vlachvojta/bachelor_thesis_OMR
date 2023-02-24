@@ -17,8 +17,8 @@ class CustomWer:
         self.ins = 0
         self.sub = 0
 
-    def add_line(self, gt, pred) -> bool:
-        """Add line or list of lines to count WER from."""
+    def add_lines(self, gt, pred) -> bool:
+        """Add single or multiple lines to count WER from."""
         measures = jiwer.compute_measures(gt, pred)
 
         if ('deletions' in measures and
