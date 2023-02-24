@@ -57,28 +57,34 @@ class EvaulateCheckpoints:
                 print('NOT MATCHING line IDs, Aborting')
                 sys.exit()
 
+            # REAL wer
             wer = jiwer.wer(ground_truth, file) * 100
+            print(f'wer_real: \t{wer}')
+
             # FAKE wer with np.mean
             wer_list = []
             for gt, pred in zip(ground_truth, file):
                 wer_list.append(jiwer.wer(gt, pred) * 100)
 
             wer_fake = np.mean(wer_list)
-            print(f'wer_fake: {wer_fake}')
+            # print(f'wer_fake: {wer_fake}')
 
             # Custom wer with continues counting
             my_wer = CustomWer()
-            my_wer.add_line(ground_truth, file)
-            # for gt, line in zip(ground_truth, file):
-            #     my_wer.add_line(gt, line)
-            print(f'wer_custom: {my_wer()}')
+            
+            for gt, pred in zip(ground_truth[:50], file[:50]):
+                my_wer.add_lines(gt, pred)
+            # my_wer.add_lines(ground_truth[:50], file[:50])
+            my_wer.add_lines(ground_truth[50:], file[50:])
+            
+            print(f'wer_custom: \t{my_wer()}')
 
             # print(f'\t{jiwer.wer(ground_truth[0], file[0])},\n\tgt: {ground_truth[0]},\n\tpred: {file[0]}')
             cerr = self.get_cerr_mean(ground_truth, file)
 
             iteration = int(re.findall(r"\d+", file_name)[-1])
             iterations.append(iteration)
-            print(f'Iteration: {iteration} wer: {wer:.2f}%')
+            print(f'Iteration: {iteration} wer: {my_wer():.2f}%')
             wers.append(wer)
 
         print(f'Iterations: {iterations}')

@@ -38,8 +38,9 @@ class CustomWer:
     def __call__(self) -> float:
         """Return final WER for all lines in percents."""
         try:
-            return (float(self.sub + self.dele + self.ins) /
-                    float(self.hits + self.sub + self.dele) * 100)
+            true_wer = (float(self.sub + self.dele + self.ins) /
+                        float(self.hits + self.sub + self.dele) * 100)
+            return round(true_wer, 4)
         except ZeroDivisionError as error:
             print(f'ERROR: ZeroDivisionError: unsuccessfull final wer '
                   f'calculations {str(error)}')
