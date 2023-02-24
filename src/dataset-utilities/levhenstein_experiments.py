@@ -53,3 +53,26 @@ plt.xlabel('Iteration')
 plt.ylabel('Symbol error rate [%]')
 
 plt.savefig('SAgnostic Symbol Error.png')
+
+# %% Check if gts equal
+
+import os
+
+# os.listdir('../../../experiments/230213_Semantic_original/checkpoints/detective_tst_ground_truth')
+
+path = '../../../experiments/230213_Semantic_original/checkpoints/detective_tst_ground_truth'
+checkp_gt_path = os.path.join(path, 'checkpoint_gt.sort')
+orig_gt_path = os.path.join(path, 'orig_gt.sort')
+
+with open(checkp_gt_path, 'r') as f:
+    check_gt = f.read()
+
+with open(orig_gt_path, 'r') as f:
+    orig_gt = f.read()
+
+
+orig_gt = orig_gt.replace('\t', ' ')
+
+with open(orig_gt_path + '.spaces', 'w+') as f:
+    f.write(orig_gt)
+
