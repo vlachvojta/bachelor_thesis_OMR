@@ -26,9 +26,8 @@ class EvaulateCheckpoints:
     of training outputs and export to json and chart.
     """
     def __init__(self, input_files: list, ground_truth: str,
-                 name: str = 'Evaluated_checkpoints',
-                 checkpoint_folder: str = '.',
-                 output_folder: str = 'eval_out') -> None:
+                 output_folder: str = 'eval_out',
+                 name: str = 'Evaluated_checkpoints') -> None:
 
         print(f'input_files: {input_files}')
 
@@ -50,45 +49,30 @@ class EvaulateCheckpoints:
             if len(ground_truth) != len(file):
                 continue
 
-            # TODO kontroluj ID řádků pro každý řádek
-            gt_first_ID = re.split(r'\s+', ground_truth[0])[0]
-            pred_first_ID = re.split(r'\s+', file[0])[0]
-            if not gt_first_ID == pred_first_ID:
-                print('NOT MATCHING line IDs, Aborting')
-                sys.exit()
-
-            # REAL wer
-            wer = jiwer.wer(ground_truth, file) * 100
-            print(f'wer_real: \t{wer}')
-
-            # FAKE wer with np.mean
             wer_list = []
             for gt, pred in zip(ground_truth, file):
                 wer_list.append(jiwer.wer(gt, pred) * 100)
 
-            wer_fake = np.mean(wer_list)
-            # print(f'wer_fake: {wer_fake}')
-
             # Custom wer with continues counting
+            wer_list = []
             my_wer = CustomWer()
             
+            # Add lines in to different ways to demonstrate
             for gt, pred in zip(ground_truth[:50], file[:50]):
                 my_wer.add_lines(gt, pred)
-            # my_wer.add_lines(ground_truth[:50], file[:50])
             my_wer.add_lines(ground_truth[50:], file[50:])
-            
-            print(f'wer_custom: \t{my_wer()}')
 
-            # print(f'\t{jiwer.wer(ground_truth[0], file[0])},\n\tgt: {ground_truth[0]},\n\tpred: {file[0]}')
+            wer_list.append(my_wer())
+
             cerr = self.get_cerr_mean(ground_truth, file)
 
             iteration = int(re.findall(r"\d+", file_name)[-1])
             iterations.append(iteration)
             print(f'Iteration: {iteration} wer: {my_wer():.2f}%')
-            wers.append(wer)
+            wers.append(my_wer())
 
-        print(f'Iterations: {iterations}')
-        print(f'WERs: {wers}')
+        print(f'Iterations: \t{iterations}')
+        print(f'WERs: \t\t{wers}')
 
         plt.title(name)
         plt.plot(np.array(iterations), np.array(wers))
@@ -112,17 +96,14 @@ def parseargs():
     """Parse arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-f", "--checkpoint-folder", type=str, default='.',
-        help="Folder where to look for checkpoint outputs.")
-    parser.add_argument(
         "-i", "--input-files", nargs='+',
         help="Folder where to look for checkpoint outputs.")
     parser.add_argument(
-        "-o", "--output-folder", type=str, default='eval_out',
-        help="Output folder to write outputs to.")
-    parser.add_argument(
         "-g", "--ground-truth", required=True,
         help="Ground truth to compare files with.")
+    parser.add_argument(
+        "-o", "--output-folder", type=str, default='eval_out',
+        help="Output folder to write outputs to.")
     parser.add_argument(
         "-n", "--name", type=str, default='Evaluated_checkpoints',
         help="Name of generated files + chart heading.")
@@ -136,10 +117,9 @@ def main():
     start = time.time()
 
     EvaulateCheckpoints(
-        checkpoint_folder=args.checkpoint_folder,
         input_files=args.input_files,
-        output_folder=args.output_folder,
         ground_truth=args.ground_truth,
+        output_folder=args.output_folder,
         name=args.name)
 
     end = time.time()
