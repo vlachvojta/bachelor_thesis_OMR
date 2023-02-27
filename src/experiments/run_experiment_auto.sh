@@ -17,12 +17,10 @@ cp -r /storage/brno2/home/xvlach22/bp_omr/ubuntu_fonts $SCRATCH/ubuntu_fonts
 cp -r /storage/brno2/home/xvlach22/bp_omr/code_from_others $SCRATCH/code_from_others
 cp -r /storage/brno2/home/xvlach22/bp_omr/bp-git $SCRATCH/bp-git
 cd experiments/$EXPERIMENT
-# chmod u+x run_experiment.sh
 trap 'cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/ ; echo "data saved back to storage" ; clean_scratch' EXIT TERM
 module add python36-modules-gcc
 
 pip3.6 install --upgrade pip 1>/dev/null
-# pip3.6 install -r pero_requirements.txt 1>/dev/null
 
 HOME=$SCRATCH
 PERO_PATH=$HOME"/code_from_others/pero/"
@@ -31,22 +29,17 @@ BP_GIT_EXP=$HOME"/bp-git/src/experiments"
 export PYTHONPATH=$PERO_PATH:$PERO_OCR_PATH:$BP_GIT_EXP
 export PATH=$PATH:$PYTHONPATH
 
-SRC=$HOME"/bp-git/src"
-GET_LAST_POINT_PY=$SRC"/experiments/find_last_checkpoint.py"
+GET_LAST_POINT_PY=$BP_GIT_EXP"/find_last_checkpoint.py"
 
 SCRIPT=$HOME"/code_from_others/pero/pytorch_ctc/train_pytorch_ocr.py"
 LENGTH=1700
 LMDB=$HOME"/datasets/images.lmdb"
 DATA_TRN=$HOME"/datasets/data_SSemantic.trn"
 DATA_TST=$HOME"/datasets/data_SSemantic.tst"
-#NET=NET_SIMPLE_BC_3_BLC_2_BFC_24
-#NET=NET_RES_D3_BFC_24_BN
-#NET=NET_RES_D3_BFC_24_MI
 NET=VGG_LSTM_B64_L17_S4_CB4
 
 DATA_TYPE=all
 TRANSFORMER=
-#'--data-manipulator UNIVERSAL_PRINT'
 START_ITER=`python3 $GET_LAST_POINT_PY checkpoints/`
 START="--start-iteration 0"$START_ITER
 FONT=$HOME/"ubuntu_fonts/Ubuntu-Regular.ttf"
@@ -55,13 +48,8 @@ pip3.6 install arabic-reshaper 1>/dev/null
 pip3.6 install lmdb 1>/dev/null
 pip3.6 install safe-gpu 1>/dev/null
 pip3.6 install shapely imgaug lxml Levenshtein rapidfuzz typing-extensions 1>/dev/null
-# pip3.6 install nvidia-cublas-cu11 1>/dev/null
-# pip3.6 install nvidia-cudnn-cu11 1>/dev/null
-# pip3.6 install nvidia-cuda-nvrtc-cu11 1>/dev/null
-# pip3.6 install nvidia-cuda-runtime-cu11 1>/dev/null
 pip3.6 install jiwer 1>/dev/null
 pip3.6 install torchvision==0.2.2 1>/dev/null
-# pip3.6 install torch==1.8.0+cu111 torchvision==0.2.2+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
 echo "python modules installed"
 pwd
 echo "============== Running training script =============="
@@ -77,7 +65,7 @@ python3.6 -u $SCRIPT $START  \
     --view-step 500 \
     --test --checkpoint-dir checkpoints -c all \
     --font $FONT --n-gpu $NGPU \
-    --show-trans --test --warm-up-iterations 500 2>&1 | tee -a log_x.txt
+    --show-trans --warm-up-iterations 500 2>&1 | tee -a log_x.txt
 
 cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/
 clean_scratch
