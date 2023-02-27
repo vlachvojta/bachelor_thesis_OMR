@@ -86,14 +86,13 @@ OK:
 - black1      cerit
 - grimbold    meta
 - (glados10-13 OK)
-- elmo3   **NOT INVESTIGATED FURTHURE**
 
 NOP:
 - glados1-7   NOP
 - galdor1-20  NOP
 - adan1-61    NOP
 - fau1-3      NOP
-- gita1-7     NOP
+- gita1-9     NOP
 - luna        NOP
 - zia3        NOP
 
