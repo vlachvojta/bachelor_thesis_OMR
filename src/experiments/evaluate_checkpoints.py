@@ -12,7 +12,6 @@ import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-# import jiwer
 from customwer import CustomWer
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
@@ -68,16 +67,11 @@ class EvaulateCheckpoints:
         my_wer = CustomWer()
 
         # Add lines in two different ways to demonstrate
-        for gt, pred in zip(ground_truth[:50], file[:50]):
-            my_wer.add_lines(gt, pred)
+        for truth, pred in zip(ground_truth[:50], file[:50]):
+            my_wer.add_lines(truth, pred)
         my_wer.add_lines(ground_truth[50:], file[50:])
 
-        cer = self.get_cerr(ground_truth, file)
-        return my_wer(), cer
-
-    def get_cerr(self, truth, result) -> float:
-        # TODO Count Levenshtein distance same as in PERO
-        return self.ERROR_ERROR
+        return my_wer(), my_wer(get='cer')
 
     def make_chart(self, results, output_folder, name):
         """Generate chart with iterations, WERs and CERs"""
@@ -85,7 +79,6 @@ class EvaulateCheckpoints:
         wers = [results[res]['wer'] for res in results]
         cers = [results[res]['cer'] for res in results]
 
-        # TODO add CER to chart
         plt.title(name)
         plt.plot(np.array(iterations), np.array(wers), label = 'Symbol error rate')
         plt.plot(np.array(iterations), np.array(cers), label = 'Character error rate')
