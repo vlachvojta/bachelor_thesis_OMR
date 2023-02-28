@@ -29,6 +29,9 @@ class EvaulateCheckpoints:
     def __init__(self, input_files: list, ground_truth: str,
                  output_folder: str = 'eval_out',
                  name: str = 'Evaluated_checkpoints') -> None:
+        """,
+        ignore_n_pred: int = 0,
+        ignore_n_gt: int = 0"""
         print(f'input_files: {input_files}')
 
         # Read Ground_truth
@@ -107,6 +110,12 @@ def parseargs():
     parser.add_argument(
         "-n", "--name", type=str, default='Evaluated_checkpoints',
         help="Name of generated files + chart heading.")
+    parser.add_argument(
+        "--ignore-first-n-words_gt", type=int, default=0,
+        help="Ignore first n words in ground truth.")
+    parser.add_argument(
+        "--ignore-first-n-words_pred", type=int, default=0,
+        help="Ignore first n words in ground truth.")
     return parser.parse_args()
 
 
@@ -120,7 +129,10 @@ def main():
         input_files=args.input_files,
         ground_truth=args.ground_truth,
         output_folder=args.output_folder,
-        name=args.name)
+        name=args.name
+        # ignore_n_gt=args.ignore_first_n_words_gt,
+        # ignore_n_pred=args.ignore_first_n_words_pred
+        )
 
     end = time.time()
     print(f'Total time: {end - start:.2f} s')
