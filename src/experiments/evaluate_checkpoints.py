@@ -78,18 +78,20 @@ class EvaulateCheckpoints:
     def get_cerr(self, truth, result) -> float:
         # TODO Count Levenshtein distance same as in PERO
         return self.ERROR_ERROR
-    
+
     def make_chart(self, results, output_folder, name):
         """Generate chart with iterations, WERs and CERs"""
         iterations = [results[res]['iter'] for res in results]
         wers = [results[res]['wer'] for res in results]
         cers = [results[res]['cer'] for res in results]
-        
+
         # TODO add CER to chart
         plt.title(name)
-        plt.plot(np.array(iterations), np.array(wers))
+        plt.plot(np.array(iterations), np.array(wers), label = 'Symbol error rate')
+        plt.plot(np.array(iterations), np.array(cers), label = 'Character error rate')
         plt.xlabel('Iteration')
-        plt.ylabel('Symbol error rate [%]')
+        plt.ylabel('Rate [%]')
+        plt.legend()
 
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
