@@ -29,9 +29,11 @@ class EvaulateCheckpoints:
     def __init__(self, input_files: list, ground_truth: str,
                  output_folder: str = 'eval_out',
                  name: str = 'Evaluated_checkpoints') -> None:
-        print(f'input_files: {input_files}')
+        print(f'input_files ({len(input_files)}): {input_files}')
 
         # Read Ground_truth
+        if not os.path.exists(ground_truth):
+            raise FileNotFoundError(f'Ground truth file not found: {ground_truth}')
         ground_truth = Common.read_file(ground_truth)
         ground_truth = [line for line in re.split(r'\n', ground_truth)
                         if not line == '']
