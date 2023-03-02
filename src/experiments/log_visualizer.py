@@ -21,13 +21,14 @@ from common import Common
 class LogVisualizer:
     def __init__(self, file: str = "stdin", output: str = "log_out",
                  name: str = "") -> None:
+        # TODO add loadign WER if there is some
         if file == "stdin":
             print('Input form stdin not supported yet, use file instead')
             exit()
 
         if not os.path.exists(output):
             os.mkdir(output)
-        
+
         if not os.path.exists(file):
             raise FileNotFoundError(f'Log file not found {file}')
 
@@ -51,11 +52,11 @@ class LogVisualizer:
         print(f'json written to: {name}')
 
     @staticmethod
-    def get_cerrs(input: str = '') -> dict:
-        input = input.split('ITERATION ')
+    def get_cerrs(input_: str = '') -> dict:
+        input_ = input_.split('ITERATION ')
         cerrs = {}
 
-        for line in input:
+        for line in input_:
             iteration = re.findall(r'\d+', line)
             if not iteration:
                 continue
