@@ -8,9 +8,13 @@ $ python3 log_visualizer.py -i log_x.txt -o visualized_log
 import argparse
 import re
 import os
+import sys
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+
+rel_dir = os.path.dirname(os.path.relpath(__file__))
+sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
 from common import Common
 
 
@@ -28,12 +32,12 @@ class LogVisualizer:
             raise FileNotFoundError(f'Log file not found {file}')
 
         log = Common.read_file(file)
-        cerrs = Log_visualizer.get_cerrs(log)
+        cerrs = LogVisualizer.get_cerrs(log)
         print(f'cerrs[0:10]: {list(cerrs.values())[0:10]}')
 
-        Log_visualizer.chart(cerrs, output, name)
+        LogVisualizer.chart(cerrs, output, name)
 
-        Log_visualizer.write_cerrs(cerrs, output, name)
+        LogVisualizer.write_cerrs(cerrs, output, name)
 
         # print mean
         mean = np.mean(list(cerrs.values())[10:])
