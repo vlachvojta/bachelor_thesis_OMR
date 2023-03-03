@@ -31,8 +31,6 @@ class EvaulateCheckpoints:
                  name: str = 'Evaluated_checkpoints',
                  ignore_n_pred: int = 0,
                  ignore_n_gt: int = 0) -> None:
-        print(f'input_files ({len(input_files)}): {input_files}')
-
         # Read Ground_truth
         if not os.path.exists(ground_truth):
             raise FileNotFoundError(f'Ground truth file not found: {ground_truth}')
@@ -95,10 +93,12 @@ class EvaulateCheckpoints:
 
     def make_chart(self, results, output_folder, name):
         """Generate chart with iterations, WERs and CERs"""
-        iterations = [results[res]['iter'] for res in results]
-        wers = [results[res]['wer'] for res in results]
-        cers = [results[res]['cer'] for res in results]
+        threshold = 10 if len(results) > 20 else 0
+        iterations = [results[res]['iter'] for res in results][threshold:]
+        wers = [results[res]['wer'] for res in results][threshold:]
+        cers = [results[res]['cer'] for res in results][threshold:]
 
+        # fig, ax = plt.subplots()
         plt.title(name)
         plt.plot(np.array(iterations), np.array(wers), label = 'Symbol error rate')
         plt.plot(np.array(iterations), np.array(cers), label = 'Character error rate')
