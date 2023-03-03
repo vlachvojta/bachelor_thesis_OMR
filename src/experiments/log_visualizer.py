@@ -74,8 +74,10 @@ class LogVisualizer:
     def chart(data: dict = {}, output: str = "", name: str = "fig_01") -> None:
         # TODO add WER to chart
 
-        iterations = np.array(sorted(data.keys()))
-        cerrs = np.array([data[k] for k in sorted(data.keys())])
+        threshold = 10 if len(data) > 20 else 0
+
+        iterations = np.array(sorted(data.keys()))[threshold:]
+        cerrs = np.array([data[k] for k in sorted(data.keys())])[threshold:]
 
         plt.title(name)
         plt.plot(iterations, cerrs)
