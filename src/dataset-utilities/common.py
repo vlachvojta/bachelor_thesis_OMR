@@ -105,7 +105,7 @@ class Common:
                     '.png', data,
                     [int(cv.IMWRITE_JPEG_QUALITY), 95])[1].tobytes()
         else:
-            with open(file) as f:
+            with open(file, 'r') as f:
                 data = f.read()
                 if lmdb:
                     data = data.encode()
