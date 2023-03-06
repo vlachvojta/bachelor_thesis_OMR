@@ -24,7 +24,7 @@ class EvaulateCheckpoints:
     of training outputs and export to json and chart.
     """
 
-    ERROR_ERROR = 100.42
+    ERROR_ERROR = 200.42
 
     def __init__(self, input_files: list, ground_truth: str,
                  output_folder: str = 'eval_out',
@@ -48,6 +48,9 @@ class EvaulateCheckpoints:
             iteration = int(re.findall(r"\d+", file_name)[-1])
 
             wer, cer = self.get_errs(file_name, ground_truth, ignore_n_pred)
+
+            if wer == cer == self.ERROR_ERROR:
+                continue
 
             results[iteration] = {'iter': iteration, 'wer': wer, 'cer': cer}
             print(f'Iteration: {iteration} wer: {results[iteration]}')
@@ -79,7 +82,14 @@ class EvaulateCheckpoints:
             file = self.ignore_n_words(ignore_n_words, file)
 
         if len(ground_truth) != len(file):
-            return self.ERROR_ERROR, self.ERROR_ERROR
+            if len(file) == len(ground_truth) * 2:
+                print('INFO: file is 2 times longer than ground truth.'
+                      ' using only second half.')
+                file = file[:len(file) // 2]
+            else:
+                print(f'ERR: Number of lines in ground truth ({len(ground_truth)}) '
+                    f'and file ({len(file)}) do not match. SKIPPING.')
+                return self.ERROR_ERROR, self.ERROR_ERROR
 
         # Custom wer with continues counting
         my_wer = CustomWer()
