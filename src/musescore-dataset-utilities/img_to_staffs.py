@@ -11,8 +11,6 @@ import sys
 import os
 import time
 import numpy as np
-# import matplotlib.pyplot as plt
-# import cv2 as cv
 from PIL import Image, ImageOps
 
 
@@ -30,8 +28,9 @@ class StaffCuter:
         self.output_folder = output_folder
         self.staff_count = staff_count
 
-        if not staff_count == 1:
-            print('WARNING: staff_count other then 1 is not supported YET.')
+        if staff_count != 1:
+            print('WARNING: staff_count other then 1 is not supported YET. \n'
+                  'Output will be one file with all staffs.')
 
         self.input_files = Common.check_existing_files(input_files)
         if not input_files:
@@ -43,18 +42,7 @@ class StaffCuter:
         print(f'Working with: {input_files[0]}')
         image = Image.open(self.input_files[0])
         image = ImageOps.grayscale(image)
-        print(image.format)
-        print(image.size)
-        print(image.mode)
-        print('--------------')
         data = np.asarray(image)
-
-        ### plot means to chart
-        # means = data[0:1500].mean(axis=1)
-        # print(means.shape)
-        # plt.plot(means)
-        # plt.title('Means of DPI 250')
-        # plt.savefig(os.path.join(output_folder, 'chart_of_means_DPI_250.png'))
 
         # Crop vertical white space
         cropped_data = self.crop_white_space(data, strip_count=10)
@@ -65,12 +53,15 @@ class StaffCuter:
         image = Image.fromarray(cropped_data)
 
         # Save image from np array
-        out_file = re.split(r'\.', os.path.basename(input_files[0]))[0] + f'_cropped.png'
-        out_file = os.path.join(output_folder, out_file)
-        image.save(out_file)
-        print(f'Saved: {out_file}')
+        self.save_image(image, self.input_files[0])
 
-        # image.save(os.path.join(self.output_folder, os.path.basename(input_files[0])))
+    def save_image(self, image: Image, filename: str):
+        """Save image."""
+        out_file = re.split(r'\.', os.path.basename(filename))[0] + '_cropped.png'
+        out_file = os.path.join(self.output_folder, out_file)
+
+        image.save(out_file)
+        print(f'Saved to: {out_file}')
 
     def crop_horizontal(self, image: Image) -> Image:
         """Crop the image horizontally to reduce whitespace."""
@@ -88,16 +79,11 @@ class StaffCuter:
         """Crop image iteratively and stop when it finds the staff."""
         safety_threshold = 10
         for j in range(safety_threshold):
-            print('------------')
-            print(f'j: {j}')
-
             cropped_data = 'empty'
 
             strip_height = len(data) // strip_count
-            print(f'strip_height: {strip_height}')
 
             for i in range(strip_count):
-                print(f'i: {i}')
                 strip = data[(strip_height * i) : (strip_height * (i + 1))]
 
                 if np.min(strip) == 0:
@@ -105,10 +91,7 @@ class StaffCuter:
                         cropped_data = strip
                     else:
                         cropped_data = np.append(cropped_data, strip, axis=0)
-                else:
-                    print('cut cut.')
 
-            print(cropped_data.shape)
             if cropped_data.shape == data.shape:
                 break
             else:
