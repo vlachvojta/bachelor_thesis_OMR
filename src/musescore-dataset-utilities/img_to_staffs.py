@@ -19,25 +19,26 @@ from common import Common  # noqa: E402
 
 
 class StaffCuter:
-    """Cut images to sperate music staffs."""
-
+    """Crop images to fit music staffs tightly with very little white space arround."""
     def __init__(self, input_files: list,
                  output_folder: str = '.',
                  staff_count: int = 1):
         self.output_folder = output_folder
         self.staff_count = staff_count
+        self.input_files = input_files
 
         if staff_count != 1:
             print('WARNING: staff_count other then 1 is not supported YET. \n'
                   'Output will be one file with all staffs.')
 
         self.input_files = Common.check_existing_files(input_files)
-        if not input_files:
+        if not self.input_files:
             raise ValueError('No valid input files provided.')
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
 
+    def __call__(self):
         for file in self.input_files:
             print(f'Working with: {file}')
             image = Image.open(file)
@@ -120,10 +121,11 @@ def main():
 
     start = time.time()
 
-    StaffCuter(
+    cutter = StaffCuter(
         input_files=args.input_files,
         output_folder=args.output_folder)
         # staff_count=args.staff_count)
+    cutter()
 
     end = time.time()
     print(f'Total time: {end - start:.2f} s')
