@@ -13,7 +13,7 @@ def main():
         "-n", "--number-of-clicks", type=int, default=10,
         help="Number of times to click on the screen")
     parser.add_argument(
-        "-X", type=int, default=934,
+        "-X", type=int, default=940,
         help="X position of click")
     parser.add_argument(
         "-Y", type=int, default=555,
@@ -28,6 +28,7 @@ def main():
     for i in range(args.number_of_clicks):
         print(i)
         pg.click(args.X, args.Y)
+        pg.click(args.X, 0)
         time.sleep(args.sleep)
 
 
