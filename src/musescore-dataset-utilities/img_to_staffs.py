@@ -11,7 +11,7 @@ import sys
 import os
 import time
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 # import cv2 as cv
 from PIL import Image, ImageOps
 
@@ -56,12 +56,13 @@ class StaffCuter:
         # plt.title('Means of DPI 250')
         # plt.savefig(os.path.join(output_folder, 'chart_of_means_DPI_250.png'))
 
+        # Crop vertical white space
         cropped_data = self.crop_white_space(data, strip_count=10)
 
-        print(f'resulting cropped data shape: {cropped_data.shape}')
+        # Crop Horizontal white space
+        cropped_data = self.crop_white_space(cropped_data.T, strip_count=20).T
 
         image = Image.fromarray(cropped_data)
-        image = self.crop_horizontal(image)
 
         # Save image from np array
         out_file = re.split(r'\.', os.path.basename(input_files[0]))[0] + f'_cropped.png'
@@ -85,7 +86,8 @@ class StaffCuter:
     def crop_white_space(self, data: np.ndarray,
                    strip_count: int = 5) -> np.ndarray:
         """Crop image iteratively and stop when it finds the staff."""
-        for j in range(1000):  # TODO: change this to while TRUE?
+        safety_threshold = 10
+        for j in range(safety_threshold):
             print('------------')
             print(f'j: {j}')
 
@@ -97,8 +99,6 @@ class StaffCuter:
             for i in range(strip_count):
                 print(f'i: {i}')
                 strip = data[(strip_height * i) : (strip_height * (i + 1))]
-
-                # if i == 5:
 
                 if np.min(strip) == 0:
                     if isinstance(cropped_data, str):
