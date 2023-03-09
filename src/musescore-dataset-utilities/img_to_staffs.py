@@ -1,8 +1,7 @@
 #!/usr/bin/python3.8
-"""Cut images to sperate music staffs.
+"""Crop images to fit music staffs tightly with very little white space arround.
 Example run:
-$ python3 evaluate_checkpoints.py --ground-truth data.tst \
-        --checkpoint-folder checkpoints
+$ python3 img_to_staffs.py -i image.png -o imgs_out/
 """
 
 import argparse
@@ -109,9 +108,9 @@ def parseargs():
     parser.add_argument(
         "-o", "--output-folder", type=str, default='.',
         help="Output folder to write cut imgs to.")
-    parser.add_argument(
-        "-n", "--staff-count", type=int, default=1,
-        help="Indicates how many staffs to cut fro every image.")
+    # parser.add_argument(
+    #     "-n", "--staff-count", type=int, default=1,
+    #     help="Indicates how many staffs to cut fro every image.")
     return parser.parse_args()
 
 
@@ -123,8 +122,8 @@ def main():
 
     StaffCuter(
         input_files=args.input_files,
-        output_folder=args.output_folder,
-        staff_count=args.staff_count)
+        output_folder=args.output_folder)
+        # staff_count=args.staff_count)
 
     end = time.time()
     print(f'Total time: {end - start:.2f} s')
