@@ -39,21 +39,20 @@ class StaffCuter:
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
 
-        print(f'Working with: {input_files[0]}')
-        image = Image.open(self.input_files[0])
-        image = ImageOps.grayscale(image)
-        data = np.asarray(image)
+        for file in self.input_files:
+            print(f'Working with: {file}')
+            image = Image.open(file)
+            image = ImageOps.grayscale(image)
+            data = np.asarray(image)
 
-        # Crop vertical white space
-        cropped_data = self.crop_white_space(data, strip_count=10)
+            # Crop vertical white space
+            cropped_data = self.crop_white_space(data, strip_count=10)
 
-        # Crop Horizontal white space
-        cropped_data = self.crop_white_space(cropped_data.T, strip_count=20).T
+            # Crop Horizontal white space
+            cropped_data = self.crop_white_space(cropped_data.T, strip_count=20).T
 
-        image = Image.fromarray(cropped_data)
-
-        # Save image from np array
-        self.save_image(image, self.input_files[0])
+            image = Image.fromarray(cropped_data)
+            self.save_image(image, file)
 
     def save_image(self, image: Image, filename: str):
         """Save image."""
