@@ -77,7 +77,7 @@ class StaffCuter:
                    strip_count: int = 5) -> np.ndarray:
         """Crop image iteratively and stop when it finds the staff."""
         safety_threshold = 10
-        for j in range(safety_threshold):
+        for _ in range(safety_threshold):
             cropped_data = 'empty'
 
             strip_height = len(data) // strip_count
