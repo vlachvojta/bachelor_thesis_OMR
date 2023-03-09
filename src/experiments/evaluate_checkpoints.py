@@ -128,7 +128,7 @@ def parseargs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i", "--input-files", nargs='+',
-        help="Folder where to look for checkpoint outputs.")
+        help="List of input files (checkpoint outputs)")
     parser.add_argument(
         "-g", "--ground-truth", required=True,
         help="Ground truth to compare files with.")
