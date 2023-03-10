@@ -43,7 +43,7 @@ class Common:
     def check_existing_files(files: list = []):
         """Return only existing file"""
         def file_is_visible(file: str = '') -> bool:
-            return re.split(os.sep, file)[-1][0] != '.'
+            return os.path.basename(file)[0] != '.'
 
         return [file for file in files
                 if os.path.exists(file) and file_is_visible(file)]
