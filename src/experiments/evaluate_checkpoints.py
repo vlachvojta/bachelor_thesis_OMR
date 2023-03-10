@@ -84,7 +84,7 @@ class EvaulateCheckpoints:
         if len(ground_truth) != len(file):
             if len(file) == len(ground_truth) * 2:
                 print('INFO: file is 2 times longer than ground truth.'
-                      ' using only second half.')
+                      ' Using only second half.')
                 file = file[:len(file) // 2]
             else:
                 print(f'ERR: Number of lines in ground truth ({len(ground_truth)}) '
