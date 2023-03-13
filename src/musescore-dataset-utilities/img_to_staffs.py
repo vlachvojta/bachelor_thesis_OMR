@@ -1,7 +1,9 @@
 #!/usr/bin/python3.8
 """Crop images to fit music staffs tightly with very little white space arround.
+
 Example run:
 $ python3 img_to_staffs.py -i image.png -o imgs_out/
+resulting in creating cropped file imgs_out/image.png 
 """
 
 import argparse
