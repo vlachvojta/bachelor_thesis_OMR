@@ -89,7 +89,7 @@ class PartSplitter:
                             staff.getparent().remove(staff)
                             part.getparent().remove(part)
                         else:
-                            staff.set('id', f'1')
+                            staff.set('id', str(1))
 
                 file_out = file_in.split('.')[0]
                 part_file_name = f'{file_out}_p{i:02d}.{file_type}'
@@ -140,10 +140,10 @@ def parseargs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i", "--input-files", nargs='+',
-        help="Input images to cut.")
+        help="Input XML files to process.")
     parser.add_argument(
         "-o", "--output-folder", type=str, default='.',
-        help="Output folder to write cut imgs to.")
+        help="Output folder to write files to.")
     return parser.parse_args()
 
 
