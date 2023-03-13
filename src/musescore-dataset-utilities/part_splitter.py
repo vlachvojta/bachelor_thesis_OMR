@@ -79,37 +79,6 @@ class PartSplitter:
                 new_tree.write(part_path, pretty_print=True, encoding='utf-8', xml_declaration=True)
                 generated_files += 1
 
-
-            ### Check length after copy and test delete
-            # print(len(file_tree.xpath("./*")))
-            # # file_tree.remove(file_tree.xpath(".//*")[0])
-            # bad = new_trees[0].xpath(".//*")[0]
-            # bad.getparent().remove(bad)
-
-            # print(len(file_tree.xpath("./*")))
-            # for new_tree in new_trees:
-            #     print(len(new_tree.xpath("./*")))
-
-
-            # convert etree element to dictionary
-            # part_dict = {}
-            # for part in score_parts:
-            #     part_id = part.get('id')
-            #     part_name = part.get('name')
-            #     part_path = part.get('path')
-            #     part_dict[part_id] = part_name
-
-
-            # for part in file_tree.findall('part'):
-            #     part_id = part.get('id')
-            #     part_name = part.get('name')
-            #     part_path = os.path.join(self.output_folder, f'{part_id:03d}_{part_name}.musixml')
-            #     part.set('id', f'{part_id:03d}')
-            #     part.set('name', f'{part_id:03d}_{part_name}')
-            #     part.set('path', part_path)
-            #     part.text = ''
-            #     part.tail = ''
-
         print('--------------------')
         print('Results:')
         print(f'From {len(self.input_files)} input files.')
@@ -120,14 +89,7 @@ class PartSplitter:
     # def is_valid_music_score(self, tree: etree.Element) -> bool:
     #     """Check if the music score is valid."""
 
-    #     # Check if part declarations are the same as part list.
-    #     # score_part_ids = self.get_params_of_tags(tree, 'score-part', 'id')
-    #     # part_ids = self.get_params_of_tags(tree, 'part', 'id')
-
-    #     # if not score_part_ids == part_ids:
-    #     #     return False
-        
-    #     # ? Another checks
+    #     # ? Some checks ?
 
     #     return True
 
