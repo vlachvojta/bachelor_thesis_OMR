@@ -49,7 +49,7 @@ class Common:
                 if os.path.exists(file) and file_is_visible(file)]
 
     @staticmethod
-    def get_existing_file_names(files, dirs, exts, recursive):
+    def get_existing_file_names(files, dirs):
         """Get files, return only existing ones.
 
         Get file names from directory with given extension + files.
@@ -59,10 +59,9 @@ class Common:
         if not dirs:
             return existing_files
 
-        print('for')
-        for dir in dirs:
-            print(dir)
-            print(os.listdir(dir))
+        for dir_ in dirs:
+            print(dir_)
+            print(os.listdir(dir_))
 
         return existing_files
 
@@ -171,17 +170,29 @@ class Common:
 
     @staticmethod
     def right_file_ext(file: str, exts: list) -> bool:
+        """Check if file has one of given extensions.
+
+        Working only for extensions without '.' at the beggining.
+        """
+        if isinstance(exts, str):
+            exts = [exts]
+
         if not file:
             return False
         return file.split('.')[-1] in exts
 
     @staticmethod
-    def sum_lists_in_dict(data: dict = {}) -> int:
+    def check_files_extention(files: list, exts: list) -> list:
+        """Check list of files. Return only files with one of given extensions."""
+        return [f for f in files if Common.right_file_ext(f, exts)]
+
+    @staticmethod
+    def sum_lists_in_dict(data: dict) -> int:
         """Return sum of all unique symbols found."""
-        sum = 0
-        for v in data.values():
-            sum += len(v)
-        return sum
+        sum_ = 0
+        for value in data.values():
+            sum_ += len(value)
+        return sum_
 
     @staticmethod
     def serialize_dict_to_list(data: dict = {}) -> list:
