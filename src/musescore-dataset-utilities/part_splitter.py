@@ -1,16 +1,16 @@
 #!/usr/bin/python3.8
 """Split multi-part music score files to multiple files with only one part per file.
 
+Works for .musicxml and .mscx files.
 File naming conventions: file.musicxml -> file_p[1-n].musixml 
     where n is the number of parts.
 
 Example run:
 $ python3 part_splitter.py -i 100.musicxml -o parts_out/
-resulting in creating files parts_out/100_p00.musixml, parts_out/100_p01.musix etc.
+resulting in creating files parts_out/100_p00.musicxml, parts_out/100_p01.musicxml etc.
 """
 
 import argparse
-# import re
 import sys
 import os
 import time
@@ -30,7 +30,7 @@ class PartSplitter:
         self.output_folder = output_folder
 
         self.input_files = Common.check_existing_files(input_files)
-        self.input_files = Common.check_files_extention(self.input_files, 'musicxml')
+        self.input_files = Common.check_files_extention(self.input_files, ['musicxml', 'mscx'])
         if not self.input_files:
             raise ValueError('No valid input files provided.')
 
@@ -42,6 +42,8 @@ class PartSplitter:
     def __call__(self):
         for file_in in self.input_files:
             print(f'Working with: {file_in}')
+            file_type = file_in.split('.')[-1]
+
             xml_syntax_error_files = 0
             music_score_error_files = 0
             generated_files = 0
@@ -56,25 +58,41 @@ class PartSplitter:
             #     music_score_error_files += 1
             #     continue
 
-            part_ids = self.get_valid_ids(file_tree)
-            print(part_ids)
+            part_ids = self.get_valid_ids(file_tree, file_type)
+            if not part_ids:
+                music_score_error_files += 1
+                continue
 
             new_trees = []
             for _ in range(len(part_ids)):
                 new_trees.append(deepcopy(file_tree))
 
             for i, (part_id, new_tree) in enumerate(zip(sorted(part_ids), new_trees)):
-                score_parts = new_tree.xpath('//score-part | //part')
+                if file_type == 'musicxml':
+                    score_parts = new_tree.xpath('//score-part | //part')
+                    print(f'Found {len(score_parts)} score parts.')
 
-                print(f'Found {len(score_parts)} score parts.')
-                for part in score_parts:
-                    if part.get('id') != part_id:
-                        part.getparent().remove(part)
+                    for part in score_parts:
+                        if part.get('id') != part_id:
+                            part.getparent().remove(part)
 
-                print(len(new_tree.xpath(".//*")))
+                    print(len(new_tree.xpath(".//*")))
+                elif file_type == 'mscx':
+                    parts = new_tree.xpath('//Part')
+                    staffs = new_tree.xpath('/museScore/Staff')
+                    print(f'Found {len(parts)} parts and {len(staffs)} staffs.')
+
+                    for part, staff in zip(parts, staffs):
+                        staff_id = staff.get('id')
+
+                        if staff_id != part_id:
+                            staff.getparent().remove(staff)
+                            part.getparent().remove(part)
+                        else:
+                            staff.set('id', f'1')
 
                 file_out = file_in.split('.')[0]
-                part_file_name = f'{file_out}_p{i:02d}.musicxml'
+                part_file_name = f'{file_out}_p{i:02d}.{file_type}'
                 part_path = os.path.join(self.output_folder, part_file_name)
                 new_tree.write(part_path, pretty_print=True, encoding='utf-8', xml_declaration=True)
                 generated_files += 1
@@ -100,11 +118,20 @@ class PartSplitter:
             params.append(child.get(param))
         return params
 
-    def get_valid_ids(self, tree)-> list:
+    def get_valid_ids(self, tree, file_type)-> list:
         """Get only valid ids of parts in the tree."""
-        score_part_ids = self.get_params_of_tags(tree, 'score-part', 'id')
-        part_ids = self.get_params_of_tags(tree, 'part', 'id')
-        return Common.intersection(score_part_ids, part_ids)
+        if file_type =='musicxml':
+            score_part_ids = self.get_params_of_tags(tree,'score-part', 'id')
+            part_ids = self.get_params_of_tags(tree, 'part', 'id')
+            return Common.intersection(score_part_ids, part_ids)
+        elif file_type =='mscx':
+            parts_count = len(tree.xpath('//Part'))
+            staff_count = len(tree.xpath('/museScore/Staff'))
+
+            if parts_count == staff_count:
+                return self.get_params_of_tags(tree, '/museScore/Staff', 'id')
+            else:
+                return []
 
 
 def parseargs():
