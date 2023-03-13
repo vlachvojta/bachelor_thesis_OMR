@@ -245,6 +245,11 @@ class Common:
 
         return complete_file_groups
 
+    @staticmethod
+    def intersection(lst1: list, lst2: list) -> list:
+        """Return intersection of two lists."""
+        return [x for x in lst1 if x in lst2]
+
     # ======================== Image stats and manipulation ==================
 
     @staticmethod
