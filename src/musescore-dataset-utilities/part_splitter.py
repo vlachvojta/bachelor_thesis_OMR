@@ -40,13 +40,13 @@ class PartSplitter:
             os.makedirs(self.output_folder)
 
     def __call__(self):
+        xml_syntax_error_files = 0
+        music_score_error_files = 0
+        generated_files = 0
+
         for file_in in self.input_files:
             print(f'Working with: {file_in}')
             file_type = file_in.split('.')[-1]
-
-            xml_syntax_error_files = 0
-            music_score_error_files = 0
-            generated_files = 0
 
             try:
                 file_tree = etree.parse(file_in)
@@ -70,17 +70,16 @@ class PartSplitter:
             for i, (part_id, new_tree) in enumerate(zip(sorted(part_ids), new_trees)):
                 if file_type == 'musicxml':
                     score_parts = new_tree.xpath('//score-part | //part')
-                    print(f'Found {len(score_parts)} score parts.')
+                    # print(f'Found {len(score_parts)} score parts.')
 
                     for part in score_parts:
                         if part.get('id') != part_id:
                             part.getparent().remove(part)
-
-                    print(len(new_tree.xpath(".//*")))
+                    # print(len(new_tree.xpath(".//*")))
                 elif file_type == 'mscx':
                     parts = new_tree.xpath('//Part')
                     staffs = new_tree.xpath('/museScore/Staff')
-                    print(f'Found {len(parts)} parts and {len(staffs)} staffs.')
+                    # print(f'Found {len(parts)} parts and {len(staffs)} staffs.')
 
                     for part, staff in zip(parts, staffs):
                         staff_id = staff.get('id')
@@ -99,7 +98,7 @@ class PartSplitter:
 
         print('--------------------')
         print('Results:')
-        print(f'From {len(self.input_files)} input files.')
+        print(f'From {len(self.input_files)} input files:')
         print(f'\t{xml_syntax_error_files} had xml syntax errors')
         print(f'\t{music_score_error_files} had music score errors')
         print(f'\t{generated_files} generated files')
