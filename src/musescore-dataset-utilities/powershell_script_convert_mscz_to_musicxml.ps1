@@ -1,5 +1,5 @@
 # $DIR = "D:\OneDrive - Vysoké učení technické v Brně\skola\BP\datasets\musescore_pipeline_44\1_musicxml_using_MuseScore4_native_CLI"
-$DIR = "..\..\..\datasets\musescore_pipeline_44\1_musicxml_using_MuseScore4_native_CLI\"
+$DIR = "."
 
 echo "Hellou"
 
