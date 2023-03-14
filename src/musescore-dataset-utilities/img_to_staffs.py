@@ -1,9 +1,9 @@
 #!/usr/bin/python3.8
-"""Crop images to fit music staffs tightly with very little white space arround.
+"""Separate images to individual music staffs with very little white space arround.
 
-Example run:
-$ python3 img_to_staffs.py -i image.png -o imgs_out/
-resulting in creating cropped file imgs_out/image.png 
+Usage:
+$ python3 img_to_staffs.py -i image.png -o out/
+resulting in creating cropped files out/image_s000.png, out/image_s001.png etc.
 """
 
 import argparse
@@ -13,6 +13,7 @@ import os
 import time
 import numpy as np
 from PIL import Image, ImageOps
+# from matplotlib import pyplot as plt
 
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
@@ -21,17 +22,17 @@ from common import Common  # noqa: E402
 
 
 class StaffCuter:
-    """Crop images to fit music staffs tightly with very little white space arround."""
+    """Separate images to individual music staffs with very little white space arround."""
     def __init__(self, input_files: list,
-                 output_folder: str = '.',
-                 staff_count: int = 1):
+                 output_folder: str = '.'):
+                #  staff_count: int = 1):
         self.output_folder = output_folder
         self.staff_count = staff_count
         self.input_files = input_files
 
-        if staff_count != 1:
-            print('WARNING: staff_count other then 1 is not supported YET. \n'
-                  'Output will be one file with all staffs.')
+        # if staff_count != 1:
+        #     print('WARNING: staff_count other then 1 is not supported YET. \n'
+        #           'Output will be one file with all staffs.')
 
         self.input_files = Common.check_existing_files(input_files)
         if not self.input_files:
@@ -47,33 +48,84 @@ class StaffCuter:
             image = ImageOps.grayscale(image)
             data = np.asarray(image)
 
+            # # Calculate mean of each row
+            # means = []
+            # for line in data:
+            #     means.append(np.mean(line))
+
+            # plt.plot(means)
+            # plt.savefig(os.path.join(self.output_folder, 'chart_mean.png'))
+
             # Crop vertical white space
-            cropped_data = self.crop_white_space(data, strip_count=10)
+            # cropped_data = self.crop_white_space(data, strip_count=10)
 
             # Crop Horizontal white space
-            cropped_data = self.crop_white_space(cropped_data.T, strip_count=20).T
+            # cropped_data = self.crop_white_space(cropped_data.T, strip_count=20).T
 
-            image = Image.fromarray(cropped_data)
-            self.save_image(image, file)
+            staffs = self.get_staffs(data)
 
-    def save_image(self, image: Image, filename: str):
+            print(f'\tSeparated into {len(staffs)} staff images.')
+
+            for i, staff in enumerate(staffs):
+                # print(f'file_name: {file_name}, staff shape: {staff.shape}')
+                cropped_staff = self.crop_white_space(staff.T, strip_count=20).T
+                image = Image.fromarray(cropped_staff)
+
+                self.save_image(image, file, i)
+
+    def save_image(self, image: Image, file_name: str, staff_number: int):
         """Save image."""
-        out_file = re.split(r'\.', os.path.basename(filename))[0] + '_cropped.png'
-        out_file = os.path.join(self.output_folder, out_file)
+        file_name_parts = re.split(r'\.', os.path.basename(file_name))
+        file_name = '.'.join(file_name_parts[:-1]) + f'_s{staff_number:03}.png'
+        file_name_path = os.path.join(self.output_folder, file_name)
+        image.save(file_name_path)
+        # print(f'Saved to: {file_name_path}')
 
-        image.save(out_file)
-        print(f'Saved to: {out_file}')
+    def get_staffs(self, data) -> list:
+        """Cut individual staffs from img. Return in a list of staffs."""
+        staffs = []
+        line_mean_threshold = 250
+        zero_lines = 0
 
-    def crop_horizontal(self, image: Image) -> Image:
-        """Crop the image horizontally to reduce whitespace."""
-        w, h = image.size
-        crop_edge = 50
+        for i, line in enumerate(data[1:]):
+            # print(f'i: {i}, len(staffs) = {len(staffs)}, np.mean(line) = {np.mean(line):.2f}, len(line) = {len(line)}')
+            if np.min(line) != 255:
+                zero_lines += 1
+                # print(f'i: {i}, len(staffs) = {len(staffs)}, np.min(line) = {np.min(line)}')
 
-        if crop_edge * 2 > w:
-            return image
+            if np.min(line) < line_mean_threshold:
+                if np.min(data[i-20 : i]) > line_mean_threshold:   #? np.mean(data[i - 5:i]) ??
+                    # print(f'Adding staff at i: {i + 1}')
+                    staffs.append(np.array([line]))
+                elif np.min(data[i-20 : i]) < line_mean_threshold:
+                    if not staffs:
+                        staffs.append(np.array([line]))
+                    else:
+                        staffs[-1] = np.concatenate((staffs[-1], [line]), axis=0)
 
-        image = image.crop((crop_edge, 0, w - (crop_edge * 2 ), h))
-        return image
+        # print(f'zero_lines: {zero_lines}')
+        # print(f'data.shape: {data.shape}')
+
+        border = np.zeros((20, data.shape[1]), dtype='uint8') + 255
+
+        new_staffs = []
+
+        for i, staff in enumerate(staffs):
+            if staff.shape[0] > 20:
+                new_staffs.append(np.concatenate((border, staff, border), axis=0))
+
+        return new_staffs
+
+    # def crop_horizontal(self, image: Image) -> Image:
+    #     """Crop the image horizontally to reduce whitespace arround the music staffs."""
+    #     w, h = image.size
+    #     crop_edge = 50
+
+    #     if crop_edge * 2 > w:
+    #         return image
+
+    #     image = image.crop((crop_edge, 0, w - (crop_edge * 2 ), h))
+    #     return image
 
     def crop_white_space(self, data: np.ndarray,
                    strip_count: int = 5) -> np.ndarray:
