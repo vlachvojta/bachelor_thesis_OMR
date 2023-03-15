@@ -72,6 +72,11 @@ class PartSplitter:
                     score_parts = new_tree.xpath('//score-part | //part')
                     # print(f'Found {len(score_parts)} score parts.')
 
+                    # Remove "part-groups" tags
+                    for part_group in new_tree.xpath('//part-group'):
+                        part_group.getparent().remove(part_group)
+
+                    # Remove all other parts
                     for part in score_parts:
                         if part.get('id') != part_id:
                             part.getparent().remove(part)
