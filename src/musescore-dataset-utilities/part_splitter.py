@@ -1,7 +1,9 @@
 #!/usr/bin/python3.8
 """Split multi-part music score files to multiple files with only one part per file.
 
-Works for .musicxml and .mscx files.
+Script also removes unwanted elements in remove_credits_and_stuff function.
+
+Works for .musicxml and .mscx files (the ladder has not been tested in latest versions).
 File naming conventions: file.musicxml -> file_p[1-n].musixml 
     where n is the number of parts.
 
@@ -25,14 +27,21 @@ from common import Common  # noqa: E402
 
 class PartSplitter:
     """Split multi-part music score files to multiple files with only one part per file."""
-    def __init__(self, input_files: list = [],
+    def __init__(self, input_files: list = None,
                  input_folder: str = None, output_folder: str = 'out'):
         self.output_folder = output_folder
         self.input_folder = input_folder
 
         if not input_folder is None:
             listdir = os.listdir(input_folder)
-            input_files = input_files + [os.path.join(input_folder, file) for file in listdir]
+            if not input_files:
+                input_files = [os.path.join(input_folder, file) for file in listdir]
+            else:
+                input_files = input_files + [os.path.join(input_folder, file) for file in listdir]
+
+        if input_files is None:
+            input_files = []
+            print('No valid input files provided.')
 
         self.input_files = self.check_files(input_files)
 
@@ -65,6 +74,8 @@ class PartSplitter:
             if not part_ids:
                 self.music_score_error_files += 1
                 continue
+
+            file_tree = self.remove_credits_and_stuff(file_tree)
 
             new_trees = []
             for _ in range(len(part_ids)):
@@ -143,6 +154,31 @@ class PartSplitter:
             else:
                 return []
 
+    def remove_credits_and_stuff(self, tree: etree.Element) -> etree.Element:
+        """Remove unwanted elements (credits, lyrics, labels and dynamics) from XML tree.
+
+        NOTE: NOT tested on MSCX files!
+        """
+        for elem in tree.xpath('//credit'):
+            parent = elem.getparent()
+            parent.remove(elem)
+        for elem in tree.xpath('//rights'):
+            parent = elem.getparent()
+            parent.remove(elem)
+        for elem in tree.xpath('//lyric'):
+            parent = elem.getparent()
+            parent.remove(elem)
+        for elem in tree.xpath('//part-name'):
+            elem.text = ''
+        for elem in tree.xpath('//instrument-name'):
+            elem.text = ''
+        for elem in tree.xpath('//part-abbreviation'):
+            elem.text = ''
+        for elem in tree.xpath('//direction'):
+            parent = elem.getparent()
+            parent.remove(elem)
+        return tree
+
 
 def parseargs():
     """Parse arguments."""
@@ -152,7 +188,7 @@ def parseargs():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-I", "--input-files", nargs='*', default=[],
+        "-I", "--input-files", nargs='*', default=None,
         help="Input XML (musicxml + mscx) files to process.")
     parser.add_argument(
         "-i", "--input-folder", type=str, default=None,
