@@ -34,9 +34,7 @@ class PartSplitter:
             listdir = os.listdir(input_folder)
             input_files = input_files + [os.path.join(input_folder, file) for file in listdir]
 
-        input_files = Common.check_existing_files(input_files)
-        input_files = Common.check_files_extention(input_files, ['musicxml', 'mscx'])
-        self.input_files = list(set(input_files))
+        self.input_files = self.check_files(input_files)
 
         if not self.input_files:
             print('No valid input files provided.')
@@ -118,12 +116,12 @@ class PartSplitter:
         print(f'\t{music_score_error_files} had music score errors')
         print(f'\t{generated_files} generated files')
 
-    # def is_valid_music_score(self, tree: etree.Element) -> bool:
-    #     """Check if the music score is valid."""
+    def check_files(self, files: list) -> list:
+        """Check existing files with correct extension and return only valid files"""
+        files = Common.check_existing_files(files)
+        files = Common.check_files_extention(files, ['musicxml', 'mscx'])
 
-    #     # ? Some checks ?
-
-    #     return True
+        return list(set(files))
 
     def get_params_of_tags(self, tree: etree.Element, tag: str, param: str) -> list:
         """Get the ids of the tags."""
