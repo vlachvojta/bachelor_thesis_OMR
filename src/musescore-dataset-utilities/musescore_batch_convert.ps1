@@ -1,6 +1,5 @@
 param ($in_ext, $out_ext, $in_dir='.') #, $out_dir='out')
 
-echo "Welcome to simple powershel script with parameters"
 if ($in_ext -eq $null){
 	$in_ext = read-host -Prompt "Please enter the INPUT files extension"
 } else {
