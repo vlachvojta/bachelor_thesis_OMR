@@ -99,7 +99,10 @@ class PartSplitter:
                             part.getparent().remove(part)
 
                     current_part = new_tree.xpath(f'//part[@id="{part_id}"]')[0]
-                    
+
+                    # Ignore percussion parts
+                    if self.is_percussion_part(current_part):
+                        continue
                     is_dual_staff_part = self.is_dual_staff_part(current_part)
 
                 elif file_type == 'mscx':
@@ -204,7 +207,6 @@ class PartSplitter:
 
     def is_dual_staff_part(self, part: etree.Element) -> bool:
         """Check if part is a dual staff part using "<attributes>" tag in the first measure."""
-        # measure = part.xpath('//measure[@number=1]/attributes')
         staves = part.xpath('//measure[@number=1]/attributes/staves')
 
         if staves:
@@ -219,6 +221,17 @@ class PartSplitter:
                 return True
 
         return False
+
+    def is_percussion_part(self, part: etree.Element) -> bool:
+        """Check if part is percussion part using "<clef><sign>percussion" tag."""
+        # clef_signs = part.xpath('//measure[@number=1]/clef/sign')
+        clef_signs = part.xpath('//measure[@number=1]/attributes/clef/sign')
+
+        if clef_signs and clef_signs[0].text == 'percussion':
+            return True
+
+        return False
+
 
 def parseargs():
     """Parse arguments."""
