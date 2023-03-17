@@ -44,8 +44,8 @@ class PartSplitter:
         music_score_error_files = 0
         generated_files = 0
 
-        for file_in in self.input_files:
-            print(f'Working with: {file_in}')
+        for i, file_in in enumerate(self.input_files):
+            Common.print_dots(i, 200, 8_000)
             file_type = file_in.split('.')[-1]
 
             try:
@@ -95,10 +95,10 @@ class PartSplitter:
                         else:
                             staff.set('id', str(1))
 
-                file_out = file_in.split('.')[0]
+                file_out = os.path.basename(file_in).split('.')[0]
                 part_file_name = f'{file_out}_p{i:02d}.{file_type}'
                 part_path = os.path.join(self.output_folder, part_file_name)
-                new_tree.write(part_path, pretty_print=True, encoding='utf-8', xml_declaration=True)
+                new_tree.write(part_path, pretty_print=True, encoding='utf-8')
                 generated_files += 1
 
         print('--------------------')
@@ -140,7 +140,10 @@ class PartSplitter:
 
 def parseargs():
     """Parse arguments."""
+    print('sys.argv: ')
     print(' '.join(sys.argv))
+    print('--------------------------------------')
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i", "--input-files", nargs='+',
