@@ -44,11 +44,11 @@ class PartSplitter:
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
 
-    def __call__(self):
-        xml_syntax_error_files = 0
-        music_score_error_files = 0
-        generated_files = 0
+        self.xml_syntax_error_files = 0
+        self.music_score_error_files = 0
+        self.generated_files = 0
 
+    def __call__(self):
         print(f'Going through {len(self.input_files)} files. (every dot is 200 files)')
 
         for i, file_in in enumerate(self.input_files):
@@ -58,16 +58,12 @@ class PartSplitter:
             try:
                 file_tree = etree.parse(file_in)
             except etree.XMLSyntaxError:
-                xml_syntax_error_files += 1
+                self.xml_syntax_error_files += 1
                 continue
-
-            # if not self.is_valid_music_score(file_tree):
-            #     music_score_error_files += 1
-            #     continue
 
             part_ids = self.get_valid_ids(file_tree, file_type)
             if not part_ids:
-                music_score_error_files += 1
+                self.music_score_error_files += 1
                 continue
 
             new_trees = []
@@ -87,7 +83,6 @@ class PartSplitter:
                     for part in score_parts:
                         if part.get('id') != part_id:
                             part.getparent().remove(part)
-                    # print(len(new_tree.xpath(".//*")))
                 elif file_type == 'mscx':
                     parts = new_tree.xpath('//Part')
                     staffs = new_tree.xpath('/museScore/Staff')
@@ -106,15 +101,18 @@ class PartSplitter:
                 part_file_name = f'{file_out}_p{i:02d}.{file_type}'
                 part_path = os.path.join(self.output_folder, part_file_name)
                 new_tree.write(part_path, pretty_print=True, encoding='utf-8')
-                generated_files += 1
+                self.generated_files += 1
 
+        self.print_results()
+
+    def print_results(self):
         print('')
         print('--------------------')
         print('Results:')
         print(f'From {len(self.input_files)} input files:')
-        print(f'\t{xml_syntax_error_files} had xml syntax errors')
-        print(f'\t{music_score_error_files} had music score errors')
-        print(f'\t{generated_files} generated files')
+        print(f'\t{self.xml_syntax_error_files} had xml syntax errors')
+        print(f'\t{self.music_score_error_files} had music score errors')
+        print(f'\t{self.generated_files} generated files')
 
     def check_files(self, files: list) -> list:
         """Check existing files with correct extension and return only valid files"""
