@@ -154,13 +154,13 @@ class Common:
         return files
 
     @staticmethod
-    def print_dots(i: int = 0, threshold1: int = 1_000,
-                   threshold2: int = 20_000) -> None:
+    def print_dots(i: int = 0, threshold1: int = 200,
+                   threshold2: int = 800) -> None:
         """Print dots and flush for every n-th i."""
         if i % threshold1 == 0:
             print('.', end='')
             if i > 0 and i % threshold2 == 0:
-                print('')
+                print(f' ({threshold2} files)')
             sys.stdout.flush()
 
     @staticmethod
@@ -185,6 +185,13 @@ class Common:
     def check_files_extention(files: list, exts: list) -> list:
         """Check list of files. Return only files with one of given extensions."""
         return [f for f in files if Common.right_file_ext(f, exts)]
+
+    @staticmethod
+    def change_file_extesion(file, new_ext) -> str:
+        """Change file name extension. Don't to anything with actual files."""
+        file_parts = re.split(r'\.', file)[:-1]
+        return '.'.join(file_parts) + f'.{new_ext}'
+
 
     @staticmethod
     def sum_lists_in_dict(data: dict) -> int:
