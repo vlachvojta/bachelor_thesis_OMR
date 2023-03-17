@@ -55,7 +55,9 @@ class PartSplitter:
 
         self.xml_syntax_error_files = 0
         self.music_score_error_files = 0
+        self.dual_staff_parts_count = 0
         self.generated_files = 0
+        self.dual_staff_parts = []
 
     def __call__(self):
         print(f'Going through {len(self.input_files)} files. (every dot is 200 files)')
@@ -82,6 +84,7 @@ class PartSplitter:
                 new_trees.append(deepcopy(file_tree))
 
             for i, (part_id, new_tree) in enumerate(zip(sorted(part_ids), new_trees)):
+                is_dual_staff_part = False
                 if file_type == 'musicxml':
                     score_parts = new_tree.xpath('//score-part | //part')
                     # print(f'Found {len(score_parts)} score parts.')
@@ -94,6 +97,11 @@ class PartSplitter:
                     for part in score_parts:
                         if part.get('id') != part_id:
                             part.getparent().remove(part)
+
+                    current_part = new_tree.xpath(f'//part[@id="{part_id}"]')[0]
+                    
+                    is_dual_staff_part = self.is_dual_staff_part(current_part)
+
                 elif file_type == 'mscx':
                     parts = new_tree.xpath('//Part')
                     staffs = new_tree.xpath('/museScore/Staff')
@@ -114,6 +122,11 @@ class PartSplitter:
                 new_tree.write(part_path, pretty_print=True, encoding='utf-8')
                 self.generated_files += 1
 
+                if is_dual_staff_part:
+                    self.dual_staff_parts.append(part_file_name)
+                    self.dual_staff_parts_count += 1
+
+
         self.print_results()
 
     def print_results(self):
@@ -121,16 +134,26 @@ class PartSplitter:
         print('--------------------')
         print('Results:')
         print(f'From {len(self.input_files)} input files:')
+        print(f'\t{self.generated_files} generated part files')
         print(f'\t{self.xml_syntax_error_files} had xml syntax errors')
         print(f'\t{self.music_score_error_files} had music score errors')
-        print(f'\t{self.generated_files} generated files')
+
+        if self.dual_staff_parts_count > 0:
+            dual_staff_file = os.path.join(self.output_folder, '0_dual_staff_parts.json')
+            print(f'\t{self.dual_staff_parts_count} dual staff parts (saved into {dual_staff_file})')
+            Common.write_to_file(self.dual_staff_parts, dual_staff_file)
+
 
     def check_files(self, files: list) -> list:
         """Check existing files with correct extension and return only valid files"""
         files = Common.check_existing_files(files)
         files = Common.check_files_extention(files, ['musicxml', 'mscx'])
 
-        return list(set(files))
+        files_uniq = list(set(files))
+        if len(files_uniq) < len(files):
+            print(f'WARNING: {len(files) - len(files_uniq)} duplicate files.')
+
+        return files
 
     def get_params_of_tags(self, tree: etree.Element, tag: str, param: str) -> list:
         """Get the ids of the tags."""
@@ -179,6 +202,23 @@ class PartSplitter:
             parent.remove(elem)
         return tree
 
+    def is_dual_staff_part(self, part: etree.Element) -> bool:
+        """Check if part is a dual staff part using "<attributes>" tag in the first measure."""
+        # measure = part.xpath('//measure[@number=1]/attributes')
+        staves = part.xpath('//measure[@number=1]/attributes/staves')
+
+        if staves:
+            number = staves[0].text
+            try:
+                number = int(number)
+                if number > 1:
+                    return True
+            except ValueError:
+                print(f'WARNING: Number of staves in first measure cannot be parsed to int. '
+                      f'({number})')
+                return True
+
+        return False
 
 def parseargs():
     """Parse arguments."""
