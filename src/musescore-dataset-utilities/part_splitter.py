@@ -25,14 +25,21 @@ from common import Common  # noqa: E402
 
 class PartSplitter:
     """Split multi-part music score files to multiple files with only one part per file."""
-    def __init__(self, input_files: list,
-                 output_folder: str = '.'):
+    def __init__(self, input_files: list = [],
+                 input_folder: str = None, output_folder: str = 'out'):
         self.output_folder = output_folder
+        self.input_folder = input_folder
 
-        self.input_files = Common.check_existing_files(input_files)
-        self.input_files = Common.check_files_extention(self.input_files, ['musicxml', 'mscx'])
+        if not input_folder is None:
+            listdir = os.listdir(input_folder)
+            input_files = input_files + [os.path.join(input_folder, file) for file in listdir]
+
+        input_files = Common.check_existing_files(input_files)
+        input_files = Common.check_files_extention(input_files, ['musicxml', 'mscx'])
+        self.input_files = list(set(input_files))
+
         if not self.input_files:
-            raise ValueError('No valid input files provided.')
+            print('No valid input files provided.')
 
         print(f'Found {len(self.input_files)} input files.')
 
@@ -43,6 +50,8 @@ class PartSplitter:
         xml_syntax_error_files = 0
         music_score_error_files = 0
         generated_files = 0
+
+        print(f'Going through {len(self.input_files)} files. (every dot is 200 files)')
 
         for i, file_in in enumerate(self.input_files):
             Common.print_dots(i, 200, 8_000)
@@ -101,6 +110,7 @@ class PartSplitter:
                 new_tree.write(part_path, pretty_print=True, encoding='utf-8')
                 generated_files += 1
 
+        print('')
         print('--------------------')
         print('Results:')
         print(f'From {len(self.input_files)} input files:')
@@ -146,10 +156,13 @@ def parseargs():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input-files", nargs='+',
-        help="Input XML files to process.")
+        "-I", "--input-files", nargs='*', default=[],
+        help="Input XML (musicxml + mscx) files to process.")
     parser.add_argument(
-        "-o", "--output-folder", type=str, default='.',
+        "-i", "--input-folder", type=str, default=None,
+        help="Input folder where to look for XML (musicxml + mscx) files to process.")
+    parser.add_argument(
+        "-o", "--output-folder", type=str, default='out',
         help="Output folder to write files to.")
     return parser.parse_args()
 
@@ -162,6 +175,7 @@ def main():
 
     splitter = PartSplitter(
         input_files=args.input_files,
+        input_folder=args.input_folder,
         output_folder=args.output_folder)
     splitter()
 
