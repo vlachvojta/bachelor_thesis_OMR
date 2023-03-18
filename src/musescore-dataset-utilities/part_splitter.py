@@ -81,22 +81,32 @@ class PartSplitter:
 
             self.remove_credits_and_stuff(file_tree)
 
-            new_trees = []
-            for _ in range(len(part_ids)):
-                file_tree_str = etree.tostring(file_tree)
-                new_trees.append(etree.fromstring(file_tree_str).getroottree())
-                # new_trees.append(deepcopy(file_tree))
-
-            for i, (part_id, new_tree) in enumerate(zip(sorted(part_ids), new_trees)):
+            for i, part_id in enumerate(sorted(part_ids)):
                 file_out = self.get_file_out_name(file_in, i)
 
-                score_parts = new_tree.xpath('//score-part | //part')
-                # print(f'Found {len(score_parts)} score parts.')
+                # Create new root tag and add children from file_tree
+                root_tag = '<score-partwise version="4.0"></score-partwise>'
+                new_tree = etree.fromstring(root_tag)
+                for i, child in enumerate(list(file_tree.getroot())):
+                    if child.tag == 'part':
+                        continue
+                    child_str = etree.tostring(child)
+                    child_back = etree.fromstring(child_str)
+                    new_tree.insert(i+1, child_back)
 
-                # Remove all other parts
+                # Remove all other part declarations
+                score_parts = new_tree.xpath('//score-part')
                 for part in score_parts:
                     if part.get('id') != part_id:
                         part.getparent().remove(part)
+
+                parts = file_tree.xpath('//part')
+                for part in parts:
+                    if part.get('id') == part_id:
+                        part_copy = deepcopy(part)
+                        # part_str = etree.tostring(part)
+                        # part_copy = etree.fromstring(part_str)
+                        new_tree.insert(7, part_copy)
 
                 new_tree = self.change_new_page_to_new_system(new_tree)
 
@@ -116,7 +126,7 @@ class PartSplitter:
                     self.polyphonic_parts_count += 1
 
                 # Save every part to a special file
-                new_tree.write(file_out, pretty_print=True, encoding='utf-8')
+                new_tree.getroottree().write(file_out, pretty_print=True, encoding='utf-8')
                 self.generated_files += 1
 
         self.print_results()
