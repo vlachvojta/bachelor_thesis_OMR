@@ -100,6 +100,7 @@ class PartSplitter:
                     if part.get('id') != part_id:
                         part.getparent().remove(part)
 
+                # Insert only the right part directly from original file_tree
                 parts = file_tree.xpath('//part')
                 for part in parts:
                     if part.get('id') == part_id:
