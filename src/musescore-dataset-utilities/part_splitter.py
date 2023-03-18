@@ -98,6 +98,8 @@ class PartSplitter:
                         if part.get('id') != part_id:
                             part.getparent().remove(part)
 
+                    new_tree = self.change_new_page_to_new_system(new_tree)
+
                     current_part = new_tree.xpath(f'//part[@id="{part_id}"]')[0]
 
                     # Ignore percussion parts
@@ -145,7 +147,6 @@ class PartSplitter:
             dual_staff_file = os.path.join(self.output_folder, '0_dual_staff_parts.json')
             print(f'\t{self.dual_staff_parts_count} dual staff parts (saved into {dual_staff_file})')
             Common.write_to_file(self.dual_staff_parts, dual_staff_file)
-
 
     def check_files(self, files: list) -> list:
         """Check existing files with correct extension and return only valid files"""
@@ -231,6 +232,20 @@ class PartSplitter:
             return True
 
         return False
+
+    def change_new_page_to_new_system(self, tree: etree.Element) -> etree.Element:
+        """Go though all measures with change new-page to new-system.
+        
+        Precise tags are: `<print new-page="yes" />` change to `<print new-system="yes" />`."""
+        print_tags = tree.xpath('//measure/print[@new-page="yes"]')
+
+        print(f'print_tags: {len(print_tags)}')
+
+        for print_tag in print_tags:
+            print_tag.attrib.pop('new-page')
+            print_tag.attrib['new-system'] = 'yes'
+
+        return tree
 
 
 def parseargs():
