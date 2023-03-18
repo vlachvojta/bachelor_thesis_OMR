@@ -79,21 +79,19 @@ class PartSplitter:
                 self.music_score_error_files += 1
                 continue
 
-            file_tree = self.remove_credits_and_stuff(file_tree)
+            self.remove_credits_and_stuff(file_tree)
 
             new_trees = []
             for _ in range(len(part_ids)):
-                new_trees.append(deepcopy(file_tree))
+                file_tree_str = etree.tostring(file_tree)
+                new_trees.append(etree.fromstring(file_tree_str).getroottree())
+                # new_trees.append(deepcopy(file_tree))
 
             for i, (part_id, new_tree) in enumerate(zip(sorted(part_ids), new_trees)):
                 file_out = self.get_file_out_name(file_in, i)
 
                 score_parts = new_tree.xpath('//score-part | //part')
                 # print(f'Found {len(score_parts)} score parts.')
-
-                # Remove "part-groups" tags
-                for part_group in new_tree.xpath('//part-group'):
-                    part_group.getparent().remove(part_group)
 
                 # Remove all other parts
                 for part in score_parts:
@@ -174,31 +172,27 @@ class PartSplitter:
         part_ids = self.get_params_of_tags(tree, 'part', 'id')
         return Common.intersection(score_part_ids, part_ids)
 
-    def remove_credits_and_stuff(self, tree: etree.Element) -> etree.Element:
+    def remove_credits_and_stuff(self, tree: etree.Element) -> None:
         """Remove unwanted elements (credits, lyrics, labels and dynamics) from XML tree.
         """
-        for elem in tree.xpath('//credit'):
-            parent = elem.getparent()
-            parent.remove(elem)
-        for elem in tree.xpath('//rights'):
-            parent = elem.getparent()
-            parent.remove(elem)
-        for elem in tree.xpath('//lyric'):
-            parent = elem.getparent()
-            parent.remove(elem)
-        for elem in tree.xpath('//direction'):
-            parent = elem.getparent()
-            parent.remove(elem)
-        for elem in tree.xpath('//creator'):
-            parent = elem.getparent()
-            parent.remove(elem)
+        elements_to_remove = [
+            'credit', 'rights', 'lyric', 'direction', 'creator', 'work', 'part-group'
+        ]
+
+        for elem in elements_to_remove:
+            self.remove_element(tree, elem)
+
         for elem in tree.xpath('//part-name'):
             elem.text = ''
         for elem in tree.xpath('//instrument-name'):
             elem.text = ''
         for elem in tree.xpath('//part-abbreviation'):
             elem.text = ''
-        return tree
+    
+    def remove_element(self, tree: etree.Element, element: str) -> None:
+        """Remove all element by name from given tree."""
+        for elem in tree.xpath(f'//{element}'):
+            elem.getparent().remove(elem)
 
     def is_dual_staff_part(self, part: etree.Element) -> bool:
         """Check if part is a dual staff part using "<attributes>" tag in the first measure."""
