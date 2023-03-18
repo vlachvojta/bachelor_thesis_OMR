@@ -1,10 +1,9 @@
 #!/usr/bin/python3.8
-"""Split multi-part music score files to multiple files with only one part per file.
+"""Split multi-part .musicxml files to multiple files with only one part per file.
 
 Script also removes unwanted elements in remove_credits_and_stuff function.
 
-Works for .musicxml and .mscx files (the ladder has not been tested in latest versions).
-File naming conventions: file.musicxml -> file_p[1-n].musixml 
+File naming conventions: file.musicxml -> file_p[1-n].musicxml
     where n is the number of parts.
 
 Example run:
@@ -64,7 +63,6 @@ class PartSplitter:
 
         for i, file_in in enumerate(self.input_files):
             Common.print_dots(i, 200, 8_000)
-            file_type = file_in.split('.')[-1]
 
             try:
                 file_tree = etree.parse(file_in)
@@ -72,7 +70,7 @@ class PartSplitter:
                 self.xml_syntax_error_files += 1
                 continue
 
-            part_ids = self.get_valid_ids(file_tree, file_type)
+            part_ids = self.get_valid_ids(file_tree)
             if not part_ids:
                 self.music_score_error_files += 1
                 continue
@@ -85,44 +83,31 @@ class PartSplitter:
 
             for i, (part_id, new_tree) in enumerate(zip(sorted(part_ids), new_trees)):
                 is_dual_staff_part = False
-                if file_type == 'musicxml':
-                    score_parts = new_tree.xpath('//score-part | //part')
-                    # print(f'Found {len(score_parts)} score parts.')
 
-                    # Remove "part-groups" tags
-                    for part_group in new_tree.xpath('//part-group'):
-                        part_group.getparent().remove(part_group)
+                score_parts = new_tree.xpath('//score-part | //part')
+                # print(f'Found {len(score_parts)} score parts.')
 
-                    # Remove all other parts
-                    for part in score_parts:
-                        if part.get('id') != part_id:
-                            part.getparent().remove(part)
+                # Remove "part-groups" tags
+                for part_group in new_tree.xpath('//part-group'):
+                    part_group.getparent().remove(part_group)
 
-                    new_tree = self.change_new_page_to_new_system(new_tree)
+                # Remove all other parts
+                for part in score_parts:
+                    if part.get('id') != part_id:
+                        part.getparent().remove(part)
 
-                    current_part = new_tree.xpath(f'//part[@id="{part_id}"]')[0]
+                new_tree = self.change_new_page_to_new_system(new_tree)
 
-                    # Ignore percussion parts
-                    if self.is_percussion_part(current_part):
-                        continue
-                    is_dual_staff_part = self.is_dual_staff_part(current_part)
+                current_part = new_tree.xpath(f'//part[@id="{part_id}"]')[0]
 
-                elif file_type == 'mscx':
-                    parts = new_tree.xpath('//Part')
-                    staffs = new_tree.xpath('/museScore/Staff')
-                    # print(f'Found {len(parts)} parts and {len(staffs)} staffs.')
+                # Ignore percussion parts
+                if self.is_percussion_part(current_part):
+                    continue
+                is_dual_staff_part = self.is_dual_staff_part(current_part)
 
-                    for part, staff in zip(parts, staffs):
-                        staff_id = staff.get('id')
-
-                        if staff_id != part_id:
-                            staff.getparent().remove(staff)
-                            part.getparent().remove(part)
-                        else:
-                            staff.set('id', str(1))
-
+                # Save every part to a special file
                 file_out = os.path.basename(file_in).split('.')[0]
-                part_file_name = f'{file_out}_p{i:02d}.{file_type}'
+                part_file_name = f'{file_out}_p{i:02d}.musicxml'
                 part_path = os.path.join(self.output_folder, part_file_name)
                 new_tree.write(part_path, pretty_print=True, encoding='utf-8')
                 self.generated_files += 1
@@ -136,7 +121,7 @@ class PartSplitter:
 
     def print_results(self):
         print('')
-        print('--------------------')
+        print('--------------------------------------')
         print('Results:')
         print(f'From {len(self.input_files)} input files:')
         print(f'\t{self.generated_files} generated part files')
@@ -151,7 +136,7 @@ class PartSplitter:
     def check_files(self, files: list) -> list:
         """Check existing files with correct extension and return only valid files"""
         files = Common.check_existing_files(files)
-        files = Common.check_files_extention(files, ['musicxml', 'mscx'])
+        files = Common.check_files_extention(files, ['musicxml'])
 
         files_uniq = list(set(files))
         if len(files_uniq) < len(files):
@@ -166,25 +151,14 @@ class PartSplitter:
             params.append(child.get(param))
         return params
 
-    def get_valid_ids(self, tree, file_type)-> list:
+    def get_valid_ids(self, tree)-> list:
         """Get only valid ids of parts in the tree."""
-        if file_type =='musicxml':
-            score_part_ids = self.get_params_of_tags(tree,'score-part', 'id')
-            part_ids = self.get_params_of_tags(tree, 'part', 'id')
-            return Common.intersection(score_part_ids, part_ids)
-        elif file_type =='mscx':
-            parts_count = len(tree.xpath('//Part'))
-            staff_count = len(tree.xpath('/museScore/Staff'))
-
-            if parts_count == staff_count:
-                return self.get_params_of_tags(tree, '/museScore/Staff', 'id')
-            else:
-                return []
+        score_part_ids = self.get_params_of_tags(tree,'score-part', 'id')
+        part_ids = self.get_params_of_tags(tree, 'part', 'id')
+        return Common.intersection(score_part_ids, part_ids)
 
     def remove_credits_and_stuff(self, tree: etree.Element) -> etree.Element:
         """Remove unwanted elements (credits, lyrics, labels and dynamics) from XML tree.
-
-        NOTE: NOT tested on MSCX files!
         """
         for elem in tree.xpath('//credit'):
             parent = elem.getparent()
@@ -239,8 +213,6 @@ class PartSplitter:
         Precise tags are: `<print new-page="yes" />` change to `<print new-system="yes" />`."""
         print_tags = tree.xpath('//measure/print[@new-page="yes"]')
 
-        print(f'print_tags: {len(print_tags)}')
-
         for print_tag in print_tags:
             print_tag.attrib.pop('new-page')
             print_tag.attrib['new-system'] = 'yes'
@@ -257,10 +229,10 @@ def parseargs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-I", "--input-files", nargs='*', default=None,
-        help="Input XML (musicxml + mscx) files to process.")
+        help="Input musicxml files to process.")
     parser.add_argument(
         "-i", "--input-folder", type=str, default=None,
-        help="Input folder where to look for XML (musicxml + mscx) files to process.")
+        help="Input folder where to look for musicxml files to process.")
     parser.add_argument(
         "-o", "--output-folder", type=str, default='out',
         help="Output folder to write files to.")
