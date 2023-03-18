@@ -186,15 +186,18 @@ class PartSplitter:
         for elem in tree.xpath('//lyric'):
             parent = elem.getparent()
             parent.remove(elem)
+        for elem in tree.xpath('//direction'):
+            parent = elem.getparent()
+            parent.remove(elem)
+        for elem in tree.xpath('//creator'):
+            parent = elem.getparent()
+            parent.remove(elem)
         for elem in tree.xpath('//part-name'):
             elem.text = ''
         for elem in tree.xpath('//instrument-name'):
             elem.text = ''
         for elem in tree.xpath('//part-abbreviation'):
             elem.text = ''
-        for elem in tree.xpath('//direction'):
-            parent = elem.getparent()
-            parent.remove(elem)
         return tree
 
     def is_dual_staff_part(self, part: etree.Element) -> bool:
