@@ -146,7 +146,7 @@ class PartSplitter:
 
         if self.polyphonic_parts_count > 0:
             polyphonic_file = os.path.join(self.output_folder, '0_polyphonic_parts.json')
-            print(f'\t{self.polyphonic_parts_count} dual staff parts '
+            print(f'\t{self.polyphonic_parts_count} polyphonic parts '
                   f'(saved into {polyphonic_file})')
             Common.write_to_file(self.polyphonic_parts, polyphonic_file)
 
