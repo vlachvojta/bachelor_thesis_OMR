@@ -54,9 +54,13 @@ class PartSplitter:
 
         self.xml_syntax_error_files = 0
         self.music_score_error_files = 0
+
         self.dual_staff_parts_count = 0
-        self.generated_files = 0
         self.dual_staff_parts = []
+        self.polyphonic_parts_count = 0
+        self.polyphonic_parts = []
+
+        self.generated_files = 0
 
     def __call__(self):
         print(f'Going through {len(self.input_files)} files. (every dot is 200 files)')
@@ -82,7 +86,7 @@ class PartSplitter:
                 new_trees.append(deepcopy(file_tree))
 
             for i, (part_id, new_tree) in enumerate(zip(sorted(part_ids), new_trees)):
-                is_dual_staff_part = False
+                file_out = self.get_file_out_name(file_in, i)
 
                 score_parts = new_tree.xpath('//score-part | //part')
                 # print(f'Found {len(score_parts)} score parts.')
@@ -103,21 +107,27 @@ class PartSplitter:
                 # Ignore percussion parts
                 if self.is_percussion_part(current_part):
                     continue
-                is_dual_staff_part = self.is_dual_staff_part(current_part)
 
-                # Save every part to a special file
-                file_out = os.path.basename(file_in).split('.')[0]
-                part_file_name = f'{file_out}_p{i:02d}.musicxml'
-                part_path = os.path.join(self.output_folder, part_file_name)
-                new_tree.write(part_path, pretty_print=True, encoding='utf-8')
-                self.generated_files += 1
-
-                if is_dual_staff_part:
-                    self.dual_staff_parts.append(part_file_name)
+                # Report dual staff part if needed
+                if self.is_dual_staff_part(current_part):
+                    self.dual_staff_parts.append(os.path.basename(file_out))
                     self.dual_staff_parts_count += 1
 
+                if self.is_polyphonic_part(current_part):
+                    self.polyphonic_parts.append(os.path.basename(file_out))
+                    self.polyphonic_parts_count += 1
+
+                # Save every part to a special file
+                new_tree.write(file_out, pretty_print=True, encoding='utf-8')
+                self.generated_files += 1
 
         self.print_results()
+
+    def get_file_out_name(self, name, part_id):
+        """Get file in name, part id a return name for output file WITH PATH."""
+        file_split = os.path.basename(name).split('.')[0]
+        file_out = f'{file_split}_p{part_id:02d}.musicxml'
+        return os.path.join(self.output_folder, file_out)
 
     def print_results(self):
         print('')
@@ -130,8 +140,15 @@ class PartSplitter:
 
         if self.dual_staff_parts_count > 0:
             dual_staff_file = os.path.join(self.output_folder, '0_dual_staff_parts.json')
-            print(f'\t{self.dual_staff_parts_count} dual staff parts (saved into {dual_staff_file})')
+            print(f'\t{self.dual_staff_parts_count} dual staff parts '
+                  f'(saved into {dual_staff_file})')
             Common.write_to_file(self.dual_staff_parts, dual_staff_file)
+
+        if self.polyphonic_parts_count > 0:
+            polyphonic_file = os.path.join(self.output_folder, '0_polyphonic_parts.json')
+            print(f'\t{self.polyphonic_parts_count} dual staff parts '
+                  f'(saved into {polyphonic_file})')
+            Common.write_to_file(self.polyphonic_parts, polyphonic_file)
 
     def check_files(self, files: list) -> list:
         """Check existing files with correct extension and return only valid files"""
@@ -205,6 +222,14 @@ class PartSplitter:
         if clef_signs and clef_signs[0].text == 'percussion':
             return True
 
+        return False
+
+    def is_polyphonic_part(self, part: etree.Element) -> bool:
+        """Look for <chord/> tag in notes to determine whether part is polyphonic."""
+        chord_notes = part.xpath('//measure/note/chord')
+
+        if len(chord_notes) > 0:
+            return True
         return False
 
     def change_new_page_to_new_system(self, tree: etree.Element) -> etree.Element:
