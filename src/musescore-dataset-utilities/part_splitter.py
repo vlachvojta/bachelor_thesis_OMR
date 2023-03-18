@@ -226,11 +226,21 @@ class PartSplitter:
 
     def is_polyphonic_part(self, part: etree.Element) -> bool:
         """Look for <chord/> tag in notes to determine whether part is polyphonic."""
+        has_chords = False
+        has_more_voices = False
+
         chord_notes = part.xpath('//measure/note/chord')
 
         if len(chord_notes) > 0:
-            return True
-        return False
+            has_chords = True
+
+        voices = part.xpath('//measure/note/voice')
+        voices = list(set([voice.text for voice in voices]))
+
+        if len(voices) > 1:
+            has_more_voices = True
+
+        return has_chords or has_more_voices
 
     def change_new_page_to_new_system(self, tree: etree.Element) -> etree.Element:
         """Go though all measures with change new-page to new-system.
