@@ -81,18 +81,25 @@ class PartSplitter:
 
             self.remove_credits_and_stuff(file_tree)
 
-            for i, part_id in enumerate(sorted(part_ids)):
-                file_out = self.get_file_out_name(file_in, i)
+            # Create new root tag and add children from file_tree
+            root_tag = '<score-partwise version="4.0"></score-partwise>'
+            file_headers = etree.fromstring(root_tag)
+            for i, child in enumerate(list(file_tree.getroot())):
+                if child.tag == 'part':
+                    continue
+                child_str = etree.tostring(child)
+                child_back = etree.fromstring(child_str)
+                file_headers.insert(i+1, child_back)
 
-                # Create new root tag and add children from file_tree
-                root_tag = '<score-partwise version="4.0"></score-partwise>'
-                new_tree = etree.fromstring(root_tag)
-                for i, child in enumerate(list(file_tree.getroot())):
-                    if child.tag == 'part':
-                        continue
-                    child_str = etree.tostring(child)
-                    child_back = etree.fromstring(child_str)
-                    new_tree.insert(i+1, child_back)
+            files_headers_str = etree.tostring(file_headers)
+
+            new_trees = [file_headers]
+            for _ in range(len(part_ids) - 1):
+                new_trees.append(etree.fromstring(files_headers_str))
+                # new_trees.append(deepcopy(file_tree))
+
+            for i, (part_id, new_tree) in enumerate(zip(sorted(part_ids), new_trees)):
+                file_out = self.get_file_out_name(file_in, i)
 
                 # Remove all other part declarations
                 score_parts = new_tree.xpath('//score-part')
@@ -100,6 +107,7 @@ class PartSplitter:
                     if part.get('id') != part_id:
                         part.getparent().remove(part)
 
+                # Insert only the right part directly from original file_tree
                 parts = file_tree.xpath('//part')
                 for part in parts:
                     if part.get('id') == part_id:
