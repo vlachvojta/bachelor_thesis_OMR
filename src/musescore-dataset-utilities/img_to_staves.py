@@ -22,10 +22,11 @@ from common import Common  # noqa: E402
 
 class StaffCuter:
     """Separate images to individual music staves with very little white space arround."""
-    def __init__(self, input_files: list,
-                 output_folder: str = '.'):
+    def __init__(self, input_files: list, output_folder: str = '.',
+                 image_height: int = 100):
         self.output_folder = output_folder
         self.input_files = input_files
+        self.image_height = image_height
 
         self.input_files = Common.check_existing_files(input_files)
         if not self.input_files:
@@ -47,6 +48,9 @@ class StaffCuter:
 
             for i, staff in enumerate(staves):
                 cropped_staff = self.crop_white_space(staff.T, strip_count=20).T
+
+                # TODO resize image according to self.height HERE
+
                 image = Image.fromarray(cropped_staff)
 
                 self.save_image(image, file, i)
@@ -111,14 +115,21 @@ class StaffCuter:
 
 def parseargs():
     """Parse arguments."""
+    print('sys.argv: ')
     print(' '.join(sys.argv))
+    print('--------------------------------------')
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input-files", nargs='+',
+        "-i", "--input-files", nargs='+',   # ? change to -I ?
         help="Input images to cut.")
+    # TODO implemet --input-folder
     parser.add_argument(
         "-o", "--output-folder", type=str, default='.',
         help="Output folder to write cut imgs to.")
+    parser.add_argument(
+        "--image-height", type=int, default=100,  # TODO: implement this option
+        help="Image height in px to resize all images to. If -1, height will be left unchanged.")
     return parser.parse_args()
 
 
@@ -130,7 +141,8 @@ def main():
 
     cutter = StaffCuter(
         input_files=args.input_files,
-        output_folder=args.output_folder)
+        output_folder=args.output_folder,
+        image_height=args.image_height)
     cutter()
 
     end = time.time()
