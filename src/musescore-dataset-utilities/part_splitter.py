@@ -109,16 +109,14 @@ class PartSplitter:
                         # part_copy = etree.fromstring(part_str)
                         new_tree.insert(7, part_copy)
 
-                new_tree = self.change_new_page_to_new_system(new_tree)
-
-                current_part = new_tree.xpath(f'//part[@id="{part_id}"]')[0]
+                self.change_new_page_to_new_system(new_tree)
 
                 # Ignore percussion parts
-                if self.is_percussion_part(current_part):
+                if self.is_percussion_part(new_tree):
                     continue
 
                 # Separate dual staff part + detect polyphonic for both
-                if self.is_dual_staff_part(current_part):
+                if self.is_dual_staff_part(new_tree):
                     self.dual_staff_parts.append(os.path.basename(file_out))
                     self.dual_staff_parts_count += 1
                     second_tree, file_out_2 = self.separate_dual_staff(new_tree, file_out)
@@ -127,11 +125,11 @@ class PartSplitter:
                     if self.is_polyphonic_part(second_tree):
                         self.polyphonic_parts.append(os.path.basename(file_out_2))
                         self.polyphonic_parts_count += 1
-                    if self.is_polyphonic_part(current_part):
+                    if self.is_polyphonic_part(new_tree):
                         self.polyphonic_parts.append(os.path.basename(file_out))
                         self.polyphonic_parts_count += 1
                 else:
-                    if self.is_polyphonic_part(current_part):
+                    if self.is_polyphonic_part(new_tree):
                         self.polyphonic_parts.append(os.path.basename(file_out))
                         self.polyphonic_parts_count += 1
 
