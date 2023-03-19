@@ -117,20 +117,31 @@ class PartSplitter:
                 if self.is_percussion_part(current_part):
                     continue
 
-                # Report dual staff part if needed
+                # Separate dual staff part + detect polyphonic for both
                 if self.is_dual_staff_part(current_part):
                     self.dual_staff_parts.append(os.path.basename(file_out))
                     self.dual_staff_parts_count += 1
+                    second_tree, file_out_2 = self.separate_dual_staff(new_tree, file_out)
+                    self.save_part_to_file(second_tree, file_out_2)
 
-                if self.is_polyphonic_part(current_part):
-                    self.polyphonic_parts.append(os.path.basename(file_out))
-                    self.polyphonic_parts_count += 1
+                    if self.is_polyphonic_part(second_tree):
+                        self.polyphonic_parts.append(os.path.basename(file_out_2))
+                        self.polyphonic_parts_count += 1
+                    if self.is_polyphonic_part(current_part):
+                        self.polyphonic_parts.append(os.path.basename(file_out))
+                        self.polyphonic_parts_count += 1
+                else:
+                    if self.is_polyphonic_part(current_part):
+                        self.polyphonic_parts.append(os.path.basename(file_out))
+                        self.polyphonic_parts_count += 1
 
-                # Save every part to a special file
-                new_tree.getroottree().write(file_out, pretty_print=True, encoding='utf-8')
-                self.generated_files += 1
+                self.save_part_to_file(new_tree, file_out)
 
         self.print_results()
+
+    def save_part_to_file(self, tree: etree.Element, file_out: str):
+        tree.getroottree().write(file_out, pretty_print=True, encoding='utf-8')
+        self.generated_files += 1
 
     def get_file_out_name(self, name, part_id):
         """Get file in name, part id a return name for output file WITH PATH."""
@@ -261,6 +272,57 @@ class PartSplitter:
             print_tag.attrib['new-system'] = 'yes'
 
         return tree
+
+    def separate_dual_staff(self, tree_orig: etree.Element, file_out: str) -> (etree.Element, str):
+        """Seaparate dual staff part to two one staff parts. 
+        
+        Return second staff part and its file name to save.
+        First staff part is updated here but doesn't have to be returned 
+            for it to be saved back in __call__."""
+        file_split = os.path.basename(file_out).split('.')[0]
+        file_out = f'{file_split}a.musicxml'
+        file_out = os.path.join(self.output_folder, file_out)
+
+        new_tree = deepcopy(tree_orig)
+
+        self.dual_staff_separate_first(tree_orig)
+
+        self.dual_staff_separate_second(new_tree)
+
+        return new_tree, file_out
+
+    def dual_staff_separate_first(self, part: etree.Element) -> None:
+        """Remove second staff."""
+        staves = part.xpath('.//measure[@number=1]/attributes/staves')
+        if staves:
+            staves[0].text = "1"
+
+        clefs = part.xpath('.//measure[@number=1]/attributes/clef[@number=2]')
+        if clefs:
+            clefs[0].getparent().remove(clefs[0])
+
+        second_staff_notes = part.xpath('.//measure/note[staff="2"]')
+        for note in second_staff_notes:
+            note.getparent().remove(note)
+
+    def dual_staff_separate_second(self, part: etree.Element) -> None:
+        """Remove first staff."""
+        staves = part.xpath('.//measure[@number=1]/attributes/staves')
+        if staves:
+            staves[0].text = "1"
+
+        clefs = part.xpath('.//measure[@number=1]/attributes/clef')
+        if len(clefs) > 1:
+            clefs[0].getparent().remove(clefs[0])
+            clefs[1].attrib['number'] = '1'
+
+        second_staff_notes = part.xpath('.//measure/note[staff="1"]')
+        for note in second_staff_notes:
+            note.getparent().remove(note)
+
+        second_staff_notes = part.xpath('.//measure/note/staff')
+        for note in second_staff_notes:
+            note.text = '1'
 
 
 def parseargs():
