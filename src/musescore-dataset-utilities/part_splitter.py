@@ -119,14 +119,19 @@ class PartSplitter:
                 if self.is_dual_staff_part(new_tree):
                     self.dual_staff_parts.append(os.path.basename(file_out))
                     self.dual_staff_parts_count += 1
-                    second_tree, file_out_2 = self.separate_dual_staff(new_tree, file_out)
-                    self.save_part_to_file(second_tree, file_out_2)
+                    (tree_2, file_out_2, tree_3, file_out_3
+                        ) = self.separate_dual_staff(new_tree, file_out)
+                    self.save_part_to_file(tree_2, file_out_2)
+                    self.save_part_to_file(tree_3, file_out_3)
 
-                    if self.is_polyphonic_part(second_tree):
-                        self.polyphonic_parts.append(os.path.basename(file_out_2))
-                        self.polyphonic_parts_count += 1
                     if self.is_polyphonic_part(new_tree):
                         self.polyphonic_parts.append(os.path.basename(file_out))
+                        self.polyphonic_parts_count += 1
+                    if self.is_polyphonic_part(tree_2):
+                        self.polyphonic_parts.append(os.path.basename(file_out_2))
+                        self.polyphonic_parts_count += 1
+                    if self.is_polyphonic_part(tree_3):
+                        self.polyphonic_parts.append(os.path.basename(file_out_3))
                         self.polyphonic_parts_count += 1
                 else:
                     if self.is_polyphonic_part(new_tree):
@@ -271,7 +276,8 @@ class PartSplitter:
 
         return tree
 
-    def separate_dual_staff(self, tree_orig: etree.Element, file_out: str) -> (etree.Element, str):
+    def separate_dual_staff(self, tree_orig: etree.Element, file_out: str
+                            ) -> (etree.Element, str, etree.Element, str):
         """Seaparate dual staff part to two one staff parts. 
         
         Return second staff part and its file name to save.
@@ -279,15 +285,20 @@ class PartSplitter:
             for it to be saved back in __call__."""
         file_split = os.path.basename(file_out).split('.')[0]
         file_out = f'{file_split}a.musicxml'
-        file_out = os.path.join(self.output_folder, file_out)
+        file_out_2 = os.path.join(self.output_folder, file_out)
 
-        new_tree = deepcopy(tree_orig)
+        file_out_3 = f'{file_split}b.musicxml'
+        file_out_3 = os.path.join(self.output_folder, file_out_3)
+
+        tree_2 = deepcopy(tree_orig)
+        tree_3 = None
+        tree_3 = deepcopy(tree_orig)
 
         self.dual_staff_separate_first(tree_orig)
+        self.dual_staff_separate_second(tree_2)
+        self.dual_staff_join_to_third(tree_3)
 
-        self.dual_staff_separate_second(new_tree)
-
-        return new_tree, file_out
+        return tree_2, file_out_2, tree_3, file_out_3
 
     def dual_staff_separate_first(self, part: etree.Element) -> None:
         """Remove second staff."""
@@ -321,6 +332,23 @@ class PartSplitter:
         second_staff_notes = part.xpath('.//measure/note/staff')
         for note in second_staff_notes:
             note.text = '1'
+
+    def dual_staff_join_to_third(self, part: etree.Element) -> None:
+        """Join both staves into one to form one ultra polyphonic."""
+        staves = part.xpath('.//measure[@number=1]/attributes/staves')
+        if staves:
+            staves[0].text = "1"
+
+        clefs = part.xpath('.//measure[@number=1]/attributes/clef[@number=2]')
+        if clefs:
+            clefs[0].getparent().remove(clefs[0])
+
+        # voices = list(set(part.xpath('.//measure[@number=1]/note[staff=1]/voice')))
+        # new_voice = len(voices) + 1
+
+        second_staff_notes = part.xpath('.//measure/note[staff="2"]/staff')
+        for staff in second_staff_notes:
+            staff.text = '1'
 
 
 def parseargs():
