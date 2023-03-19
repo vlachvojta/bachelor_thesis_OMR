@@ -110,6 +110,7 @@ class PartSplitter:
                         new_tree.insert(7, part_copy)
 
                 self.change_new_page_to_new_system(new_tree)
+                # self.change_new_system_to_new_page(new_tree)
 
                 # Ignore percussion parts
                 if self.is_percussion_part(new_tree):
@@ -156,17 +157,32 @@ class PartSplitter:
         print(f'\t{self.xml_syntax_error_files} had xml syntax errors')
         print(f'\t{self.music_score_error_files} had music score errors')
 
+        # TODO delete dual staff parts stats??
         if self.dual_staff_parts_count > 0:
             dual_staff_file = os.path.join(self.output_folder, '0_dual_staff_parts.json')
             print(f'\t{self.dual_staff_parts_count} dual staff parts '
                   f'(saved into {dual_staff_file})')
-            Common.write_to_file(self.dual_staff_parts, dual_staff_file)
+
+            # TODO test this
+            if not os.path.exists(dual_staff_file):
+                Common.write_to_file(self.dual_staff_parts, dual_staff_file)
+            else:
+                # TODO concat existing file to new and save
+                print(f'WARNING: {dual_staff_file} already exists, printing to stdout instead')    
+                print(self.dual_staff_parts)
 
         if self.polyphonic_parts_count > 0:
             polyphonic_file = os.path.join(self.output_folder, '0_polyphonic_parts.json')
             print(f'\t{self.polyphonic_parts_count} polyphonic parts '
                   f'(saved into {polyphonic_file})')
-            Common.write_to_file(self.polyphonic_parts, polyphonic_file)
+
+            # TODO test this
+            if not os.path.exists(polyphonic_file):
+                Common.write_to_file(self.polyphonic_parts, polyphonic_file)
+            else:
+                # TODO concat existing file to new and save
+                print(f'WARNING: {polyphonic_file} already exists, printing to stdout instead')    
+                print(self.polyphonic_parts)
 
     def check_files(self, files: list) -> list:
         """Check existing files with correct extension and return only valid files"""
@@ -258,6 +274,19 @@ class PartSplitter:
             has_more_voices = True
 
         return has_chords or has_more_voices
+
+    def change_new_system_to_new_page(self, tree: etree.Element) -> etree.Element:
+        """Go though all measures with change new-page to new-system.
+        
+        Precise tags are: `<print new-page="yes" />` change to `<print new-system="yes" />`."""
+        # TODO TEST: z nějakýho důvodu to moc nefungovalo při prvním testu, potřeba udělat TDD
+        print_tags = tree.xpath('//measure/print[@new-system="yes"]')
+
+        for print_tag in print_tags:
+            print_tag.attrib.pop('new-system')
+            print_tag.attrib['new-page'] = 'yes'
+
+        return tree
 
     def change_new_page_to_new_system(self, tree: etree.Element) -> etree.Element:
         """Go though all measures with change new-page to new-system.
