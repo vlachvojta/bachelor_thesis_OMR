@@ -26,10 +26,17 @@ from common import Common  # noqa: E402
 class StaffCuter:
     """Separate images to individual music staves with very little white space arround."""
     def __init__(self, input_files: list = None, input_folder: str = None,
-                 output_folder: str = 'out', image_height: int = 100):
+                 output_folder: str = 'out', image_height: int = 100,
+                 verbose: bool = False):
         self.input_files = input_files
         self.output_folder = output_folder
         self.image_height = image_height
+        self.verbose = verbose
+
+        if verbose:
+            logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
+        else:
+            logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
 
         if not input_folder is None:
             listdir = os.listdir(input_folder)
@@ -52,7 +59,7 @@ class StaffCuter:
 
     def __call__(self):
         for i, file in enumerate(self.input_files):
-            if logging.root.level >= logging.DEBUG:
+            if not self.verbose:
                 Common.print_dots(i, 200, 8_000)
             logging.debug('Working with: %d, %s', i, file)
             image = cv.imread(file, cv.IMREAD_UNCHANGED)
@@ -70,7 +77,7 @@ class StaffCuter:
             # plt.savefig('chart_mean.png')
 
             staves = self.get_staves(data)
-            logging.debug('\tgot %d staves', {len(staves)})
+            logging.debug('\tgot %d staves', len(staves))
 
             cropped_staves = []
             for i, staff in enumerate(staves):
@@ -80,7 +87,7 @@ class StaffCuter:
                 if cropped_staff.shape[1] > 100:
                     cropped_staves.append(cropped_staff)
 
-            logging.debug('\tSeparated into %d staff images.', {len(cropped_staves)})
+            logging.debug('\tSeparated into %d staff images.', len(cropped_staves))
 
             for i, staff in enumerate(cropped_staves):
                 # logging.debug(staff.shape)
@@ -153,8 +160,8 @@ class StaffCuter:
 
         # logging.debug(data.shape)
 
-        for i, line in enumerate(data[1:]):
-            if i % 500 == 0:
+        for i, line in enumerate(data[1:]):            
+            if self.verbose and i % 500 == 0:
                 logging.debug(f'\t\ti: {i}, len(line): {len(staves)}')
             # if i < 20: logging.debug(f'{i}: np.min(line): {np.min(line)}')
             # if i % 50 == 0: logging.debug(f'i: {i}, len(staves): {len(staves)}')
@@ -244,16 +251,12 @@ def main():
 
     start = time.time()
 
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
-    else:
-        logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
-
     cutter = StaffCuter(
         input_files=args.input_files,
         input_folder=args.input_folder,
         output_folder=args.output_folder,
-        image_height=args.image_height)
+        image_height=args.image_height,
+        verbose=args.verbose)
     cutter()
 
     end = time.time()
