@@ -40,13 +40,26 @@ class Common:
         print('}')
 
     @staticmethod
+    def check_files(files: list, exts: list = []) -> list:
+        """Check existing files with correct extension and return only valid files"""
+        files = Common.check_existing_files(files)
+        if exts:
+            files = Common.check_files_extention(files, exts)
+
+        files_uniq = list(set(files))
+        if len(files_uniq) < len(files):
+            print(f'WARNING: {len(files) - len(files_uniq)} duplicate files.')
+
+        return files
+
+    @staticmethod
     def check_existing_files(files: list = []):
         """Return only existing file"""
         def file_is_visible(file: str = '') -> bool:
             return os.path.basename(file)[0] != '.'
 
         return [file for file in files
-                if os.path.exists(file) and file_is_visible(file)]
+                if os.path.exists(file) and file_is_visible(file) and os.path.isfile(file)]
 
     @staticmethod
     def get_existing_file_names(files, dirs):
