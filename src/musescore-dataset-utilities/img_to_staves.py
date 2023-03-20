@@ -13,7 +13,7 @@ import os
 import time
 import numpy as np
 from PIL import Image, ImageOps
-
+# from matplotlib import pyplot as plt
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
 sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
@@ -39,21 +39,37 @@ class StaffCuter:
         for file in self.input_files:
             print(f'Working with: {file}')
             image = Image.open(file)
-            image = ImageOps.grayscale(image)
-            data = np.asarray(image)
+            data = self.grayscale(image)
+
+            # # Calculate means of each row
+            # means = []
+            # for line in data:
+            #     means.append(np.mean(line))
+
+            # plt.plot(means)
+            # plt.savefig('chart_mean.png')
 
             staves = self.get_staves(data)
 
-            print(f'\tSeparated into {len(staves)} staff images.')
-
+            cropped_staves = []
             for i, staff in enumerate(staves):
                 cropped_staff = self.crop_white_space(staff.T, strip_count=20).T
 
-                # TODO resize image according to self.height HERE
+                if cropped_staff.shape[1] > 100:
+                    cropped_staves.append(cropped_staff)
 
-                image = Image.fromarray(cropped_staff)
+            print(f'\tSeparated into {len(cropped_staves)} staff images.')
 
-                self.save_image(image, file, i)
+            for i, staff in enumerate(cropped_staves):
+                # print(staff.shape)
+                double_staff_error_border = 300
+                if staff.shape[0] > double_staff_error_border:
+                    image = Image.fromarray(staff)
+                    self.save_image(image, f'z_{file}', i)
+                else:
+                    staff = Common.resize_img(staff, self.image_height)
+                    image = Image.fromarray(staff)
+                    self.save_image(image, file, i)
 
     def save_image(self, image: Image, file_name: str, staff_number: int):
         """Save image."""
@@ -62,16 +78,39 @@ class StaffCuter:
         file_name_path = os.path.join(self.output_folder, file_name)
         image.save(file_name_path)
 
+    def grayscale(self, image):
+        """Convert image to grayscale and return as numpy array.
+        
+        Check if values are stored in RGB values or just in ALPHA values."""
+        data = np.asarray(image)
+
+        means = []
+        for i in range(4):
+            means.append(np.mean(data[:,:,i]))
+
+        if sum(means[:3]) < 0.0001:
+            # Image data is only in ALPHA channel
+            return 255 - data[:,:,3]
+        return np.asarray(ImageOps.grayscale(image))
+
     def get_staves(self, data) -> list:
         """Cut individual staves from img. Return in a list of staves."""
         staves = []
         line_mean_threshold = 250
 
+        print(data.shape)
+
         for i, line in enumerate(data[1:]):
+            # if i < 20: print(f'{i}: np.min(line): {np.min(line)}')
+            # if i % 50 == 0: print(f'i: {i}, len(staves): {len(staves)}')
             if np.min(line) < line_mean_threshold:
-                if np.min(data[i-20 : i]) > line_mean_threshold:
+                strip = data[i-20 : i]
+                if strip.shape[0] == 0:
+                    continue
+                strip_min = np.min(strip)
+                if strip_min > line_mean_threshold:
                     staves.append(np.array([line]))
-                elif np.min(data[i-20 : i]) < line_mean_threshold:
+                elif strip_min < line_mean_threshold:
                     if not staves:
                         staves.append(np.array([line]))
                     else:
@@ -90,15 +129,22 @@ class StaffCuter:
     def crop_white_space(self, data: np.ndarray,
                    strip_count: int = 5) -> np.ndarray:
         """Crop image iteratively and stop when it finds the staff."""
-        safety_threshold = 10
+        safety_threshold = 3
         for _ in range(safety_threshold):
             cropped_data = 'empty'
 
-            strip_height = len(data) // strip_count
+            strip_height = max(len(data) // strip_count, 1)
+            print(f'len(data): {len(data)}, strip_count: {strip_count}, '
+                  f'strip_height: {strip_height}')
 
             for i in range(strip_count):
                 strip = data[(strip_height * i) : (strip_height * (i + 1))]
+                # print(f'i: {i}, data.shape: {data.shape}, strip.shape: {strip.shape}')
+                # print(f'strip_height: {strip_height}')
+                # print(strip)
 
+                # print(type(strip))
+                # if strip.shape[0] > 0 and np.min(strip) == 0:
                 if np.min(strip) == 0:
                     if isinstance(cropped_data, str):
                         cropped_data = strip
@@ -107,8 +153,7 @@ class StaffCuter:
 
             if cropped_data.shape == data.shape:
                 break
-            else:
-                data = cropped_data
+            data = cropped_data
 
         return data
 
