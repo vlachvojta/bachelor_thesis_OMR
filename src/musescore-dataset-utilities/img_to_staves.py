@@ -3,7 +3,7 @@
 
 Usage:
 $ python3 img_to_staves.py -i image.png -o out/
-resulting in creating cropped files out/image_s000.png, out/image_s001.png etc.
+resulting in creating cropped files out/image_s00.png, out/image_s01.png etc.
 """
 
 import argparse
@@ -11,8 +11,11 @@ import re
 import sys
 import os
 import time
+import logging
+
 import numpy as np
-from PIL import Image, ImageOps
+# from PIL import Image, ImageOps
+import cv2 as cv
 # from matplotlib import pyplot as plt
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
@@ -35,7 +38,7 @@ class StaffCuter:
             else:
                 input_files = input_files + [os.path.join(input_folder, file) for file in listdir]
 
-        self.input_files = Common.check_files(input_files)
+        self.input_files = Common.check_files(input_files, ['png'])
         if not self.input_files:
             print('No valid input files provided.')
 
@@ -43,15 +46,20 @@ class StaffCuter:
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
-        
+
         self.suspicious_files = []
         self.generated_staves = 0
 
     def __call__(self):
-        for file in self.input_files:
-            print(f'Working with: {file}')
-            image = Image.open(file)
+        for i, file in enumerate(self.input_files):
+            if logging.root.level >= logging.DEBUG:
+                Common.print_dots(i, 200, 8_000)
+            logging.debug('Working with: %d, %s', i, file)
+            image = cv.imread(file, cv.IMREAD_UNCHANGED)
+            # image = Image.open(file)
+            logging.debug('\tImage opened')
             data = self.grayscale(image)
+            logging.debug('\tgot Grayscale picture.')
 
             # # Calculate means of each row
             # means = []
@@ -62,6 +70,7 @@ class StaffCuter:
             # plt.savefig('chart_mean.png')
 
             staves = self.get_staves(data)
+            logging.debug('\tgot %d staves', {len(staves)})
 
             cropped_staves = []
             for i, staff in enumerate(staves):
@@ -71,12 +80,12 @@ class StaffCuter:
                 if cropped_staff.shape[1] > 100:
                     cropped_staves.append(cropped_staff)
 
-            print(f'\tSeparated into {len(cropped_staves)} staff images.')
+            logging.debug('\tSeparated into %d staff images.', {len(cropped_staves)})
 
             for i, staff in enumerate(cropped_staves):
-                # print(staff.shape)
+                # logging.debug(staff.shape)
                 suspicious_threshold = 500
-                # print(f'\t{file}_s{i:02}.png: {staff.shape}')
+                logging.debug(f'\t{file}_s{i:02}.png: {staff.shape}')
                 if staff.shape[0] > suspicious_threshold:
                     # image = Image.fromarray(staff)
                     base_file = os.path.basename(file)
@@ -107,45 +116,48 @@ class StaffCuter:
                 Common.write_to_file(self.suspicious_files, suspicious_files_path)
             else:
                 # TODO concat existing file to new and save
-                print(f'WARNING: {suspicious_files_path} already exists, printing to stdout instead')
+                print(f'WARNING: {suspicious_files_path} already exists, '
+                      'printing to stdout instead')
                 print(self.suspicious_files)
 
-    def save_image(self, image: Image, file_name: str, staff_number: int):
+    def save_image(self, image: np.ndarray, file_name: str, staff_number: int):
         """Save image."""
-        print(f'file_name: {file_name}')
+        # logging.debug(f'file_name: {file_name}')
         file_name_parts = re.split(r'\.', os.path.basename(file_name))
         file_name = '.'.join(file_name_parts[:-1]) + f'_s{staff_number:02}.png'
         file_name_path = os.path.join(self.output_folder, file_name)
-        print(f'saving to: {file_name_path}')
+        # logging.debug(f'saving to: {file_name_path}')
         Common.write_to_file(image, file_name_path)
         # image.save(file_name_path)
         self.generated_staves += 1
 
-    def grayscale(self, image):
+    def grayscale(self, image: np.ndarray):
         """Convert image to grayscale and return as numpy array.
         
         Check if values are stored in RGB values or just in ALPHA values."""
-        data = np.asarray(image)
-
         means = []
         for i in range(4):
-            means.append(np.mean(data[:,:,i]))
+            means.append(np.mean(image[:,:,i]))
+
+        logging.debug(f'\tmeans: {means}')
 
         if sum(means[:3]) < 0.0001:
             # Image data is only in ALPHA channel
-            return 255 - data[:,:,3]
-        return np.asarray(ImageOps.grayscale(image))
+            return 255 - image[:,:,3]
+        return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
     def get_staves(self, data) -> list:
         """Cut individual staves from img. Return in a list of staves."""
         staves = []
         line_mean_threshold = 250
 
-        # print(data.shape)
+        # logging.debug(data.shape)
 
         for i, line in enumerate(data[1:]):
-            # if i < 20: print(f'{i}: np.min(line): {np.min(line)}')
-            # if i % 50 == 0: print(f'i: {i}, len(staves): {len(staves)}')
+            if i % 500 == 0:
+                logging.debug(f'\t\ti: {i}, len(line): {len(staves)}')
+            # if i < 20: logging.debug(f'{i}: np.min(line): {np.min(line)}')
+            # if i % 50 == 0: logging.debug(f'i: {i}, len(staves): {len(staves)}')
             if np.min(line) < line_mean_threshold:
                 strip = data[i-20 : i]
                 if strip.shape[0] == 0:
@@ -177,16 +189,16 @@ class StaffCuter:
             cropped_data = 'empty'
 
             strip_height = max(len(data) // strip_count, 1)
-            # print(f'len(data): {len(data)}, strip_count: {strip_count}, '
+            # logging.debug(f'len(data): {len(data)}, strip_count: {strip_count}, '
             #       f'strip_height: {strip_height}')
 
             for i in range(strip_count):
                 strip = data[(strip_height * i) : (strip_height * (i + 1))]
-                # print(f'i: {i}, data.shape: {data.shape}, strip.shape: {strip.shape}')
-                # print(f'strip_height: {strip_height}')
-                # print(strip)
+                # logging.debug(f'i: {i}, data.shape: {data.shape}, strip.shape: {strip.shape}')
+                # logging.debug(f'strip_height: {strip_height}')
+                # logging.debug(strip)
 
-                # print(type(strip))
+                # logging.debug(type(strip))
                 # if strip.shape[0] > 0 and np.min(strip) == 0:
                 if np.min(strip) == 0:
                     if isinstance(cropped_data, str):
@@ -220,6 +232,9 @@ def parseargs():
     parser.add_argument(
         "--image-height", type=int, default=100,
         help="Image height in px to resize all images to. If -1, height will be left unchanged.")
+    parser.add_argument(
+        '-v', "--verbose", action='store_true', default=False,
+        help="Activate verbose logging.")
     return parser.parse_args()
 
 
@@ -228,6 +243,11 @@ def main():
     args = parseargs()
 
     start = time.time()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
+    else:
+        logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
 
     cutter = StaffCuter(
         input_files=args.input_files,
