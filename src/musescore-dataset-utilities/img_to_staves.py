@@ -12,6 +12,8 @@ import sys
 import os
 import time
 import logging
+import cProfile  # Profiling
+import pstats  # Profiling
 
 import numpy as np
 # from PIL import Image
@@ -326,6 +328,9 @@ def parseargs():
     parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,
         help="Activate verbose logging.")
+    parser.add_argument(  # Profiling
+        "-p", "--profile-output", type=str, default='profile_dump.prof',
+        help="File to output profiling results.")
     return parser.parse_args()
 
 
@@ -335,13 +340,20 @@ def main():
 
     start = time.time()
 
-    cutter = StaffCuter(
-        input_files=args.input_files,
-        input_folder=args.input_folder,
-        output_folder=args.output_folder,
-        image_height=args.image_height,
-        verbose=args.verbose)
-    cutter()
+    with cProfile.Profile() as profile:  # Profiling
+        cutter = StaffCuter(
+            input_files=args.input_files,
+            input_folder=args.input_folder,
+            output_folder=args.output_folder,
+            image_height=args.image_height,
+            verbose=args.verbose)
+        cutter()
+
+    # Profiling
+    results = pstats.Stats(profile)
+    results.sort_stats(pstats.SortKey.TIME)
+    # results.print_stats()
+    results.dump_stats(args.profile_output)
 
     end = time.time()
     print(f'Total time: {end - start:.2f} s')
