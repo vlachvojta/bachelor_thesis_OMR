@@ -212,7 +212,7 @@ class PartSplitter:
         """Remove unwanted elements (credits, lyrics, labels and dynamics) from XML tree.
         """
         elements_to_remove = [
-            'credit', 'rights', 'lyric', 'direction', 'creator', 'work', 'part-group'
+            'credit', 'rights', 'lyric', 'direction', 'creator', 'work', 'part-group', 'notations'
         ]
 
         for elem in elements_to_remove:
