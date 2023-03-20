@@ -14,7 +14,7 @@ import time
 import logging
 
 import numpy as np
-# from PIL import Image, ImageOps
+# from PIL import Image
 import cv2 as cv
 # from matplotlib import pyplot as plt
 
@@ -59,11 +59,16 @@ class StaffCuter:
 
     def __call__(self):
         for i, file in enumerate(self.input_files):
+            if i % 1000 == 0:
+                suspicious_files_path = os.path.join(self.output_folder, '0_suspicious_files.json')
+                print(f'\t{len(self.suspicious_files)} files was suspicious, writing to file.')
+                Common.write_to_file(self.suspicious_files, suspicious_files_path)
             if not self.verbose:
                 Common.print_dots(i, 200, 8_000)
             logging.debug('Working with: %d, %s', i, file)
             image = cv.imread(file, cv.IMREAD_UNCHANGED)
             # image = Image.open(file)
+            # image = np.asarray(image)
             logging.debug('\tImage opened')
             data = self.grayscale(image)
             logging.debug('\tgot Grayscale picture.')
@@ -76,15 +81,25 @@ class StaffCuter:
             # plt.plot(means)
             # plt.savefig('chart_mean.png')
 
-            staves = self.get_staves(data)
+            # staves = self.get_staves(data)
+            staves = self.get_staves_new(data)
             logging.debug('\tgot %d staves', len(staves))
 
             cropped_staves = []
             for i, staff in enumerate(staves):
+                # cropped_staves = self.get_staves_new(data.T)
+                # # print(f'len(cropped_staves): {len(cropped_staves)}')
+                # if len(cropped_staves) > 1:
+                #     print(f'TOO much cut staves: {len(cropped_staves)}')
+                # cropped_staff = cropped_staves[0].T
+                # print(f'before: {staff.shape}, after: {cropped_staff.shape}')
+                # Common.write_to_file(staff, os.path.join(self.output_folder, f'error_png_{i}.png'))
+                logging.debug(f'\t\tcropping {i}')
                 cropped_staff = self.crop_white_space(staff.T, strip_count=20).T
 
                 # Delete everything that has too short lentgh (page numbers, labels, etc)
-                if cropped_staff.shape[1] > 100:
+                too_narrow_image_threshold = 200
+                if cropped_staff.shape[1] > too_narrow_image_threshold:
                     cropped_staves.append(cropped_staff)
 
             logging.debug('\tSeparated into %d staff images.', len(cropped_staves))
@@ -93,6 +108,7 @@ class StaffCuter:
                 # logging.debug(staff.shape)
                 suspicious_threshold = 500
                 logging.debug(f'\t{file}_s{i:02}.png: {staff.shape}')
+
                 if staff.shape[0] > suspicious_threshold:
                     # image = Image.fromarray(staff)
                     base_file = os.path.basename(file)
@@ -135,6 +151,7 @@ class StaffCuter:
         file_name_path = os.path.join(self.output_folder, file_name)
         # logging.debug(f'saving to: {file_name_path}')
         Common.write_to_file(image, file_name_path)
+        # image = Image.fromarray(image)
         # image.save(file_name_path)
         self.generated_staves += 1
 
@@ -142,16 +159,74 @@ class StaffCuter:
         """Convert image to grayscale and return as numpy array.
         
         Check if values are stored in RGB values or just in ALPHA values."""
+        # start_mean = time.time()
         means = []
         for i in range(4):
-            means.append(np.mean(image[:,:,i]))
+            means.append(np.mean(image[0,:,i]))
+        # end_mean = time.time()
+        # print(f'Mean counting time: {end_mean - start_mean:.5f} s')
 
         logging.debug(f'\tmeans: {means}')
 
         if sum(means[:3]) < 0.0001:
+            # print('Image is only ALPHA')
             # Image data is only in ALPHA channel
             return 255 - image[:,:,3]
+        # print('Image is NOT')
         return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+
+    def get_staves_new(self, data) -> list:
+        """Cut individual staves from img. Return in a list of staves."""
+        # def strip_is_white(strip: np.ndarray()) -> bool:
+        #     strip_min = np.min(strip)
+        #     return strip_min > line_min_threshold
+
+        lines_in_strip = 5
+        line_min_threshold = 249
+
+        # Round image size to the nearest multiple of lines_in_group
+        max_height = (data.shape[0] // lines_in_strip) * lines_in_strip
+        data = data[:max_height]
+        # print(f'data.shape: {data.shape}')
+        data_strips = data.reshape([-1,lines_in_strip,data.shape[1]])
+        # print(f'data_strips.shape: {data_strips.shape}')
+
+        white_strip_indexes = [[0]]
+
+        for strip_i, strip in enumerate(data_strips, 1):
+            strip_min = np.min(strip)
+
+            strip_is_white = strip_min > line_min_threshold
+            # print(f'{strip_i}, np.min(strip): {strip_min}, strip_is_white: {strip_is_white}')
+            if strip_is_white:
+                # back_strip = data_strips[strip_i-2: strip_i]
+                # if back_strip.shape[0] == 0:
+                #     continue
+                # back_strip_min = np.min(back_strip)
+                # print(f'strip_i: {strip_i}, white_strip_indexes[-1]: {white_strip_indexes[-1]}')
+                previous_strip_is_white = (strip_i-1 == white_strip_indexes[-1][-1])
+                if previous_strip_is_white:
+                    # print('previous_strip_is_white')
+                    white_strip_indexes[-1].append(strip_i)
+                else:
+                    # if white_strip_indexes == []:
+                    #     white_strip_indexes.append([strip_i])
+                    # else:
+                    white_strip_indexes.append([strip_i])
+                    # logging.debug(f'Staves[-1].shape: {staves[-1].shape}')
+
+        # print(white_strip_indexes)
+        # print(f'len(white_strip_indexes): {len(white_strip_indexes)}')
+
+        staves = []
+        for white_strip_i in range(len(white_strip_indexes) - 1):
+            staff_start = white_strip_indexes[white_strip_i][-1] * lines_in_strip
+            staff_end = white_strip_indexes[white_strip_i + 1][0] * lines_in_strip
+            staves.append(data[staff_start:staff_end])
+
+        staves = self.add_border(staves)
+
+        return staves
 
     def get_staves(self, data) -> list:
         """Cut individual staves from img. Return in a list of staves."""
@@ -160,7 +235,7 @@ class StaffCuter:
 
         # logging.debug(data.shape)
 
-        for i, line in enumerate(data[1:]):            
+        for i, line in enumerate(data[1:]):
             if self.verbose and i % 500 == 0:
                 logging.debug(f'\t\ti: {i}, len(line): {len(staves)}')
             # if i < 20: logging.debug(f'{i}: np.min(line): {np.min(line)}')
@@ -177,15 +252,21 @@ class StaffCuter:
                         staves.append(np.array([line]))
                     else:
                         staves[-1] = np.concatenate((staves[-1], [line]), axis=0)
+                        # logging.debug(f'Staves[-1].shape: {staves[-1].shape}')
 
-        border = np.zeros((20, data.shape[1]), dtype='uint8') + 255
+        staves = self.add_border(staves)
+
+        return staves
+
+    def add_border(self, staves:list, height: int=20) -> list:
+        border_width = max([stave.shape[1] for stave in staves])
+        border = np.zeros((height, border_width), dtype='uint8') + 255
 
         new_staves = []
 
-        for i, staff in enumerate(staves):
+        for staff in staves:
             if staff.shape[0] > 20:
                 new_staves.append(np.concatenate((border, staff, border), axis=0))
-
         return new_staves
 
     def crop_white_space(self, data: np.ndarray,
@@ -205,8 +286,11 @@ class StaffCuter:
                 # logging.debug(f'strip_height: {strip_height}')
                 # logging.debug(strip)
 
-                # logging.debug(type(strip))
-                # if strip.shape[0] > 0 and np.min(strip) == 0:
+                # check if strip is not too thin
+                min_width_threshold = 20
+                if strip.shape[0] < min_width_threshold:
+                    return strip
+
                 if np.min(strip) == 0:
                     if isinstance(cropped_data, str):
                         cropped_data = strip
