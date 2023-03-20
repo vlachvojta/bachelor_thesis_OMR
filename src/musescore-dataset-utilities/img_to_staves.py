@@ -22,15 +22,24 @@ from common import Common  # noqa: E402
 
 class StaffCuter:
     """Separate images to individual music staves with very little white space arround."""
-    def __init__(self, input_files: list, output_folder: str = '.',
-                 image_height: int = 100):
-        self.output_folder = output_folder
+    def __init__(self, input_files: list = None, input_folder: str = None,
+                 output_folder: str = 'out', image_height: int = 100):
         self.input_files = input_files
+        self.output_folder = output_folder
         self.image_height = image_height
 
-        self.input_files = Common.check_existing_files(input_files)
+        if not input_folder is None:
+            listdir = os.listdir(input_folder)
+            if not input_files:
+                input_files = [os.path.join(input_folder, file) for file in listdir]
+            else:
+                input_files = input_files + [os.path.join(input_folder, file) for file in listdir]
+
+        self.input_files = Common.check_files(input_files)
         if not self.input_files:
-            raise ValueError('No valid input files provided.')
+            print('No valid input files provided.')
+
+        print(f'Found {len(self.input_files)} input files.')
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
@@ -98,7 +107,7 @@ class StaffCuter:
         staves = []
         line_mean_threshold = 250
 
-        print(data.shape)
+        # print(data.shape)
 
         for i, line in enumerate(data[1:]):
             # if i < 20: print(f'{i}: np.min(line): {np.min(line)}')
@@ -134,8 +143,8 @@ class StaffCuter:
             cropped_data = 'empty'
 
             strip_height = max(len(data) // strip_count, 1)
-            print(f'len(data): {len(data)}, strip_count: {strip_count}, '
-                  f'strip_height: {strip_height}')
+            # print(f'len(data): {len(data)}, strip_count: {strip_count}, '
+            #       f'strip_height: {strip_height}')
 
             for i in range(strip_count):
                 strip = data[(strip_height * i) : (strip_height * (i + 1))]
@@ -166,14 +175,16 @@ def parseargs():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input-files", nargs='+',   # ? change to -I ?
+        "-I", "--input-files", nargs='*', default=None,
         help="Input images to cut.")
-    # TODO implemet --input-folder
     parser.add_argument(
-        "-o", "--output-folder", type=str, default='.',
+        "-i", "--input-folder", type=str, default=None,
+        help="Input folder where to look for images to cut.")
+    parser.add_argument(
+        "-o", "--output-folder", type=str, default='out',
         help="Output folder to write cut imgs to.")
     parser.add_argument(
-        "--image-height", type=int, default=100,  # TODO: implement this option
+        "--image-height", type=int, default=100,
         help="Image height in px to resize all images to. If -1, height will be left unchanged.")
     return parser.parse_args()
 
@@ -186,6 +197,7 @@ def main():
 
     cutter = StaffCuter(
         input_files=args.input_files,
+        input_folder=args.input_folder,
         output_folder=args.output_folder,
         image_height=args.image_height)
     cutter()
