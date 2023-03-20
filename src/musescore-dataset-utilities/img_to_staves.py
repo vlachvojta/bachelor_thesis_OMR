@@ -43,6 +43,9 @@ class StaffCuter:
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
+        
+        self.suspicious_files = []
+        self.generated_staves = 0
 
     def __call__(self):
         for file in self.input_files:
@@ -64,6 +67,7 @@ class StaffCuter:
             for i, staff in enumerate(staves):
                 cropped_staff = self.crop_white_space(staff.T, strip_count=20).T
 
+                # Delete everything that has too short lentgh (page numbers, labels, etc)
                 if cropped_staff.shape[1] > 100:
                     cropped_staves.append(cropped_staff)
 
@@ -71,21 +75,46 @@ class StaffCuter:
 
             for i, staff in enumerate(cropped_staves):
                 # print(staff.shape)
-                double_staff_error_border = 300
-                if staff.shape[0] > double_staff_error_border:
+                suspicious_threshold = 300
+                print(f'\t{file}_s{i:02}.png: {staff.shape}')
+                if staff.shape[0] > suspicious_threshold:
                     image = Image.fromarray(staff)
+                    self.suspicious_files.append(file)
                     self.save_image(image, f'z_{file}', i)
                 else:
                     staff = Common.resize_img(staff, self.image_height)
                     image = Image.fromarray(staff)
                     self.save_image(image, file, i)
 
+        self.print_results()
+
+    def print_results(self):
+        """Print stats for input and output files."""
+        print('')
+        print('--------------------------------------')
+        print('Results:')
+        print(f'From {len(self.input_files)} input files:')
+        print(f'\t{self.generated_staves} generated staves.')
+
+        if len(self.suspicious_files) > 0:
+            self.suspicious_files = sorted(list(set(self.suspicious_files)))
+            print(f'\t{len(self.suspicious_files)} files was suspicious.')
+            suspicious_files_path = os.path.join(self.output_folder, '0_suspicous_files.json')
+
+            if not os.path.exists(suspicious_files_path):
+                Common.write_to_file(self.suspicious_files, suspicious_files_path)
+            else:
+                # TODO concat existing file to new and save
+                print(f'WARNING: {suspicious_files_path} already exists, printing to stdout instead')
+                print(self.suspicious_files)
+
     def save_image(self, image: Image, file_name: str, staff_number: int):
         """Save image."""
         file_name_parts = re.split(r'\.', os.path.basename(file_name))
-        file_name = '.'.join(file_name_parts[:-1]) + f'_s{staff_number:03}.png'
+        file_name = '.'.join(file_name_parts[:-1]) + f'_s{staff_number:02}.png'
         file_name_path = os.path.join(self.output_folder, file_name)
         image.save(file_name_path)
+        self.generated_staves += 1
 
     def grayscale(self, image):
         """Convert image to grayscale and return as numpy array.
