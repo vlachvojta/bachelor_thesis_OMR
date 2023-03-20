@@ -75,16 +75,18 @@ class StaffCuter:
 
             for i, staff in enumerate(cropped_staves):
                 # print(staff.shape)
-                suspicious_threshold = 300
-                print(f'\t{file}_s{i:02}.png: {staff.shape}')
+                suspicious_threshold = 500
+                # print(f'\t{file}_s{i:02}.png: {staff.shape}')
                 if staff.shape[0] > suspicious_threshold:
-                    image = Image.fromarray(staff)
-                    self.suspicious_files.append(file)
-                    self.save_image(image, f'z_{file}', i)
+                    # image = Image.fromarray(staff)
+                    base_file = os.path.basename(file)
+                    self.suspicious_files.append(base_file)
+                    self.save_image(staff, f'z_{base_file}', i)
+
                 else:
                     staff = Common.resize_img(staff, self.image_height)
-                    image = Image.fromarray(staff)
-                    self.save_image(image, file, i)
+                    # image = Image.fromarray(staff)
+                    self.save_image(staff, file, i)
 
         self.print_results()
 
@@ -110,10 +112,13 @@ class StaffCuter:
 
     def save_image(self, image: Image, file_name: str, staff_number: int):
         """Save image."""
+        print(f'file_name: {file_name}')
         file_name_parts = re.split(r'\.', os.path.basename(file_name))
         file_name = '.'.join(file_name_parts[:-1]) + f'_s{staff_number:02}.png'
         file_name_path = os.path.join(self.output_folder, file_name)
-        image.save(file_name_path)
+        print(f'saving to: {file_name_path}')
+        Common.write_to_file(image, file_name_path)
+        # image.save(file_name_path)
         self.generated_staves += 1
 
     def grayscale(self, image):
