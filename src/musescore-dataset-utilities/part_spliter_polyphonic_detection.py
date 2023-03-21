@@ -84,57 +84,63 @@ class PartSplitter:
             for i, part_id in enumerate(sorted(part_ids)):
                 file_out = self.get_file_out_name(file_in, i)
 
-                # Create new root tag and add children from file_tree
-                root_tag = '<score-partwise version="4.0"></score-partwise>'
-                new_tree = etree.fromstring(root_tag)
-                for i, child in enumerate(list(file_tree.getroot())):
-                    if child.tag == 'part':
-                        continue
-                    child_str = etree.tostring(child)
-                    child_back = etree.fromstring(child_str)
-                    new_tree.insert(i+1, child_back)
+                # # Create new root tag and add children from file_tree
+                # root_tag = '<score-partwise version="4.0"></score-partwise>'
+                # new_tree = etree.fromstring(root_tag)
+                # for i, child in enumerate(list(file_tree.getroot())):
+                #     if child.tag == 'part':
+                #         continue
+                #     child_str = etree.tostring(child)
+                #     child_back = etree.fromstring(child_str)
+                #     new_tree.insert(i+1, child_back)
 
-                # Remove all other part declarations
-                score_parts = new_tree.xpath('//score-part')
-                for part in score_parts:
-                    if part.get('id') != part_id:
-                        part.getparent().remove(part)
+                # # Remove all other part declarations
+                # score_parts = new_tree.xpath('//score-part')
+                # for part in score_parts:
+                #     if part.get('id') != part_id:
+                #         part.getparent().remove(part)
+                parts = file_tree.xpath(f'//part[@id="{part_id}"]')
+                
+                if parts:
+                    if self.is_polyphonic_part(parts[0]):
+                        self.polyphonic_parts.append(os.path.basename(file_out))
+                        self.polyphonic_parts_count += 1
+                    
 
-                # Insert only the right part directly from original file_tree
-                parts = file_tree.xpath('//part')
-                for part in parts:
-                    if part.get('id') == part_id:
-                        part_copy = deepcopy(part)
-                        # part_str = etree.tostring(part)
-                        # part_copy = etree.fromstring(part_str)
-                        new_tree.insert(7, part_copy)
+                # # Insert only the right part directly from original file_tree
+                # parts = file_tree.xpath('//part')
+                # for part in parts:
+                #     if part.get('id') == part_id:
+                #         part_copy = deepcopy(part)
+                #         # part_str = etree.tostring(part)
+                #         # part_copy = etree.fromstring(part_str)
+                #         new_tree.insert(7, part_copy)
 
-                self.change_new_page_to_new_system(new_tree)
-                # self.change_new_system_to_new_page(new_tree)
+                # self.change_new_page_to_new_system(new_tree)
 
-                # Ignore percussion parts
-                if self.is_percussion_part(new_tree):
-                    continue
+                # # Ignore percussion parts
+                # if self.is_percussion_part(new_tree):
+                #     continue
 
                 # Separate dual staff part + detect polyphonic for both
-                if self.is_dual_staff_part(new_tree):
-                    self.dual_staff_parts.append(os.path.basename(file_out))
-                    self.dual_staff_parts_count += 1
-                    second_tree, file_out_2 = self.separate_dual_staff(new_tree, file_out)
-                    self.save_part_to_file(second_tree, file_out_2)
+                # if self.is_dual_staff_part(new_tree):
+                #     self.dual_staff_parts.append(os.path.basename(file_out))
+                #     self.dual_staff_parts_count += 1
+                #     second_tree, file_out_2 = self.separate_dual_staff(new_tree, file_out)
+                #     self.save_part_to_file(second_tree, file_out_2)
 
-                    if self.is_polyphonic_part(second_tree):
-                        self.polyphonic_parts.append(os.path.basename(file_out_2))
-                        self.polyphonic_parts_count += 1
-                    if self.is_polyphonic_part(new_tree):
-                        self.polyphonic_parts.append(os.path.basename(file_out))
-                        self.polyphonic_parts_count += 1
-                else:
-                    if self.is_polyphonic_part(new_tree):
-                        self.polyphonic_parts.append(os.path.basename(file_out))
-                        self.polyphonic_parts_count += 1
+                #     if self.is_polyphonic_part(second_tree):
+                #         self.polyphonic_parts.append(os.path.basename(file_out_2))
+                #         self.polyphonic_parts_count += 1
+                #     if self.is_polyphonic_part(new_tree):
+                #         self.polyphonic_parts.append(os.path.basename(file_out))
+                #         self.polyphonic_parts_count += 1
+                # else:
+                #     if self.is_polyphonic_part(new_tree):
+                #         self.polyphonic_parts.append(os.path.basename(file_out))
+                #         self.polyphonic_parts_count += 1
 
-                self.save_part_to_file(new_tree, file_out)
+                # self.save_part_to_file(new_tree, file_out)
 
         self.print_results()
 
