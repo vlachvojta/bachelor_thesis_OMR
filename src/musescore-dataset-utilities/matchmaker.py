@@ -50,7 +50,26 @@ class Matchmaker:
         # self.generated_staves = 0
 
     def __call__(self):
-        ...
+        image_parts = [self.get_part_name(img) for img in self.images]
+        label_parts = [self.get_part_name(label) for label in self.labels]
+
+        image_parts = self.list_to_dict_sum(image_parts)
+        label_parts = self.list_to_dict_sum(label_parts)
+
+        print(len(image_parts))
+        print(len(label_parts))
+        print(image_parts)
+        print(label_parts)
+
+        pairs = {}
+
+        for part_name, n in image_parts.items():
+            if part_name in label_parts:
+                pairs[part_name] = [label_parts[part_name], image_parts[part_name]]
+                print(f'{part_name}: \t(i: {image_parts[part_name]}, l: {label_parts[part_name]})')
+
+
+
         # for i, file in enumerate(self.input_files):
         #     if i % 1000 == 0:
         #         suspicious_files_path = os.path.join(self.output_folder, '0_suspicious_files.json')
@@ -62,6 +81,27 @@ class Matchmaker:
 
 
         # self.print_results()
+
+    def get_part_name(self, file: str):
+        """Get file name, return part name."""
+        file = os.path.basename(file)
+        mscz_id, part_id, *_ = re.split(r'_|-', file)
+        # print(f'mscz: {mscz_id}, part: {part_id}, rest: {rest}')
+
+        return f'{mscz_id}_{part_id}'
+
+    def list_to_dict_sum(self, parts: list) -> dict:
+        """Get list with duplicate values, return sum of occurences in dict."""
+        sums = {}
+        processed_parts = set()
+
+        for part in parts:
+            if part in processed_parts:
+                sums[part] += 1
+            else:
+                processed_parts.add(part)
+                sums[part] = 1
+        return sums
 
 
     # def print_results(self):
@@ -116,7 +156,7 @@ def main():
 
     cutter = Matchmaker(
         images_folder=args.images_folder,
-        labels_folder=args.images_labels,
+        labels_folder=args.labels_folder,
         output_folder=args.output_folder,
         verbose=args.verbose)
     cutter()

@@ -40,6 +40,14 @@ class Common:
         print('}')
 
     @staticmethod
+    def listdir(folder: str, exts: list = []):
+        """"Get all valid files from given directory"""
+        files = os.listdir(folder)
+        files = [os.path.join(folder, file) for file in files]
+
+        return Common.check_files(files, exts)
+
+    @staticmethod
     def check_files(files: list, exts: list = []) -> list:
         """Check existing files with correct extension and return only valid files"""
         files = Common.check_existing_files(files)
