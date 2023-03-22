@@ -1,5 +1,5 @@
 #!/usr/bin/python3.8
-"""Get label-image pairs from two separate folders
+"""Get label-image pairs from two separate folders.
 
 Usage:
 $ python3 matchmaker.py --labels 5_labels --images 4_images -o 6_pairs
@@ -19,7 +19,7 @@ from common import Common  # noqa: E402
 
 
 class Matchmaker:
-    """Get label-image pairs from two separate folders"""
+    """Get label-image pairs from two separate folders."""
     def __init__(self, labels_folder: list = '.', images_folder: str = '.',
                  output_folder: str = 'pairs', verbose: bool = False):
         self.labels_folder = labels_folder
@@ -50,16 +50,27 @@ class Matchmaker:
         # self.generated_staves = 0
 
     def __call__(self):
+        self.images = [os.path.basename(image) for image in self.images]
+        self.labels = [os.path.basename(label) for label in self.labels]
+
+        print(len(self.images))
+        lent = len(self.images)
+        print(sorted(self.images)[lent-20:])
+
         image_parts = [self.get_part_name(img) for img in self.images]
         label_parts = [self.get_part_name(label) for label in self.labels]
+
+        print('---------------------')
+        print(len(image_parts))
+        print(sorted(image_parts))
 
         image_parts = self.list_to_dict_sum(image_parts)
         label_parts = self.list_to_dict_sum(label_parts)
 
         print(len(image_parts))
-        print(len(label_parts))
+        # print(len(label_parts))
         print(image_parts)
-        print(label_parts)
+        # print(label_parts)
 
         pairs = {}
 
@@ -84,8 +95,17 @@ class Matchmaker:
 
     def get_part_name(self, file: str):
         """Get file name, return part name."""
-        file = os.path.basename(file)
         mscz_id, part_id, *_ = re.split(r'_|-', file)
+        # print(f'mscz: {mscz_id}, part: {part_id}, rest: {rest}')
+
+        return f'{mscz_id}_{part_id}'
+
+    def get_img_name_with_suspicious(self, file: str):
+        """Get file name, return part name."""
+        if file[0] == 'z':
+            _, mscz_id, part_id, *_ = re.split(r'_|-', file)
+        else:
+            mscz_id, part_id, *_ = re.split(r'_|-', file)
         # print(f'mscz: {mscz_id}, part: {part_id}, rest: {rest}')
 
         return f'{mscz_id}_{part_id}'
