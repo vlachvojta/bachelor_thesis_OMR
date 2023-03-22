@@ -100,12 +100,12 @@ class PartSplitter:
                 #     if part.get('id') != part_id:
                 #         part.getparent().remove(part)
                 parts = file_tree.xpath(f'//part[@id="{part_id}"]')
-                
+
                 if parts:
                     if self.is_polyphonic_part(parts[0]):
-                        self.polyphonic_parts.append(os.path.basename(file_out))
+                        self.polyphonic_parts.append((os.path.basename(file_out), self.chords, self.voices))
                         self.polyphonic_parts_count += 1
-                    
+
 
                 # # Insert only the right part directly from original file_tree
                 # parts = file_tree.xpath('//part')
@@ -272,12 +272,14 @@ class PartSplitter:
 
         if len(chord_notes) > 0:
             has_chords = True
+        self.chords = len(chord_notes)
 
         voices = part.xpath('//measure/note/voice')
         voices = list(set([voice.text for voice in voices]))
 
         if len(voices) > 1:
             has_more_voices = True
+        self.voices = len(voices)
 
         return has_chords or has_more_voices
 
