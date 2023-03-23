@@ -20,9 +20,9 @@ from common import Common  # noqa: E402
 
 class Matchmaker:
     """Get label-image pairs from two separate folders."""
-    def __init__(self, labels_folder: list = '.', images_folder: str = '.',
+    def __init__(self, labels_file: list = '.', images_folder: str = '.',
                  output_folder: str = 'pairs', verbose: bool = False):
-        self.labels_folder = labels_folder
+        self.labels_file = labels_file
         self.images_folder = images_folder
         self.output_folder = output_folder
         self.verbose = verbose
@@ -31,17 +31,19 @@ class Matchmaker:
             logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
         else:
             logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
-        
+
         self.images = Common.listdir(self.images_folder, ['png'])
-        self.labels = Common.listdir(self.labels_folder, ['semantic'])
+        self.labels = self.load_labels(self.labels_file)
 
         if not self.images:
-            print('No valid IMAGES in given folder.')
-        if not self.labels:
-            print('No valid LABELS in given folder.')
+            print('WARNING: No valid IMAGES in given folder.')
+        else:
+            print(f'Found {len(self.images)} image file.')
 
-        print(f'Found {len(self.images)} image file.')
-        print(f'Found {len(self.labels)} label files.')
+        if not self.labels:
+            print('WARNING: No valid LABELS in given folder.')
+        else:
+            print(f'Found {len(self.labels)} labels.')
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
@@ -50,32 +52,39 @@ class Matchmaker:
         # self.generated_staves = 0
 
     def __call__(self):
+        if not self.images or not self.labels:
+            print("ERROR: No images or labels where found, cannot generate no match.")
+            return
+
         self.images = [os.path.basename(image) for image in self.images]
         self.labels = [os.path.basename(label) for label in self.labels]
+        print('sus_parts')
 
-        print(len(self.images))
-        lent = len(self.images)
-        print(sorted(self.images)[lent-20:])
+        # print(len(self.images))
+        # lent = len(self.images)
+        # print(sorted(self.images)[lent-20:])
 
-        image_parts = [self.get_part_name(img) for img in self.images]
+        image_parts = [self.get_part_name_with_suspicious(img) for img in self.images]
         label_parts = [self.get_part_name(label) for label in self.labels]
 
         print('---------------------')
-        print(len(image_parts))
-        print(sorted(image_parts))
 
         image_parts = self.list_to_dict_sum(image_parts)
         label_parts = self.list_to_dict_sum(label_parts)
 
+        suspicious_parts = self.get_suspicious_parts(image_parts.keys())
+        print(f'sus parts: {suspicious_parts}')
+
         print(len(image_parts))
-        # print(len(label_parts))
         print(image_parts)
-        # print(label_parts)
+        print(len(label_parts))
+        print(label_parts)
+        # print('---------------------')
 
         pairs = {}
 
-        for part_name, n in image_parts.items():
-            if part_name in label_parts:
+        for part_name, _ in image_parts.items():
+            if part_name in label_parts and not part_name in suspicious_parts:
                 pairs[part_name] = [label_parts[part_name], image_parts[part_name]]
                 print(f'{part_name}: \t(i: {image_parts[part_name]}, l: {label_parts[part_name]})')
 
@@ -93,6 +102,45 @@ class Matchmaker:
 
         # self.print_results()
 
+    def load_labels(self, filename) -> dict:
+        """Load labels from file and return as a dictionary."""
+        # print(f'labels file: {filename}')
+        # print(f'path exists: {os.path.exists(filename)}')
+        labels = Common.read_file(filename)
+
+        if not labels:
+            return {}
+
+        labels_list = re.split(r'\n', labels)
+        labels_list = list(filter(None, labels_list))   # filter out empty lines
+
+        # print(type(labels_list))
+        # print('len(labels_list): ')
+        # print(len(labels_list))
+        # print(labels_list[:10])
+
+        labels = {}
+        for label in labels_list:
+            system_id, *sequence = re.split(r'\s', label)
+            labels[system_id] = ' '.join(sequence)
+
+        return labels
+
+    def get_suspicious_parts(self, image_parts: list) -> set:
+        """Get a dictionary of images and counts, separate suspicious images."""
+        print(image_parts)
+        all_images = [os.path.basename(image) for image in self.images]
+
+        sus_parts = set()
+        for image in all_images:
+            z, file_name, part_name, *_  = re.split(r'\_', image)
+            sus_parts.update(['_'.join([file_name, part_name])])
+        
+        # print(f'sus: {sus_parts}')
+
+        return sus_parts
+
+
     def get_part_name(self, file: str):
         """Get file name, return part name."""
         mscz_id, part_id, *_ = re.split(r'_|-', file)
@@ -100,7 +148,7 @@ class Matchmaker:
 
         return f'{mscz_id}_{part_id}'
 
-    def get_img_name_with_suspicious(self, file: str):
+    def get_part_name_with_suspicious(self, file: str):
         """Get file name, return part name."""
         if file[0] == 'z':
             _, mscz_id, part_id, *_ = re.split(r'_|-', file)
@@ -157,8 +205,8 @@ def parseargs():
         "-i", "--images-folder", type=str, default='.',
         help="Input folder where to look for images.")
     parser.add_argument(
-        "-l", "--labels-folder", type=str, default='.',
-        help="Input folder where to look for labels.")
+        "-l", "--labels", type=str, default='.',
+        help="File with labels.")
     parser.add_argument(
         "-o", "--output-folder", type=str, default='out',
         help="Output folder to copy complete pairs.")
@@ -176,7 +224,7 @@ def main():
 
     cutter = Matchmaker(
         images_folder=args.images_folder,
-        labels_folder=args.labels_folder,
+        labels_file=args.labels,
         output_folder=args.output_folder,
         verbose=args.verbose)
     cutter()
