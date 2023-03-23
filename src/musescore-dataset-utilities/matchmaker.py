@@ -39,19 +39,7 @@ class Matchmaker:
         else:
             logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
 
-        # Load folders
-        self.images = []
-        sub_folders = [os.path.join(self.image_folder, folder) for folder in os.listdir(self.image_folder)]
-        image_folders = [folder for folder in sub_folders if os.path.isdir(folder)]
-        image_folders += [self.image_folder]
-
-        for image_folder in image_folders:
-            self.images += Common.listdir(image_folder, ['png'])
-        if not self.images:
-            print('WARNING: No valid IMAGES in given folder.')
-        else:
-            print(f'Found {len(self.images)} image file.')
-
+        print(f'Loading labels from {len(self.label_files)} files.')
         # Load labels
         self.labels = []
         for label_file in label_files:
@@ -59,11 +47,31 @@ class Matchmaker:
         if not self.labels:
             print('WARNING: No valid LABELS in given folder.')
         else:
-            print(f'Found {len(self.labels)} labels.')
+            print(f'\tFound {len(self.labels)} labels.')
+
+        # Load images from folders
+        self.images = []
+        sub_folders = [os.path.join(self.image_folder, folder)
+                       for folder in os.listdir(self.image_folder)]
+        image_folders = [folder for folder in sub_folders if os.path.isdir(folder)]
+        image_folders += [self.image_folder]
+        print(f'Looking for images in {len(image_folders)} folders')
+
+        for image_folder in image_folders:
+            self.images += Common.listdir(image_folder, ['png'])
+        if not self.images:
+            print('WARNING: No valid IMAGES in given folder.')
+        else:
+            print(f'\tFound {len(self.images)} image files.')
 
         # Create output part if necessary
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
+
+        self.not_fitting_staff_count = 0
+        self.total_parts_found = set()
+        self.extra_label_parts = set()
+        self.extra_image_parts = set()
 
     def __call__(self):
         if not self.images or not self.labels:
@@ -85,12 +93,17 @@ class Matchmaker:
         print(f'LABELS originate from {len(label_parts)} parts.')
         print(f'IMAGES originate from {len(label_parts)} parts.')
 
-        sus_img_parts = self.get_sus_parts(self.images)
-        print(f'\t{len(sus_img_parts)} part(s) has generated suspicious images.')
+        self.get_stats_about_parts(image_parts, label_parts)
 
+        sus_img_parts = self.get_sus_parts(self.images)
+        # print(f'\t{len(sus_img_parts)} part(s) has generated suspicious images.')
+        logging.debug(f'sus parts: {sus_img_parts}')
+
+        logging.debug('---- Finding complete parts: ----')
+        logging.debug('----(printing only incomplete)---')
         complete_parts = self.get_complete_parts(image_parts, label_parts, sus_img_parts)
-        sum_values = sum(complete_parts.values())
-        print(f'Found {len(complete_parts)} complete parts with {sum_values} images and labels.')
+
+        self.print_results(complete_parts, sus_img_parts)
         # , copying to {self.output_folder}')
 
         # for i, file in enumerate(self.input_files):
@@ -100,6 +113,42 @@ class Matchmaker:
 
 
         # self.print_results()
+    def print_results(self, complete_parts, sus_img_parts):
+        print('')
+        print('--------------------------------------')
+        print('Results:')
+        total_parts_found_len = len(self.total_parts_found)
+        print(f'From total {total_parts_found_len} unique parts found:')
+
+        complete_ratio = len(complete_parts) / total_parts_found_len * 100
+        sum_values = sum(complete_parts.values())
+        print(f'\t{len(complete_parts)} ({complete_ratio:.1f} %) complete parts with '
+              f'{sum_values} images and labels.')
+        sus_ratio = len(sus_img_parts) / total_parts_found_len * 100
+        print(f'\t{len(sus_img_parts)} ({sus_ratio:.1f} %) parts generated suspicious images.')
+
+        not_fit_ratio = self.not_fitting_staff_count / total_parts_found_len * 100
+        print(f'\t{self.not_fitting_staff_count} ({not_fit_ratio:.1f} %) parts '
+              'had differenct counts of labels and images.')
+
+        extra_image_parts_len = len(self.extra_image_parts)
+        extra_image_ratio = extra_image_parts_len / total_parts_found_len * 100
+        print(f'\t{extra_image_parts_len} ({extra_image_ratio:.1f} %) parts generated only images.')
+
+        extra_label_parts_len = len(self.extra_label_parts)
+        extra_label_ratio = extra_label_parts_len / total_parts_found_len * 100
+        print(f'\t{extra_label_parts_len} ({extra_label_ratio:.1f} %) parts generated only labels.')
+
+
+    def get_stats_about_parts(self, image_parts: dict, label_parts: dict) -> None:
+        """Get stats about parts using dictionary input with names as keys. Save stats to self."""
+        image_parts = set(image_parts.keys())
+        label_parts = set(label_parts.keys())
+
+        self.total_parts_found = image_parts.union(label_parts)
+        self.extra_label_parts = label_parts - image_parts
+        self.extra_image_parts = image_parts - label_parts
+
 
     def get_complete_parts(self, image_parts: dict, label_parts: dict, sus_img_parts: set):
         """Go through images dictionary and labels dictionary and return complete parts.
@@ -110,11 +159,15 @@ class Matchmaker:
 
         for part_name, _ in image_parts.items():
             if (part_name in label_parts and
-                    not part_name in sus_img_parts and
-                    label_parts[part_name] == image_parts[part_name]):
-                complete_parts[part_name] = label_parts[part_name]
-                # print(f'{part_name}: \t(i: {image_parts[part_name]},'
-                #       f' l: {label_parts[part_name]})')
+                    not part_name in sus_img_parts):
+                if label_parts[part_name] == image_parts[part_name]:
+                    # logging.debug(f'{part_name}:\t(i: {image_parts[part_name]},'
+                    #               f' l: {label_parts[part_name]})\tOK')
+                    complete_parts[part_name] = label_parts[part_name]
+                else:
+                    self.not_fitting_staff_count += 1
+                    logging.debug(f'{part_name}:\t(i: {image_parts[part_name]},'
+                                  f' l: {label_parts[part_name]})\t')
 
         return complete_parts
 
