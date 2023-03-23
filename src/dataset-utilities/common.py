@@ -177,10 +177,10 @@ class Common:
     @staticmethod
     def print_dots(i: int = 0, threshold1: int = 200,
                    threshold2: int = 800) -> None:
-        """Print dots and flush for every n-th i."""
-        if i % threshold1 == 0:
+        """Print dots and flush, for every n-th i."""
+        if i > 0 and i % threshold1 == 0:
             print('.', end='')
-            if i > 0 and i % threshold2 == 0:
+            if i % threshold2 == 0:
                 print(f' ({threshold2} files)')
             sys.stdout.flush()
 
