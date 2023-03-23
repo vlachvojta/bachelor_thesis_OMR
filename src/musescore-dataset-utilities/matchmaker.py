@@ -27,10 +27,10 @@ from common import Common  # noqa: E402
 
 class Matchmaker:
     """Get label-image pairs from two separate folders."""
-    def __init__(self, labels_file: list = '.', images_folder: str = '.',
+    def __init__(self, label_files: list, image_folder: list = ['.'],
                  output_folder: str = 'pairs', verbose: bool = False):
-        self.labels_file = labels_file
-        self.images_folder = images_folder
+        self.label_files = label_files
+        self.image_folder = image_folder
         self.output_folder = output_folder
         self.verbose = verbose
 
@@ -39,24 +39,31 @@ class Matchmaker:
         else:
             logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
 
-        self.images = Common.listdir(self.images_folder, ['png'])
-        self.labels = self.load_labels(self.labels_file)
+        # Load folders
+        self.images = []
+        sub_folders = [os.path.join(self.image_folder, folder) for folder in os.listdir(self.image_folder)]
+        image_folders = [folder for folder in sub_folders if os.path.isdir(folder)]
+        image_folders += [self.image_folder]
 
-        if not self.labels:
-            print('WARNING: No valid LABELS in given folder.')
-        else:
-            print(f'Found {len(self.labels)} labels.')
-
+        for image_folder in image_folders:
+            self.images += Common.listdir(image_folder, ['png'])
         if not self.images:
             print('WARNING: No valid IMAGES in given folder.')
         else:
             print(f'Found {len(self.images)} image file.')
 
+        # Load labels
+        self.labels = []
+        for label_file in label_files:
+            self.labels += self.load_labels(label_file)
+        if not self.labels:
+            print('WARNING: No valid LABELS in given folder.')
+        else:
+            print(f'Found {len(self.labels)} labels.')
+
+        # Create output part if necessary
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
-
-        # self.suspicious_files = []
-        # self.generated_staves = 0
 
     def __call__(self):
         if not self.images or not self.labels:
@@ -111,7 +118,7 @@ class Matchmaker:
 
         return complete_parts
 
-    def load_labels(self, filename) -> dict:
+    def load_labels(self, filename: str) -> dict:
         """Load labels from file and return as a dictionary."""
         # print(f'labels file: {filename}')
         # print(f'path exists: {os.path.exists(filename)}')
@@ -212,13 +219,13 @@ def parseargs():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--images-folder", type=str, default='.',
-        help="Input folder where to look for images.")
+        "-i", "--image-folder", default='.',
+        help="Input folder where to look for images and sub-folders with images.")
     parser.add_argument(
-        "-l", "--labels", type=str, default='.',
-        help="File with labels.")
+        "-l", "--label-files", nargs='+',
+        help="Files with labels.")
     parser.add_argument(
-        "-o", "--output-folder", type=str, default='out',
+        "-o", "--output-folder", type=str, default='pairs',
         help="Output folder to copy complete pairs.")
     parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,
@@ -233,8 +240,8 @@ def main():
     start = time.time()
 
     cutter = Matchmaker(
-        images_folder=args.images_folder,
-        labels_file=args.labels,
+        image_folder=args.image_folder,
+        label_files=args.label_files,
         output_folder=args.output_folder,
         verbose=args.verbose)
     cutter()
