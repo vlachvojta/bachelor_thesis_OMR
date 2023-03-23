@@ -1,9 +1,16 @@
 #!/usr/bin/python3.8
-"""Get label-image pairs from two separate folders.
+"""Get label-image pairs from two folders and copy to a new folder with corresponding names.
+
+Part is complete when the number of images is equal to the number of labels and
+part has not generated any suspicious images.
+
+Image is suspicious a when whole page image was split
+into images higher then threshold = it's not an image of one music stave but more.
+In the input folder this is said by the image name starting with 'z'.
 
 Usage:
-$ python3 matchmaker.py --labels 5_labels --images 4_images -o 6_pairs
-Resulting in copying pairs of labels and images to folder 6_pairs.
+$ python3 matchmaker.py --labels 5_labels/generated_labels.semantic --images 4_images -o 6_pairs
+Resulting in copying pairs of labels and images to 6_pairs with new names.
 """
 
 import argparse
@@ -35,15 +42,15 @@ class Matchmaker:
         self.images = Common.listdir(self.images_folder, ['png'])
         self.labels = self.load_labels(self.labels_file)
 
-        if not self.images:
-            print('WARNING: No valid IMAGES in given folder.')
-        else:
-            print(f'Found {len(self.images)} image file.')
-
         if not self.labels:
             print('WARNING: No valid LABELS in given folder.')
         else:
             print(f'Found {len(self.labels)} labels.')
+
+        if not self.images:
+            print('WARNING: No valid IMAGES in given folder.')
+        else:
+            print(f'Found {len(self.images)} image file.')
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
@@ -57,8 +64,6 @@ class Matchmaker:
             return
 
         self.images = [os.path.basename(image) for image in self.images]
-        self.labels = [os.path.basename(label) for label in self.labels]
-        print('sus_parts')
 
         # print(len(self.images))
         # lent = len(self.images)
@@ -67,40 +72,44 @@ class Matchmaker:
         image_parts = [self.get_part_name_with_suspicious(img) for img in self.images]
         label_parts = [self.get_part_name(label) for label in self.labels]
 
-        print('---------------------')
-
         image_parts = self.list_to_dict_sum(image_parts)
         label_parts = self.list_to_dict_sum(label_parts)
 
-        suspicious_parts = self.get_suspicious_parts(image_parts.keys())
-        print(f'sus parts: {suspicious_parts}')
+        print(f'LABELS originate from {len(label_parts)} parts.')
+        print(f'IMAGES originate from {len(label_parts)} parts.')
 
-        print(len(image_parts))
-        print(image_parts)
-        print(len(label_parts))
-        print(label_parts)
-        # print('---------------------')
+        sus_img_parts = self.get_sus_parts(self.images)
+        print(f'\t{len(sus_img_parts)} part(s) has generated suspicious images.')
 
-        pairs = {}
-
-        for part_name, _ in image_parts.items():
-            if part_name in label_parts and not part_name in suspicious_parts:
-                pairs[part_name] = [label_parts[part_name], image_parts[part_name]]
-                print(f'{part_name}: \t(i: {image_parts[part_name]}, l: {label_parts[part_name]})')
-
-
+        complete_parts = self.get_complete_parts(image_parts, label_parts, sus_img_parts)
+        sum_values = sum(complete_parts.values())
+        print(f'Found {len(complete_parts)} complete parts with {sum_values} images and labels.')
+        # , copying to {self.output_folder}')
 
         # for i, file in enumerate(self.input_files):
-        #     if i % 1000 == 0:
-        #         suspicious_files_path = os.path.join(self.output_folder, '0_suspicious_files.json')
-        #         print(f'\t{len(self.suspicious_files)} files was suspicious, writing to file.')
-        #         Common.write_to_file(self.suspicious_files, suspicious_files_path)
         #     if not self.verbose:
         #         Common.print_dots(i, 200, 8_000)
         #     logging.debug('Working with: %d, %s', i, file)
 
 
         # self.print_results()
+
+    def get_complete_parts(self, image_parts: dict, label_parts: dict, sus_img_parts: set):
+        """Go through images dictionary and labels dictionary and return complete parts.
+
+        Part is complete when the number of images is equal to the number of labels and 
+        part has not generated any suspicious images."""
+        complete_parts = {}
+
+        for part_name, _ in image_parts.items():
+            if (part_name in label_parts and
+                    not part_name in sus_img_parts and
+                    label_parts[part_name] == image_parts[part_name]):
+                complete_parts[part_name] = label_parts[part_name]
+                # print(f'{part_name}: \t(i: {image_parts[part_name]},'
+                #       f' l: {label_parts[part_name]})')
+
+        return complete_parts
 
     def load_labels(self, filename) -> dict:
         """Load labels from file and return as a dictionary."""
@@ -126,17 +135,18 @@ class Matchmaker:
 
         return labels
 
-    def get_suspicious_parts(self, image_parts: list) -> set:
-        """Get a dictionary of images and counts, separate suspicious images."""
-        print(image_parts)
-        all_images = [os.path.basename(image) for image in self.images]
+    def get_sus_parts(self, images: list) -> set:
+        """Get a list of images in input folders, return onlysuspicious images.
+        
+        Suspicious image name starts with 'z'."""
+        # print(images)
+        # all_images = [os.path.basename(image) for image in self.images]
 
         sus_parts = set()
-        for image in all_images:
-            z, file_name, part_name, *_  = re.split(r'\_', image)
-            sus_parts.update(['_'.join([file_name, part_name])])
-        
-        # print(f'sus: {sus_parts}')
+        for image in images:
+            if image[0] == 'z':
+                _, file_name, part_name, *_  = re.split(r'\_|\-', image)
+                sus_parts.update(['_'.join([file_name, part_name])])
 
         return sus_parts
 
