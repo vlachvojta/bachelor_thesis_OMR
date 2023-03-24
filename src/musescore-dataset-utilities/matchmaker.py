@@ -33,6 +33,7 @@ class Matchmaker:
         self.image_folder = image_folder
         self.output_folder = output_folder
         self.verbose = verbose
+        self.stats_file = os.path.join(self.output_folder, 'stats.json')
 
         if verbose:
             logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
@@ -95,7 +96,7 @@ class Matchmaker:
 
         self.get_stats_about_parts(image_parts, label_parts)
 
-        sus_img_parts = self.get_sus_parts(self.images)
+        sus_img_parts = self.get_sus_parts(self.images)  # - self.extra_image_parts
         # print(f'\t{len(sus_img_parts)} part(s) has generated suspicious images.')
         logging.debug(f'sus parts: {sus_img_parts}')
 
@@ -104,6 +105,9 @@ class Matchmaker:
         complete_parts = self.get_complete_parts(image_parts, label_parts, sus_img_parts)
 
         self.print_results(complete_parts, sus_img_parts)
+
+        # self.copy_complete_parts(complete_parts, sus_img_parts)
+
         # , copying to {self.output_folder}')
 
         # for i, file in enumerate(self.input_files):
@@ -111,8 +115,8 @@ class Matchmaker:
         #         Common.print_dots(i, 200, 8_000)
         #     logging.debug('Working with: %d, %s', i, file)
 
-
         # self.print_results()
+
     def print_results(self, complete_parts, sus_img_parts):
         print('')
         print('--------------------------------------')
@@ -120,12 +124,11 @@ class Matchmaker:
         total_parts_found_len = len(self.total_parts_found)
         print(f'From total {total_parts_found_len} unique parts found:')
 
-        complete_ratio = len(complete_parts) / total_parts_found_len * 100
+        complete_parts_len = len(complete_parts)
+        complete_ratio = complete_parts_len / total_parts_found_len * 100
         sum_values = sum(complete_parts.values())
-        print(f'\t{len(complete_parts)} ({complete_ratio:.1f} %) complete parts with '
+        print(f'\t{complete_parts_len} ({complete_ratio:.1f} %) complete parts with '
               f'{sum_values} images and labels.')
-        sus_ratio = len(sus_img_parts) / total_parts_found_len * 100
-        print(f'\t{len(sus_img_parts)} ({sus_ratio:.1f} %) parts generated suspicious images.')
 
         not_fit_ratio = self.not_fitting_staff_count / total_parts_found_len * 100
         print(f'\t{self.not_fitting_staff_count} ({not_fit_ratio:.1f} %) parts '
@@ -139,6 +142,26 @@ class Matchmaker:
         extra_label_ratio = extra_label_parts_len / total_parts_found_len * 100
         print(f'\t{extra_label_parts_len} ({extra_label_ratio:.1f} %) parts generated only labels.')
 
+        sus_ratio = len(sus_img_parts) / total_parts_found_len * 100
+        print(f'\t{len(sus_img_parts)} ({sus_ratio:.1f} %) parts generated suspicious images.')
+
+        output = {}
+        output['Total parts found len'] = total_parts_found_len
+        output['Total parts found'] = list(self.total_parts_found)
+        output['Complete parts len'] = complete_parts_len
+        output['Complete parts'] = complete_parts
+        output['Not fitting staff count'] = self.not_fitting_staff_count
+        output['Extra image parts count'] = extra_image_parts_len
+        output['Extra image parts'] = list(self.extra_image_parts)
+        output['Extra label parts count'] = extra_label_parts_len
+        output['Extra label parts'] = list(self.extra_label_parts)
+
+        if not os.path.exists(self.stats_file):
+            Common.write_to_file(output, self.stats_file)
+            print(f'Stats saved to {self.stats_file}')
+        else:
+            print('WARNING: stats file already exists, printing to stdout.')
+            print(output)
 
     def get_stats_about_parts(self, image_parts: dict, label_parts: dict) -> None:
         """Get stats about parts using dictionary input with names as keys. Save stats to self."""
