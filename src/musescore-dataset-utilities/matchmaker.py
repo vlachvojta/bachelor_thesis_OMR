@@ -4,7 +4,7 @@
 Part is complete when the number of images is equal to the number of labels and
 part has not generated any suspicious images.
 
-Image is suspicious a when whole page image was split
+Image is suspicious when a whole page image was split
 into images higher then threshold = it's not an image of one music stave but more.
 In the input folder this is said by the image name starting with 'z'.
 
@@ -69,7 +69,8 @@ class Matchmaker:
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
 
-        self.not_fitting_staff_count = 0
+        self.no_new_system_parts = {}
+        self.not_fitting_staff_parts = {}
         self.total_parts_found = set()
         self.extra_label_parts = set()
         self.extra_image_parts = set()
@@ -130,8 +131,14 @@ class Matchmaker:
         print(f'\t{complete_parts_len} ({complete_ratio:.1f} %) complete parts with '
               f'{sum_values} images and labels.')
 
-        not_fit_ratio = self.not_fitting_staff_count / total_parts_found_len * 100
-        print(f'\t{self.not_fitting_staff_count} ({not_fit_ratio:.1f} %) parts '
+        no_new_system_len = len(self.no_new_system_parts)
+        no_new_system_ratio = no_new_system_len / total_parts_found_len * 100
+        print(f'\t{no_new_system_len} ({no_new_system_ratio:.1f} %) parts '
+              'generated only one label and more images. (missing new-system tag in musicxml)')
+
+        not_fit_len = len(self.not_fitting_staff_parts)
+        not_fit_ratio = not_fit_len / total_parts_found_len * 100
+        print(f'\t{not_fit_len} ({not_fit_ratio:.1f} %) parts '
               'had differenct counts of labels and images.')
 
         extra_image_parts_len = len(self.extra_image_parts)
@@ -150,7 +157,10 @@ class Matchmaker:
         output['Total parts found'] = list(self.total_parts_found)
         output['Complete parts len'] = complete_parts_len
         output['Complete parts'] = complete_parts
-        output['Not fitting staff count'] = self.not_fitting_staff_count
+        output['No new system parts count'] = no_new_system_len
+        output['No new system parts (image count)'] = self.no_new_system_parts
+        output['Not fitting staff count'] = not_fit_len
+        output['Not fitting staff parts (labels, images)'] = self.not_fitting_staff_parts
         output['Extra image parts count'] = extra_image_parts_len
         output['Extra image parts'] = list(self.extra_image_parts)
         output['Extra label parts count'] = extra_label_parts_len
@@ -172,7 +182,6 @@ class Matchmaker:
         self.extra_label_parts = label_parts - image_parts
         self.extra_image_parts = image_parts - label_parts
 
-
     def get_complete_parts(self, image_parts: dict, label_parts: dict, sus_img_parts: set):
         """Go through images dictionary and labels dictionary and return complete parts.
 
@@ -187,8 +196,11 @@ class Matchmaker:
                     # logging.debug(f'{part_name}:\t(i: {image_parts[part_name]},'
                     #               f' l: {label_parts[part_name]})\tOK')
                     complete_parts[part_name] = label_parts[part_name]
+                elif label_parts[part_name] == 1:
+                    self.no_new_system_parts[part_name] = image_parts[part_name]
                 else:
-                    self.not_fitting_staff_count += 1
+                    self.not_fitting_staff_parts[part_name] = [label_parts[part_name],
+                                                               image_parts[part_name]]
                     logging.debug(f'{part_name}:\t(i: {image_parts[part_name]},'
                                   f' l: {label_parts[part_name]})\t')
 
@@ -263,28 +275,6 @@ class Matchmaker:
                 processed_parts.add(part)
                 sums[part] = 1
         return sums
-
-
-    # def print_results(self):
-    #     """Print stats for input and output files."""
-    #     print('')
-    #     print('--------------------------------------')
-    #     print('Results:')
-    #     print(f'From {len(self.input_files)} input files:')
-    #     print(f'\t{self.generated_staves} generated staves.')
-
-    #     if len(self.suspicious_files) > 0:
-    #         self.suspicious_files = sorted(list(set(self.suspicious_files)))
-    #         print(f'\t{len(self.suspicious_files)} files was suspicious.')
-    #         suspicious_files_path = os.path.join(self.output_folder, '0_suspicous_files.json')
-
-    #         if not os.path.exists(suspicious_files_path):
-    #             Common.write_to_file(self.suspicious_files, suspicious_files_path)
-    #         else:
-    #             # TODO concat existing file to new and save
-    #             print(f'WARNING: {suspicious_files_path} already exists, '
-    #                   'printing to stdout instead')
-    #             print(self.suspicious_files)
 
 
 def parseargs():
