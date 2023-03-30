@@ -141,6 +141,9 @@ class Matchmaker:
         print(f'\t{not_fit_len} ({not_fit_ratio:.1f} %) parts '
               'had differenct counts of labels and images.')
 
+        sus_ratio = len(sus_img_parts) / total_parts_found_len * 100
+        print(f'\t{len(sus_img_parts)} ({sus_ratio:.1f} %) parts generated suspicious images.')
+
         extra_image_parts_len = len(self.extra_image_parts)
         extra_image_ratio = extra_image_parts_len / total_parts_found_len * 100
         print(f'\t{extra_image_parts_len} ({extra_image_ratio:.1f} %) parts generated only images.')
@@ -148,9 +151,6 @@ class Matchmaker:
         extra_label_parts_len = len(self.extra_label_parts)
         extra_label_ratio = extra_label_parts_len / total_parts_found_len * 100
         print(f'\t{extra_label_parts_len} ({extra_label_ratio:.1f} %) parts generated only labels.')
-
-        sus_ratio = len(sus_img_parts) / total_parts_found_len * 100
-        print(f'\t{len(sus_img_parts)} ({sus_ratio:.1f} %) parts generated suspicious images.')
 
         output = {}
         output['Total parts found len'] = total_parts_found_len
