@@ -58,7 +58,7 @@ class Matchmaker:
                        for folder in os.listdir(self.image_folder)]
         image_folders = [folder for folder in sub_folders if os.path.isdir(folder)]
         image_folders += [self.image_folder]
-        print(f'Looking for images in {len(image_folders)} folders')
+        print(f'Looking for images in {len(image_folders)} folders (including the root input folder)')
 
         for image_folder in image_folders:
             self.images += Common.listdir(image_folder, ['png'])
