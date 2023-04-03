@@ -1,3 +1,5 @@
+#!/usr/bin/python3.8
+
 import json
 import re
 import argparse
