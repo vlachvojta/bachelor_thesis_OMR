@@ -58,7 +58,8 @@ class Matchmaker:
                        for folder in os.listdir(self.image_folder)]
         image_folders = [folder for folder in sub_folders if os.path.isdir(folder)]
         image_folders += [self.image_folder]
-        print(f'Looking for images in {len(image_folders)} folders (including the root input folder)')
+        print(f'Looking for images in {len(image_folders)} folders '
+              '(including the root input folder)')
 
         for image_folder in image_folders:
             self.images += Common.listdir(image_folder, ['png'])
@@ -112,8 +113,17 @@ class Matchmaker:
         """Copy complete parts of labels and images to given location and rename them to match."""
 
         # Find all complete parts images with path to source image
+        print("Getting images with path")
+        startos = time.time()
         images_with_path = self.get_images_with_path(complete_parts)
+        endos = time.time()
+        print(f'Time looking for images: {endos - startos:.2f} s')
+
+        print("Getting labels with path")
+        startos = time.time()
         complete_labels = self.get_complete_labels(complete_parts)
+        endos = time.time()
+        print(f'Time looking for images: {endos - startos:.2f} s')
 
         self.save_labels(complete_labels)
 
@@ -126,7 +136,8 @@ class Matchmaker:
         if self.verbose:
             print(f'Labels saved, copying images from {len(complete_parts)} parts.')
         else:
-            print(f'Labels saved, copying images from {len(complete_parts)} parts... (every dot is 200 images, line is 10_000)')
+            print(f'Labels saved, copying images from {len(complete_parts)} parts '
+                  '(every dot is 200 images, line is 10_000)')
 
         for i, (complete_part, pairs_count) in enumerate(complete_parts.items()):
             if not self.verbose:
@@ -135,11 +146,14 @@ class Matchmaker:
             image_with_path = images_with_path[complete_part]
             part_labels = complete_labels[complete_part]
 
-            assert pairs_count == len(image_with_path),\
-                (f"Part {complete_part} couldn't be copied, because of len of images error."
-                 f"Should have {pairs_count} but got {len(image_with_path)} instead")
-            assert pairs_count == len(part_labels),\
-                f"Part {complete_part} couldn't be copied, because of len of labels error."
+            if not pairs_count == len(image_with_path):
+                print(f"Part {complete_part} couldn't be copied, because of len of images error. SKIPPING "
+                      f"Should have {pairs_count} but got {len(image_with_path)} instead")
+                continue
+
+            if not pairs_count == len(part_labels):
+                print(f"Part {complete_part} couldn't be copied, because of len of labels error. SKIPPING")
+                continue
 
             for label_id, image_with_path in zip(sorted(part_labels),
                                                  image_with_path):
@@ -196,7 +210,8 @@ class Matchmaker:
                                 f"possible loss of labels for part {part}")
 
         # Save labels to a file
-        label_output_lines = [f'{file} "{labels}"' for file, labels in labels_db.items()]
+        tag_for_PERO = 000000
+        label_output_lines = [f'{file} {tag_for_PERO} {labels}' for file, labels in labels_db.items()]
         output = '\n'.join(sorted(label_output_lines)) + '\n'
         Common.write_to_file(output, self.out_label_file)
 
