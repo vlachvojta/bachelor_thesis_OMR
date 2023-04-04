@@ -37,22 +37,25 @@ class Symbol_converter:
 
         print(f'\tSC: Loading symbols from {len(input_files)} file(s).')
         input_ = self.load_symbols_from_files(input_files)
-        print(f'\tSC: {len(input_)} symbols loaded.')
 
         if self.mode == 'orig':
+            print(f'\tSC: {len(input_)} symbols loaded.')
             symbols_out = self.convert_list(input_, reverse)
 
             if output == 'stdout':
                 print(' '.join(symbols_out))
             else:
                 Common.write_to_file(' '.join(symbols_out), output)
+                print(f'Converted labels saved to {output}')
         elif self.mode == 'matchmaker':
+            print(f'\tSC: {len(input_)} lines of labels loaded.')
             lines_out = self.convert_lines(input_, reverse)
             if output == 'stdout':
                 print('\n'.join(lines_out))
             else:
                 # print('\n'.join(lines_out[:20]))
                 Common.write_to_file('\n'.join(lines_out), output)
+                print(f'Converted labels saved to {output}')
 
         if len(self.n_existing_labels) > 0:
             print(f'Found {len(self.n_existing_labels)} not existing labels, please update translator')
@@ -99,9 +102,28 @@ class Symbol_converter:
             labels_orig = re.split(r"\s+", labels)
             labels_converted = self.convert_list(labels_orig, reverse)
 
-            output.append(f'{stave_id}"{" ".join(labels_converted)}"')
+            stave_id = self.get_correct_PERO_id(stave_id)
+
+            output.append(f'{stave_id} "{" ".join(labels_converted)}"')
 
         return output
+
+    def get_correct_PERO_id(self, stave_id: str) -> str:
+        """Checks if stave_id is correct PERO_ID, must have png name + zero tag for LMDB."""
+        if not stave_id:
+            return ""
+
+        img_id, *rest = re.split(r'\s', stave_id)
+
+        if not img_id.endswith('.png'):
+            img_id = f'{img_id}.png'
+
+        if len(rest) == 0:
+            return f'{img_id} {Common.PERO_LMDB_zero_tag}'
+        elif len(rest) == 1:
+            return f'{img_id} {Common.PERO_LMDB_zero_tag}'
+        elif len(rest) > 1:
+            return f'{stave_id}'
 
     def convert_list(self, symbols_in: list = [],
                      reverse: bool = False) -> list:
