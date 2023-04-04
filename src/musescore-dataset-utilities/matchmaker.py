@@ -210,8 +210,8 @@ class Matchmaker:
                                 f"possible loss of labels for part {part}")
 
         # Save labels to a file
-        tag_for_PERO = 000000
-        label_output_lines = [f'{file} {tag_for_PERO} {labels}' for file, labels in labels_db.items()]
+        label_output_lines = [f'{file}.png {Common.PERO_LMDB_zero_tag} {labels}'
+                              for file, labels in labels_db.items()]
         output = '\n'.join(sorted(label_output_lines)) + '\n'
         Common.write_to_file(output, self.out_label_file)
 
