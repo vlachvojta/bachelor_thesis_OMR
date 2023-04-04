@@ -12,7 +12,7 @@ import sys
 import os
 import time
 import random
-# import re
+import re
 # import logging
 # from shutil import copyfile
 
@@ -23,22 +23,28 @@ from common import Common  # noqa: E402
 
 class LabelSetSplitter:
     """Split labels dataset into two parts used for training (trn) and testing(tst)."""
-    def __init__(self, input_file: str, tst_len: int = 2000):
+    def __init__(self, input_file: str, output_file_name: str, tst_len: int = 2000):
         self.input_file = input_file
         self.tst_len = tst_len
+        self.output_file_name = output_file_name
 
-        # Load intput file
+        self.labels = re.split(r'\n', Common.read_file(self.input_file))
+        print(f'Found {len(self.labels)} labels.')
 
     def __call__(self):
-        ...
         # Random shuffle labels
-        # random.shuffle(list)
+        labels_random = self.labels
+        random.shuffle(labels_random)
 
         # Extract self.tst_len labels for tst set
+        tst_subset = labels_random[:self.tst_len]
+        trn_subset = labels_random[self.tst_len:]
 
-        # Sort both subsets
-
-        # Save both subsets
+        # Save both to corresponding file
+        output = '\n'.join(tst_subset) + '\n'
+        Common.write_to_file(output, f'{self.output_file_name}.tst')
+        output = '\n'.join(trn_subset) + '\n'
+        Common.write_to_file(output, f'{self.output_file_name}.trn')
 
 
 def parseargs():
@@ -49,8 +55,11 @@ def parseargs():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input-file", default='.',
+        "-i", "--input-file",
         help="Input file with all labels.")
+    parser.add_argument(
+        "-o", "--output-file-name",
+        help="Output file name, script will add .tst and .trn) at the end of each file.")
     parser.add_argument(
         "-l", "--tst-len", type=int, default=2000,
         help="Length of the tst subset.")
@@ -65,6 +74,7 @@ def main():
 
     splitter = LabelSetSplitter(
         input_file=args.input_file,
+        output_file_name=args.output_file_name,
         tst_len=args.tst_len)
     splitter()
 
