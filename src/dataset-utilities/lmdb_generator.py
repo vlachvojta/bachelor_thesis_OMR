@@ -86,20 +86,21 @@ class LMDB_generator:
             self.files_to_lmdb(files2, os.path.join(self.output, 'images.lmdb'))
 
     def files_to_lmdb(self, files: list = [], output: str = 'output.lmdb'):
-        print(f'Writing files to {output} (every dot is 1000 files)')
+        print(f'Writing {len(files)} files to {output} '
+              '(every dot is 200 files, every line is 10_000 files)')
 
-        self.db = lmdb.open(output, map_size=self.gb100)
+        lmdb_db = lmdb.open(output, map_size=self.gb100)
 
         for i, file in enumerate(files):
-            Common.print_dots(i)
+            Common.print_dots(i, 200, 10_000)
             file_name = re.split('/', file)[-1]
             file_id = re.split(r'\.', file_name)[0]
             file_ext = re.split(r'\.', file_name)[-1]
 
-            key = f'{file_id}-000000.{file_ext}'
+            key = f'{file_id}.{file_ext}'
             data = Common.read_file(file, lmdb=True)
 
-            with self.db.begin(write=True) as txn_out:
+            with lmdb_db.begin(write=True) as txn_out:
                 c_out = txn_out.cursor()
                 c_out.put(key.encode(), data)
         print('')
