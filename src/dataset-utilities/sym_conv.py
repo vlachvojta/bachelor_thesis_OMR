@@ -115,26 +115,49 @@ def main():
             # 'clef.C-': 'CC',
             # 'clef.F-': 'CF',
             # 'clef.G-': 'CG',
-            'barline': 'b',
-            'clef-C': 'cc',
-            'clef-F': 'cf',
-            'clef-G': 'cg',
-            'gracenote-': 'g',
+            'barline': '|',
+            'clef-C': '<',
+            'clef-F': '=',
+            'clef-G': '>',
             'keySignature-': 'k',
-            'multirest-': 'm',
-            'note-': 'n',
+            'multirest-': '-',
+            'timeSignature-C': '[',
+            'timeSignature-C/': ']',
             'timeSignature-': 's',
             'rest-': 'r',
             'tie': 't',
+        }
+    )
+# k   s
+
+# h i j l  m n o p q r   t u v w x y z
+
+    # notes and gracenotes
+    convertor.replace_dict(
+        {
+            'gracenote-A': 'a',
+            'gracenote-B': 'b',
+            'gracenote-C': 'c',
+            'gracenote-D': 'd',
+            'gracenote-E': 'e',
+            'gracenote-F': 'f',
+            'gracenote-G': 'g',
+            'note-A': 'A',
+            'note-B': 'B',
+            'note-C': 'C',
+            'note-D': 'D',
+            'note-E': 'E',
+            'note-F': 'F',
+            'note-G': 'G',
         }
     )
 
     # semantic lengths 
     convertor.replace_dict(
         {
-            'double_whole': 'D',
+            'double_whole': 'w',
             'hundred_twenty_eighth': 'h',
-            'eighth': 'E',
+            'eighth': 'z',
             'half': 'H',
             'quarter': 'q',
             'quadruple_whole': 'Q',
@@ -142,7 +165,8 @@ def main():
             'sixteenth': 'S',
             'sixty_fourth': 's',
             'whole': 'W',
-            'fermata': 'f',
+            'fermata': '^',
+            'breve': 'Y',
             '_': ''
         }
     )
