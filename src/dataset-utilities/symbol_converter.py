@@ -116,7 +116,10 @@ class Symbol_converter:
         img_id, *rest = re.split(r'\s', stave_id)
 
         if not img_id.endswith('.png'):
-            img_id = f'{img_id}.png'
+            img_id = f'{img_id}-{Common.PERO_LMDB_zero_tag}.png'
+        else:
+            img_id_withou_ext, *_ = re.split(r'\.', img_id)
+            img_id = f'{img_id_withou_ext}-{Common.PERO_LMDB_zero_tag}.png'
 
         if len(rest) == 0:
             return f'{img_id} {Common.PERO_LMDB_zero_tag}'
