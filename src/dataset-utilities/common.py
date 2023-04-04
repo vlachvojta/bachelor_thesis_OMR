@@ -16,6 +16,8 @@ class Common:
     files, folders and symbols.
     """
 
+    PERO_LMDB_zero_tag = "000000"
+
     @staticmethod
     def print_dict(data: dict, files: bool = False):
         """Print dictionary in a way I like.
@@ -94,6 +96,10 @@ class Common:
     @staticmethod
     def write_to_file(data, file) -> None:
         """Caller is responsible for what is sent to which type of file."""
+        file_dir = os.path.dirname(file)
+        if not os.path.exists(file_dir):
+            os.makedirs(file_dir)
+
         file_extension = file.split('.')[-1]
 
         if file_extension == 'json':
