@@ -27,6 +27,7 @@ class Symbol_converter:
         self.dictionary = Common.read_file(translator_file)
         self.mode = mode
         self.n_existing_labels = set()
+        self.error_splitting_lines = set()
 
         if len(input_files) == 0:
             print('ERR: No input files, exiting')
@@ -56,6 +57,10 @@ class Symbol_converter:
         if len(self.n_existing_labels) > 0:
             print(f'Found {len(self.n_existing_labels)} not existing labels, please update translator')
             print(sorted(self.n_existing_labels))
+        if len(self.error_splitting_lines) > 0:
+            print(f'{len(self.n_existing_labels)} lines have different format than needed')
+            print(sorted(self.n_existing_labels))
+
 
     def load_symbols_from_files(self, files: list = []) -> list:
         symbols_in = []
@@ -85,7 +90,11 @@ class Symbol_converter:
         for line in lines_in:
             if not line:
                 continue
-            stave_id, labels, _ = re.split(r"\"+", line)
+            try:
+                stave_id, labels, _ = re.split(r"\"+", line)
+            except ValueError:
+                self.error_splitting_lines.add(line)
+                continue
 
             labels_orig = re.split(r"\s+", labels)
             labels_converted = self.convert_list(labels_orig, reverse)
