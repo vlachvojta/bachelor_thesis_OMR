@@ -22,6 +22,7 @@ import sys
 import os
 import time
 import logging
+import numpy as np
 import pandas as pd
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
@@ -31,12 +32,15 @@ from common import Common  # noqa: E402
 
 class MusescoreAnalyzer:
     """Analyze semantic labels and musescore xml files and export to csv pandas file."""
+
+    EMPTY_SYSTEM_ID = 'EMPTY_SYSTEM_ID'
+
     def __init__(self, label_files: str, musicxml_files: str, input_folders: str,
                  file_extensions_for_input_folders: list, output_file: str = 'stats.csv',
                  verbose: bool = False):
-        self.label_files = label_files
-        self.musicxml_files = musicxml_files
-        self.input_folders = input_folders
+        self.label_files = label_files if label_files else []
+        self.musicxml_files = musicxml_files if musicxml_files else []
+        self.input_folders = input_folders if input_folders else []
         self.file_extensions_for_input_folders = file_extensions_for_input_folders
         self.output_file = output_file
         self.verbose = verbose
@@ -47,18 +51,16 @@ class MusescoreAnalyzer:
             logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
 
         # Load labels
-        # print(f'Loading labels from {len(self.label_files)} files.')
-        # self.labels = {}
-        # for label_file in label_files:
-        #     self.labels.update(self.load_labels(label_file))
-        # if not self.labels:
-        #     print('WARNING: No valid LABELS in given folder.')
-        # else:
-        #     print(f'\tFound {len(self.labels)} labels.')
+        logging.info(f'Loading labels from {len(self.label_files)} files.')
+        self.labels = {}
+        for label_file in self.label_files:
+            self.labels.update(self.load_labels(label_file))
+        if not self.labels:
+            logging.info('No valid LABELS in given folders and files.')
+        else:
+            logging.info(f'\tFound {len(self.labels)} labels.')
 
-        # Create output part if necessary
-        # if not os.path.exists(self.output_folder):
-        #     os.makedirs(self.output_folder)
+        # TODO Load musicxml files
 
         # self.no_new_system_parts = {}
         # self.not_fitting_staff_parts = {}
@@ -68,10 +70,35 @@ class MusescoreAnalyzer:
         # self.sum_values = 0
 
     def __call__(self):
-        ...
-        # if not self.images or not self.labels:
-        #     print("ERROR: No images or labels where found, cannot generate no match.")
-        #     return
+        if not self.labels:
+            logging.error("No images or labels where found, cannot generate stats.")
+            return
+
+        # df = pd.DataFrame(self.labels.keys(), dtype=pd.str, columns=['system_id'])
+        df = pd.DataFrame.from_dict(self.labels, orient='index', columns=['labels']
+                                    )
+        df.index = df.index.set_names(['system_id'])
+
+        for new_column in ['type']:
+            df['type'] = 'semantic_labels'
+            df['type'] = df['type'].astype('category')
+
+        print(df.count(axis='columns')[0])
+
+        # df.insert(df.count(axis='columns')[0], 'is_polyphonic', np.nan)
+        for new_column in ['is_polyphonic', 'char_length', 'symbol_length']:
+            df[new_column] = np.nan
+            df[new_column] = df[new_column].astype('category')
+
+        df = df.iloc[:20]   # TODO delete this, only for development purposes
+        df = df.apply(self.get_stats_for_row, axis=1)
+
+        print(df.info())
+        print('---------------------')
+        print(df)
+
+
+        # df['new_col'] = df.apply(self.get_stats, axis=1)
 
         # images_base = [os.path.basename(image) for image in self.images]
 
@@ -98,6 +125,81 @@ class MusescoreAnalyzer:
 
         # self.copy_complete_parts(complete_parts)
 
+    def get_stats_for_row(self, row: pd.Series) -> pd.Series:
+        """Gets different stats for row from DataFrame."""
+        row['char_length'] = len(row['labels'])
+        row['symbol_length'] = len(re.split(r'\s+', row['labels']))
+
+        label_sequence = row['labels']
+
+        if not '+' in label_sequence:
+            row['is_polyphonic'] = False
+        else:
+            # print(label_sequence)
+            chords_splitted = re.split(r'\+', label_sequence)
+            # print(f'seq: {len(label_sequence)}, symbols: {len(chords_splitted)}')
+
+        # row['is_polyphonic'] = self.is_sequence_polyphonic(row['labels'])
+
+        return row
+
+    def is_sequence_polyphonic(self, sequence: str) -> bool:
+        """Returns True if sequence of labels is polyphonic. False otherwise."""
+        return True
+
+    def load_labels(self, filename: str) -> dict:
+        """Load labels from one file and return as a dictionary."""
+        if not os.path.isfile(filename):
+            return {}
+
+        data = Common.read_file(filename)
+
+        if not data:
+            return {}
+
+        labels_list = re.split(r'\n', data)
+        labels_list = list(filter(None, labels_list))  # filter out empty lines
+
+        labels_dict = {}
+        for label_line in labels_list:
+            system_id, sequence = self.parse_label_line(label_line)
+            if system_id and sequence:
+                if system_id == self.EMPTY_SYSTEM_ID:
+                    labels_dict[filename] = sequence
+                else:
+                    labels_dict[system_id] = sequence
+
+        return labels_dict
+
+    def parse_label_line(self, label_line) -> (str, str):
+        """Parse a label line. Return tuple of two strings (system id and sequence of labels).
+
+        Label line consists of label header and sequence of labels.
+        Label header consists of system_id and sometimes other data not relevant to this script.
+        """
+        if not label_line:
+            return '', ''
+
+        line_splitted = re.split(r'"', label_line)
+
+        if len(line_splitted) == 1:
+            return self.EMPTY_SYSTEM_ID, label_line
+
+        label_header, *rest = line_splitted
+        rest = line_splitted[1:]
+        system_id, *_ = re.split(r'\s', label_header)
+
+        if not rest:
+            logging.warning(f'Sequence {system_id} is EMPTY. Skipping.')
+            return '', ''
+
+        if len(rest) == 1 or len(rest) == 2:
+            return system_id, rest[0]
+
+        if len(rest) > 2:
+            logging.warning(f'Sequence {system_id} has too many seperators (") in it. '
+                            'Using only the first element.')
+            return system_id, rest[0]
 
 def parseargs():
     """Parse arguments."""
