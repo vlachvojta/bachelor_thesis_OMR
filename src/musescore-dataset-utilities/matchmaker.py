@@ -94,22 +94,15 @@ class Matchmaker:
         print(f'IMAGES originate from {len(image_parts)} parts.')
         print(f'TOTAL  unique parts:  {len(self.total_parts_found)}.')
 
-        # print(f'extra image parts: {len(self.extra_image_parts)}.')
-        # print(f'extra label parts: {len(self.extra_label_parts)}.')
-
         # select parts that both generated some labels and images
         sus_img_parts = [part_name for part_name, part_data in image_parts.items()
                          if part_name in label_parts and part_data['sus']]
         logging.debug(f'sus parts: {sus_img_parts}')
-
         logging.debug('---- Finding complete parts: ----')
         logging.debug('----(printing only incomplete)---')
 
         complete_parts = self.get_complete_parts(image_parts, label_parts)
-        # print(f'len(complete_parts_agg): {len(complete_parts)}')
-
         self.print_results(complete_parts, sus_img_parts)
-
         self.copy_complete_parts(complete_parts)
 
     def copy_complete_parts(self, complete_parts):
@@ -334,19 +327,6 @@ class Matchmaker:
             mscz_id, part_id, *_ = re.split(r'_|-', file)
 
         return f'{mscz_id}_{part_id}'
-
-    def list_to_dict_sum(self, parts: list) -> dict:
-        """Get list with duplicate values, return sum of occurences in dict."""
-        sums = {}
-        # processed_parts = set()
-
-        for part in parts:
-            if part in sums:
-                sums[part] += 1
-            else:
-                # processed_parts.add(part)
-                sums[part] = 1
-        return sums
 
 
 def parseargs():
