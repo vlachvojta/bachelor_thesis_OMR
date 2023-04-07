@@ -40,9 +40,10 @@ class LMDB_generator:
         files1 = files2 = []
 
         if not self.ignore_texts:
-            print('Getting all text file names')
-            files1 = Common.get_files_from_folders(
-                self.in_folders, self.exts1[0], False)
+            print('Exporting text to lmdb is deprecated because it list its use case.')
+            # print('Getting all text file names')
+            # files1 = Common.get_files_from_folders(
+            #     self.in_folders, self.exts1[0], False)
         if not self.ignore_images:
             print('Getting all image file names')
             files2 = Common.get_files_from_folders(
@@ -53,9 +54,9 @@ class LMDB_generator:
             n_file_groups_2 = len(files2) // len(self.exts2)
             assert n_file_groups_1 == n_file_groups_2
 
-        if not self.ignore_texts:
-            self.files_to_lmdb_text(
-                files1, os.path.join(self.output, 'texts.lmdb'))
+        # if not self.ignore_texts:
+        #     self.files_to_lmdb_text(
+        #         files1, os.path.join(self.output, 'texts.lmdb'))
 
         if not self.ignore_images:
             self.files_to_lmdb(files2, os.path.join(self.output, 'images.lmdb'))
@@ -82,6 +83,7 @@ class LMDB_generator:
 
     def files_to_lmdb_text(self, files: list = [],
                            output: str = 'output_lmdb'):
+        """OLD and deprecated. DO NOT USE."""
         print(f'Reading {len(files)} files (every dot is 1000 files)')
 
         data_to_export = {}
@@ -91,7 +93,7 @@ class LMDB_generator:
             file_name = re.split('/', file)[-1]
             file_id = re.split(r'\.', file_name)[0]
 
-            key = f'{file_id}-000000.png'
+            key = f'{file_id}.png'
             data_to_export[key] = Common.read_file(file)
         print('')
 
