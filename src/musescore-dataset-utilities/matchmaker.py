@@ -20,6 +20,7 @@ import os
 import time
 import logging
 from shutil import copyfile
+from datetime import datetime
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
 sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
@@ -81,141 +82,67 @@ class Matchmaker:
 
     def __call__(self):
         if not self.images or not self.labels:
-            print("ERROR: No images or labels where found, cannot generate no match.")
+            logging.error("No images or labels were found, cannot generate no match.")
             return
 
-        images_base = [os.path.basename(image) for image in self.images]
-
-        image_parts = [self.get_part_name_with_suspicious(img) for img in images_base]
-        label_parts = [self.get_part_name(label) for label in self.labels]
-
-        image_parts = self.list_to_dict_sum(image_parts)
-        label_parts = self.list_to_dict_sum(label_parts)
-
-        print(f'LABELS originate from {len(label_parts)} parts.')
-        print(f'IMAGES originate from {len(label_parts)} parts.')
+        image_parts = self.aggregate_files_to_parts(self.images)
+        label_parts = self.aggregate_files_to_parts(self.labels)
 
         self.get_stats_about_parts(image_parts, label_parts)
 
-        sus_img_parts = self.get_sus_parts(images_base)  # - self.extra_image_parts
-        # print(f'\t{len(sus_img_parts)} part(s) has generated suspicious images.')
+        print(f'LABELS originate from {len(label_parts)} parts.')
+        print(f'IMAGES originate from {len(image_parts)} parts.')
+        print(f'TOTAL  unique parts:  {len(self.total_parts_found)}.')
+
+        # print(f'extra image parts: {len(self.extra_image_parts)}.')
+        # print(f'extra label parts: {len(self.extra_label_parts)}.')
+
+        # select parts that both generated some labels and images
+        sus_img_parts = [part_name for part_name, part_data in image_parts.items()
+                         if part_name in label_parts and part_data['sus']]
         logging.debug(f'sus parts: {sus_img_parts}')
 
         logging.debug('---- Finding complete parts: ----')
         logging.debug('----(printing only incomplete)---')
-        complete_parts = self.get_complete_parts(image_parts, label_parts, sus_img_parts)
+
+        complete_parts = self.get_complete_parts(image_parts, label_parts)
+        # print(f'len(complete_parts_agg): {len(complete_parts)}')
 
         self.print_results(complete_parts, sus_img_parts)
 
         self.copy_complete_parts(complete_parts)
 
     def copy_complete_parts(self, complete_parts):
-        """Copy complete parts of labels and images to given location and rename them to match."""
-
-        # Find all complete parts images with path to source image
-        print("Getting images with path")
-        startos = time.time()
-        images_with_path = self.get_images_with_path(complete_parts)  # TODO RE-implement THIS for something else then O(n^2) complexity
-        endos = time.time()
-        print(f'Time looking for images: {endos - startos:.2f} s')
-
-        print("Getting labels with path")
-        startos = time.time()
-        complete_labels = self.get_complete_labels(complete_parts)  # TODO RE-implement THIS for something else then O(n^2) complexity
-        endos = time.time()
-        print(f'Time looking for images: {endos - startos:.2f} s')
-
-        self.save_labels(complete_labels)
-
-        assert len(images_with_path) == len(complete_labels),\
-            "Length of complete images and labels is not equal."
-
-        # complete_parts_subset = {}
-        # complete_parts_subset["1003231_p00"] = complete_parts["1003231_p00"]
+        """Copy complete PAIRS of labels and images to given location and renamte them to match."""
+        if os.path.exists(self.out_label_file):
+            date = datetime.now().strftime("%Y_%m_%d_%H-%M-%S")
+            self.out_label_file = os.path.join(self.output_folder, f'0_labels_{date}.semantic')
+            print(f'PRINTING to new file with date as ID: {date}')
 
         if self.verbose:
-            print(f'Labels saved, copying images from {len(complete_parts)} parts.')
+            print(f'Copying images and labels from {len(complete_parts)} parts.')
         else:
-            print(f'Labels saved, copying images from {len(complete_parts)} parts '
-                  '(every dot is 200 images, line is 10_000)')
+            print(f'Copying images and labels from {len(complete_parts)} parts '
+                  '(every dot is 200 parts, line is 1_000)')
 
-        for i, (complete_part, pairs_count) in enumerate(complete_parts.items()):
-            if not self.verbose:
-                Common.print_dots(i, 200, 10_000)
-            logging.debug(f"Copying {complete_part}")
-            image_with_path = images_with_path[complete_part]
-            part_labels = complete_labels[complete_part]
+        with open(self.out_label_file, 'w', encoding='utf-8') as out_label_file:
+            for i, part_name in enumerate(sorted(complete_parts.keys())):
+                if not self.verbose:
+                    Common.print_dots(i, 200, 1_000)
+                logging.debug(f"Copying {part_name}")
 
-            if not pairs_count == len(image_with_path):
-                print(
-                    f"Part {complete_part} couldn't be copied, because of len of images error. "
-                    f"SKIPPING, Should have {pairs_count} but got {len(image_with_path)} instead")
-                continue
+                for pair in complete_parts[part_name]:
+                    # print(f"For ({pair['label_id']}) writing: {self.labels[pair['label_id']]}")
+                    label_sequence = self.labels[pair['label_id']]
+                    out_label_file.write(
+                        f"{pair['label_id']}.png {Common.PERO_LMDB_zero_tag} {label_sequence}\n")
 
-            if not pairs_count == len(part_labels):
-                print(f"Part {complete_part} couldn't be copied, "
-                      "because of len of labels error. SKIPPING")
-                continue
-
-            for label_id, image_with_path in zip(sorted(part_labels),
-                                                 image_with_path):
-                output_image = os.path.join(self.output_folder, f'{label_id}.png')
-                copyfile(image_with_path, output_image)
-                # logging.debug(f'{label_id} {image_with_path} => {output_image}')
+                    output_image = os.path.join(self.output_folder, f"{pair['label_id']}.png")
+                    copyfile(pair['image_with_path'], output_image)
+                    # print(f"{pair['label_id']} {pair['image_with_path']} => {output_image}")
         print()
 
         print(f"Copying successfull to {self.output_folder}, labels saved to {self.out_label_file}")
-
-    def get_complete_labels(self, complete_parts) -> dict:
-        """Get part names and find all labels that originate from every part.
-
-        Return dictionary, key: part name, value: dict of labels (labe_id, label)
-        """
-        complete_parts_keys = list(complete_parts.keys())
-
-        complete_labels = {}
-        for part_id in complete_parts_keys:
-            results = {label_id: label for label_id, label in self.labels.items()
-                       if f"{part_id}_" in label_id}
-
-            if len(results) > 0:
-                complete_labels[part_id] = results
-
-        return complete_labels
-
-    def get_images_with_path(self, complete_parts) -> dict:
-        """Get complete parts name and find all input images that originate from this part.
-        
-        Return dictionary, key: part name, value: list of image names with paths.
-        """
-        complete_parts_keys = list(complete_parts.keys())
-
-        images_with_path = {}
-        for part_id in complete_parts_keys:
-            finder = re.compile(f".*{part_id}[_-].*")
-            found_images = list(filter(finder.match, self.images))
-
-            if len(found_images) > 0:
-                images_with_path[part_id] = found_images
-
-        return images_with_path
-
-    def save_labels(self, complete_labels) -> None:
-        """Flatten dictionary of dictionary of labels and save to a file."""
-        # Flatten dictionary
-        labels_db = {}
-        for part, labels_in_part in complete_labels.items():
-            if isinstance(labels_in_part, dict):
-                labels_db.update(labels_in_part)
-            else:
-                logging.warning("Value of label_db is not a dict, "
-                                f"possible loss of labels for part {part}")
-
-        # Save labels to a file
-        label_output_lines = [f'{file}.png {Common.PERO_LMDB_zero_tag} {labels}'
-                              for file, labels in labels_db.items()]
-        output = '\n'.join(sorted(label_output_lines)) + '\n'
-        Common.write_to_file(output, self.out_label_file)
 
     def print_results(self, complete_parts, sus_img_parts):
         print('')
@@ -226,7 +153,7 @@ class Matchmaker:
 
         complete_parts_len = len(complete_parts)
         complete_ratio = complete_parts_len / total_parts_found_len * 100
-        self.sum_values = sum(complete_parts.values())
+        self.sum_values = sum([len(pairs) for pairs in complete_parts.values()])
         print(f'\t{complete_parts_len} ({complete_ratio:.1f} %) complete parts with '
               f'{self.sum_values} images and labels.')
 
@@ -281,29 +208,63 @@ class Matchmaker:
         self.extra_label_parts = label_parts - image_parts
         self.extra_image_parts = image_parts - label_parts
 
-    def get_complete_parts(self, image_parts: dict, label_parts: dict, sus_img_parts: set):
+    def get_complete_parts(self, image_parts: dict, label_parts: dict) -> dict:
         """Go through images dictionary and labels dictionary and return complete parts.
 
         Part is complete when the number of images is equal to the number of labels and 
-        part has not generated any suspicious images."""
+        part has not generated any suspicious images.
+
+        Return dict
+            key: part name
+            value: list of pairs {'label_id': label id,
+                                  'image_with_path': image with paths
+        """
         complete_parts = {}
 
-        for part_name, _ in image_parts.items():
-            if (part_name in label_parts and
-                    not part_name in sus_img_parts):
-                if label_parts[part_name] == image_parts[part_name]:
-                    # logging.debug(f'{part_name}:\t(i: {image_parts[part_name]},'
-                    #               f' l: {label_parts[part_name]})\tOK')
-                    complete_parts[part_name] = label_parts[part_name]
-                elif label_parts[part_name] == 1:
-                    self.no_new_system_parts[part_name] = image_parts[part_name]
-                else:
-                    self.not_fitting_staff_parts[part_name] = [label_parts[part_name],
-                                                               image_parts[part_name]]
-                    logging.debug(f'{part_name}:\t(i: {image_parts[part_name]},'
-                                  f' l: {label_parts[part_name]})\t')
+        for part_name, image_part_data in image_parts.items():
+            if part_name in label_parts and not image_part_data['sus']:
+                if label_parts[part_name]['count'] == image_part_data['count']:
+                    pairs = self.get_system_id_image_pairs(image_part_data['files_with_paths'],
+                                                           label_parts[part_name]['files'])
+                    assert len(pairs) == image_part_data['count'], \
+                           'ERROR in pairing system ids to images with paths'
 
+                    complete_parts[part_name] = pairs
+                elif label_parts[part_name]['count'] == 1:
+                    self.no_new_system_parts[part_name] = part_name
+                else:
+                    self.not_fitting_staff_parts[part_name] = {
+                        'label_count': label_parts[part_name]['count'],
+                        'labels': label_parts[part_name]['files'],
+                        'image_count': image_part_data['count'],
+                        'images': image_part_data['files'],
+                        'images_with_paths': image_part_data['files_with_paths'],
+                    }
+                    logging.debug(f'{part_name}:\t(i: {image_part_data["count"]},'
+                                  f' l: {label_parts[part_name]["count"]})\t')
         return complete_parts
+
+    def get_system_id_image_pairs(self, images_with_paths, label_ids) -> list:
+        """Get system id pairs from a list of images with paths and label ids FROM ONE PART.
+        
+        Return list of dictionaries representing corresponding pairs.
+        {'label_id': label id,
+         'image_with_path': image file with path}
+        """
+        # Sort images with paths by file name and not folder name
+        image_path_tuples = [(os.path.dirname(image), os.path.basename(image))
+                             for image in images_with_paths]
+        image_path_tuples.sort(key=lambda x: x[1])
+        images_with_paths_sorted = [os.path.join(dir, image) for dir, image in image_path_tuples]
+
+        assert len(images_with_paths) == len(label_ids), \
+               'error in pairing while getting complete parts'
+
+        pairs = []
+        for label_id, image_with_path in zip(sorted(label_ids), images_with_paths_sorted):
+            pairs.append({'label_id': label_id, 'image_with_path': image_with_path})
+
+        return pairs
 
     def load_labels(self, filename: str) -> dict:
         """Load labels from file and return as a dictionary."""
@@ -332,49 +293,58 @@ class Matchmaker:
 
         return labels
 
-    def get_sus_parts(self, images: list) -> set:
-        """Get a list of images in input folders, return onlysuspicious images.
-        
-        Suspicious image name starts with 'z'."""
-        # print(images)
-        # all_images = [os.path.basename(image) for image in self.images]
+    def aggregate_files_to_parts(self, files_with_paths) -> dict:
+        """Get list of files, aggregate them to dictionary of parts.
 
-        sus_parts = set()
-        for image in images:
-            if image[0] == 'z':
-                _, file_name, part_name, *_  = re.split(r'\_|\-', image)
-                sus_parts.update(['_'.join([file_name, part_name])])
+        Aggregate all files to parts, EVEN the ones with SUSPICIOUS names.
 
-        return sus_parts
+        Return dict:
+            Keys: part_name
+            Values: {'count': count of staves for given part,
+                     'files': list of unique img files,
+                     'files_with_paths': list of files with corresponding path,
+                     'sus': True if some of part images are sus}."""
+        parts_aggregated = {}
 
+        for file_with_path in files_with_paths:
+            file = os.path.basename(file_with_path)
+            part_name = self.get_part_name(file)
+            if not part_name:
+                continue
+
+            if not part_name in parts_aggregated:
+                parts_aggregated[part_name] = {
+                    'count': 1, 'files': [file], 'files_with_paths': [file_with_path],
+                    'sus': file.startswith('z')}
+            else:
+                # check if file is NOT already in dict from different folder or something
+                if not file in parts_aggregated[part_name]['files']:
+                    parts_aggregated[part_name]['count'] += 1
+                    parts_aggregated[part_name]['files'].append(file)
+                    parts_aggregated[part_name]['files_with_paths'].append(file_with_path)
+                    parts_aggregated[part_name]['sus'] |= file.startswith('z')
+
+        return parts_aggregated
 
     def get_part_name(self, file: str):
-        """Get file name, return part name."""
-        mscz_id, part_id, *_ = re.split(r'_|-', file)
-        # print(f'mscz: {mscz_id}, part: {part_id}, rest: {rest}')
-
-        return f'{mscz_id}_{part_id}'
-
-    def get_part_name_with_suspicious(self, file: str):
-        """Get file name, return part name."""
+        """Get file name, return part name. If file starts with 'z', return ''."""
         if file[0] == 'z':
             _, mscz_id, part_id, *_ = re.split(r'_|-', file)
         else:
             mscz_id, part_id, *_ = re.split(r'_|-', file)
-        # print(f'mscz: {mscz_id}, part: {part_id}, rest: {rest}')
 
         return f'{mscz_id}_{part_id}'
 
     def list_to_dict_sum(self, parts: list) -> dict:
         """Get list with duplicate values, return sum of occurences in dict."""
         sums = {}
-        processed_parts = set()
+        # processed_parts = set()
 
         for part in parts:
-            if part in processed_parts:
+            if part in sums:
                 sums[part] += 1
             else:
-                processed_parts.add(part)
+                # processed_parts.add(part)
                 sums[part] = 1
         return sums
 
