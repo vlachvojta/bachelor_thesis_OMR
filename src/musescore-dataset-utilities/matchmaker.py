@@ -28,10 +28,10 @@ from common import Common  # noqa: E402
 
 class Matchmaker:
     """Get label-image pairs from two separate folders."""
-    def __init__(self, label_files: list, image_folder: list = ['.'],
+    def __init__(self, label_files: list = None, image_folder: list = None,
                  output_folder: str = 'pairs', verbose: bool = False):
-        self.label_files = label_files
-        self.image_folder = image_folder
+        self.label_files = label_files if label_files else []
+        self.image_folder = image_folder if image_folder else []
         self.output_folder = output_folder
         self.verbose = verbose
         self.stats_file = os.path.join(self.output_folder, '0_stats.json')
@@ -115,13 +115,13 @@ class Matchmaker:
         # Find all complete parts images with path to source image
         print("Getting images with path")
         startos = time.time()
-        images_with_path = self.get_images_with_path(complete_parts)
+        images_with_path = self.get_images_with_path(complete_parts)  # TODO RE-implement THIS for something else then O(n^2) complexity
         endos = time.time()
         print(f'Time looking for images: {endos - startos:.2f} s')
 
         print("Getting labels with path")
         startos = time.time()
-        complete_labels = self.get_complete_labels(complete_parts)
+        complete_labels = self.get_complete_labels(complete_parts)  # TODO RE-implement THIS for something else then O(n^2) complexity
         endos = time.time()
         print(f'Time looking for images: {endos - startos:.2f} s')
 
@@ -147,12 +147,14 @@ class Matchmaker:
             part_labels = complete_labels[complete_part]
 
             if not pairs_count == len(image_with_path):
-                print(f"Part {complete_part} couldn't be copied, because of len of images error. SKIPPING "
-                      f"Should have {pairs_count} but got {len(image_with_path)} instead")
+                print(
+                    f"Part {complete_part} couldn't be copied, because of len of images error. "
+                    f"SKIPPING, Should have {pairs_count} but got {len(image_with_path)} instead")
                 continue
 
             if not pairs_count == len(part_labels):
-                print(f"Part {complete_part} couldn't be copied, because of len of labels error. SKIPPING")
+                print(f"Part {complete_part} couldn't be copied, "
+                      "because of len of labels error. SKIPPING")
                 continue
 
             for label_id, image_with_path in zip(sorted(part_labels),
