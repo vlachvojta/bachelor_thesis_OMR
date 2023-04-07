@@ -1,5 +1,7 @@
 #!/usr/bin/python3.8
-"""Split labels dataset into two parts used for training (trn) and testing(tst) of AI model.
+"""Split labels dataset into two parts and IN RANDOM ORDER.
+
+Used for training (trn) and testing(tst) of AI model.
 
 Usage:
 $ python3 labels_to_trn_and_tst.py -i labels.semantic -l 2000
