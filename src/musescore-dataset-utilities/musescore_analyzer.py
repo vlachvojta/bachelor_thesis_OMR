@@ -84,7 +84,7 @@ class MusescoreAnalyzer:
             df['type'] = 'semantic_labels'
             df['type'] = df['type'].astype('category')
 
-        print(df.count(axis='columns')[0])
+        # print(df.count(axis='columns')[0])  # get the number of columns
 
         # df.insert(df.count(axis='columns')[0], 'is_polyphonic', np.nan)
         new_columns = ['is_polyphonic', 'char_length', 'symbol_count', 'measure_count',
@@ -93,13 +93,19 @@ class MusescoreAnalyzer:
             df[new_column] = np.nan
             df[new_column] = df[new_column].astype('category')
 
-        df = df.iloc[:20]   # TODO delete this, only for development purposes
+        # df = df.iloc[:20]   # TODO delete this, only for development purposes
         df = df.apply(self.get_stats_for_row, axis=1)
 
-        print(df.info())
-        print('---------------------')
-        print(df)
+        ## Inplace sort by measure_count descending order
+        df.sort_values("measure_count", inplace = True, ascending = False)
 
+        print('------------------------------- RESULTS: -------------------------------')
+        print(df.info())
+        print('------------------------------------------------------------------------')
+        print(df.head())
+        print('------------------------------------------------------------------------')
+
+        # print('')
 
         # df['new_col'] = df.apply(self.get_stats, axis=1)
 
@@ -229,20 +235,39 @@ class MusescoreAnalyzer:
             return self.EMPTY_SYSTEM_ID, label_line
 
         label_header, *rest = line_splitted
-        rest = line_splitted[1:]
         system_id, *_ = re.split(r'\s', label_header)
 
         if not rest:
             logging.warning(f'Sequence {system_id} is EMPTY. Skipping.')
             return '', ''
 
+        if len(rest) == 0:
+            logging.warning(f'Label line {system_id} has wrong format. '
+                            'Returning the whole line.')
+            return system_id, label_line
+
         if len(rest) == 1 or len(rest) == 2:
             return system_id, rest[0]
 
         if len(rest) > 2:
-            logging.warning(f'Sequence {system_id} has too many seperators (") in it. '
-                            'Using only the first element.')
-            return system_id, rest[0]
+            # Sequence has bad format, find first non-empty sequence and work only with it
+
+            sub_sequence_lens = []
+            for sub_sequence in rest:
+                sub_sequence_lens.append(len(sub_sequence))
+
+            longest_sub_sequence_len = max(sub_sequence_lens)
+            longest_sub_sequence_i = sub_sequence_lens.index(longest_sub_sequence_len)
+
+            if longest_sub_sequence_len > 0:
+                logging.warning(f'Label line {system_id} has too many seperators (") in it. '
+                                f'Using only the {longest_sub_sequence_i + 1}. element '
+                                f'(len: {longest_sub_sequence_len}).')
+                return system_id, rest[longest_sub_sequence_i]
+
+            logging.warning(f'Label line {system_id} has wrong format. '
+                            'Returning the whole line after system_id.')
+            return system_id, rest
 
 def parseargs():
     """Parse arguments."""
