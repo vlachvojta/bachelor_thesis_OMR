@@ -3,6 +3,7 @@
 
 Works with:
     - generated semantic labels (implementation in process)
+        - works only on ORIGINAL SEMANTIC ENCODING, not any of shortened version
     - musicxml separated parts (TBD)
     - raw musicxml files exported from musescore (TBD)
 
@@ -86,7 +87,9 @@ class MusescoreAnalyzer:
         print(df.count(axis='columns')[0])
 
         # df.insert(df.count(axis='columns')[0], 'is_polyphonic', np.nan)
-        for new_column in ['is_polyphonic', 'char_length', 'symbol_length']:
+        new_columns = ['is_polyphonic', 'char_length', 'symbol_count', 'measure_count',
+                       'notes_count', 'rests_count', 'max_symbols_in_measure']
+        for new_column in new_columns:
             df[new_column] = np.nan
             df[new_column] = df[new_column].astype('category')
 
@@ -126,26 +129,66 @@ class MusescoreAnalyzer:
         # self.copy_complete_parts(complete_parts)
 
     def get_stats_for_row(self, row: pd.Series) -> pd.Series:
-        """Gets different stats for row from DataFrame."""
-        row['char_length'] = len(row['labels'])
-        row['symbol_length'] = len(re.split(r'\s+', row['labels']))
-
+        """Gets all stats needed for row from DataFrame."""
         label_sequence = row['labels']
+        logging.debug(label_sequence[:150])
+        row['char_length'] = len(label_sequence)
 
-        if not '+' in label_sequence:
-            row['is_polyphonic'] = False
-        else:
-            # print(label_sequence)
-            chords_splitted = re.split(r'\+', label_sequence)
-            # print(f'seq: {len(label_sequence)}, symbols: {len(chords_splitted)}')
+        row['is_polyphonic'] = self.is_sequence_polyphonic(label_sequence)
 
-        # row['is_polyphonic'] = self.is_sequence_polyphonic(row['labels'])
+        # Get number of musical symbols
+        row['symbol_count'] = len(re.split(r'\s+', label_sequence))
+
+        # Get number of measures
+        potential_measures = re.split(r'barline', label_sequence)
+        row['measure_count'] = len(list(filter(None, potential_measures)))
+
+        # Get number of notes and gracenotes
+        row['notes_count'] = len(re.findall(r'note-[a-gA-G]\S+\s', label_sequence))
+
+        # Get number of rests
+        row['rests_count'] = len(re.findall(r'rest-\S+\s', label_sequence))
+
+        row['max_symbols_in_measure'] = self.get_max_symbols_in_measure(label_sequence)
+        logging.debug('---------------')
 
         return row
 
+    def get_max_symbols_in_measure(self, label_sequence) -> int:
+        """Split sequence to measures and return maximum symbols in one measure."""
+        measures = re.split(r'barline', label_sequence)
+
+        symbol_counts = []
+
+        for measure in measures:
+            if len(measure) < 2:
+                continue
+
+            symbols = re.split(r'\s+', measure)
+            symbols = list(filter(None, symbols))
+            symbols_count = len(symbols)
+
+            pluses = re.findall(r'\+', measure)
+            plus_count = len(pluses)
+            symbol_counts.append(symbols_count - plus_count)
+
+        return max(symbol_counts)
+
     def is_sequence_polyphonic(self, sequence: str) -> bool:
         """Returns True if sequence of labels is polyphonic. False otherwise."""
-        return True
+        if not '+' in sequence:
+            return False
+
+        sequence_splitted = re.split(r'\+', sequence)
+
+        for potential_chord in sequence_splitted:
+            potential_chord_splitted = re.split(r'\s+', potential_chord)
+            potential_chord_splitted_len = len(list(filter(None, potential_chord_splitted)))
+
+            if potential_chord_splitted_len > 1:
+                return True
+
+        return False
 
     def load_labels(self, filename: str) -> dict:
         """Load labels from one file and return as a dictionary."""
