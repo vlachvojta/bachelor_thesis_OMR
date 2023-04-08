@@ -43,7 +43,7 @@ class MusescoreAnalyzer:
         self.musicxml_files = musicxml_files if musicxml_files else []
         self.input_folders = input_folders if input_folders else []
         self.file_extensions_for_input_folders = file_extensions_for_input_folders
-        self.output_file = output_file
+        self.output_file = output_file if output_file.endswith('.csv') else f'{output_file}.csv'
         self.verbose = verbose
 
         if verbose:
@@ -57,7 +57,7 @@ class MusescoreAnalyzer:
         for label_file in self.label_files:
             self.labels.update(self.load_labels(label_file))
         if not self.labels:
-            logging.info('No valid LABELS in given folders and files.')
+            logging.info('No valid semantic LABELS in given folders and files.')
         else:
             logging.info(f'\tFound {len(self.labels)} labels.')
 
@@ -97,42 +97,18 @@ class MusescoreAnalyzer:
         df = df.apply(self.get_stats_for_row, axis=1)
 
         ## Inplace sort by measure_count descending order
-        df.sort_values("measure_count", inplace = True, ascending = False)
+        df.sort_values("symbol_count", inplace = True, ascending = False)
 
         print('------------------------------- RESULTS: -------------------------------')
         print(df.info())
         print('------------------------------------------------------------------------')
-        print(df.head())
+        print(df)
         print('------------------------------------------------------------------------')
 
-        # print('')
-
-        # df['new_col'] = df.apply(self.get_stats, axis=1)
-
-        # images_base = [os.path.basename(image) for image in self.images]
-
-        # image_parts = [self.get_part_name_with_suspicious(img) for img in images_base]
-        # label_parts = [self.get_part_name(label) for label in self.labels]
-
-        # image_parts = self.list_to_dict_sum(image_parts)
-        # label_parts = self.list_to_dict_sum(label_parts)
-
-        # print(f'LABELS originate from {len(label_parts)} parts.')
-        # print(f'IMAGES originate from {len(label_parts)} parts.')
-
-        # self.get_stats_about_parts(image_parts, label_parts)
-
-        # sus_img_parts = self.get_sus_parts(images_base)  # - self.extra_image_parts
-        # # print(f'\t{len(sus_img_parts)} part(s) has generated suspicious images.')
-        # logging.debug(f'sus parts: {sus_img_parts}')
-
-        # logging.debug('---- Finding complete parts: ----')
-        # logging.debug('----(printing only incomplete)---')
-        # complete_parts = self.get_complete_parts(image_parts, label_parts, sus_img_parts)
-
-        # self.print_results(complete_parts, sus_img_parts)
-
-        # self.copy_complete_parts(complete_parts)
+        # df['xxx'].plot(kind='hist', bins=10)
+        
+        df.to_csv(self.output_file)
+        print(f'Dataframe saved to {self.output_file}')
 
     def get_stats_for_row(self, row: pd.Series) -> pd.Series:
         """Gets all stats needed for row from DataFrame."""
