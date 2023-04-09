@@ -97,7 +97,7 @@ class MusescoreAnalyzer:
         df = df.apply(self.get_stats_for_row, axis=1)
 
         ## Inplace sort by measure_count descending order
-        df.sort_values("symbol_count", inplace = True, ascending = False)
+        # df.sort_values("symbol_count", inplace = True, ascending = False)
 
         print('------------------------------- RESULTS: -------------------------------')
         print(df.info())
@@ -119,7 +119,7 @@ class MusescoreAnalyzer:
         row['is_polyphonic'] = self.is_sequence_polyphonic(label_sequence)
 
         # Get number of musical symbols
-        row['symbol_count'] = len(re.split(r'\s+', label_sequence))
+        row['symbol_count'] = len(re.split(r'\s+', label_sequence) - 1)
 
         # Get number of measures
         potential_measures = re.split(r'barline', label_sequence)
