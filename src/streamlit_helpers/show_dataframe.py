@@ -32,11 +32,12 @@ def plot_charts(df: pd.DataFrame, column: str):
     fig, ax = plt.subplots()
     ax.hist(df[column], bins=20)
     ax.set_title(column)
+    plt.yscale('log')
     st.pyplot(fig)
 
 def print_charts(df: pd.DataFrame):
 
-    int_columns = [column for column in df.columns if df[column].dtype == 'int64']
+    int_columns = [column for column in df.columns if df[column].dtype in ['int64', 'float64']]
 
     for i in range(len(int_columns) // 2):
         col1, col2 = st.columns(2)
