@@ -173,16 +173,16 @@ class Matchmaker:
 
         output = {}
         output['Total parts found len'] = total_parts_found_len
-        output['Total parts found'] = list(self.total_parts_found)
         output['Complete parts len'] = complete_parts_len
-        output['Complete parts'] = complete_parts
         output['No new system parts count'] = no_new_system_len
-        output['No new system parts (image count)'] = self.no_new_system_parts
         output['Not fitting staff count'] = not_fit_len
-        output['Not fitting staff parts (labels, images)'] = self.not_fitting_staff_parts
         output['Extra image parts count'] = extra_image_parts_len
-        output['Extra image parts'] = list(self.extra_image_parts)
         output['Extra label parts count'] = extra_label_parts_len
+        output['Total parts found'] = list(self.total_parts_found)
+        output['Complete parts'] = complete_parts
+        output['No new system parts (image count)'] = self.no_new_system_parts
+        output['Not fitting staff parts (labels, images)'] = self.not_fitting_staff_parts
+        output['Extra image parts'] = list(self.extra_image_parts)
         output['Extra label parts'] = list(self.extra_label_parts)
 
         if not os.path.exists(self.stats_file):
