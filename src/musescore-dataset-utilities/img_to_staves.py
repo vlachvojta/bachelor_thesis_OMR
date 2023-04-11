@@ -58,13 +58,17 @@ class StaffCuter:
         self.generated_staves = 0
 
     def __call__(self):
+        if not self.verbose:
+            print(f'Goint through {len(self.input_files)} input files, separating to staves. '
+                  '(every dot is 200 files, every line is 1_000)')
+
         for i, file in enumerate(self.input_files):
-            if i % 1000 == 0:
+            if i > 0 and i % 1000 == 0:
                 suspicious_files_path = os.path.join(self.output_folder, '0_suspicious_files.json')
                 print(f'\t{len(self.suspicious_files)} files was suspicious, writing to file.')
                 Common.write_to_file(self.suspicious_files, suspicious_files_path)
             if not self.verbose:
-                Common.print_dots(i, 200, 8_000)
+                Common.print_dots(i, 200, 10_000)
             logging.debug('Working with: %d, %s', i, file)
             image = cv.imread(file, cv.IMREAD_UNCHANGED)
             # image = Image.open(file)

@@ -16,6 +16,8 @@ class Common:
     files, folders and symbols.
     """
 
+    PERO_LMDB_zero_tag = "000000"
+
     @staticmethod
     def print_dict(data: dict, files: bool = False):
         """Print dictionary in a way I like.
@@ -94,6 +96,10 @@ class Common:
     @staticmethod
     def write_to_file(data, file) -> None:
         """Caller is responsible for what is sent to which type of file."""
+        file_dir = os.path.dirname(file)
+        if not os.path.exists(file_dir):
+            os.makedirs(file_dir)
+
         file_extension = file.split('.')[-1]
 
         if file_extension == 'json':
@@ -151,7 +157,7 @@ class Common:
     @staticmethod
     def get_files(folder: str = '.', exts: list = ['semantic'],
                   go_deeper: bool = True) -> list:
-        print(f'looking for all files in {folder} with extensions {exts}')
+        print(f'Looking for all files in {folder} with extensions {exts}')
         files = []
         dirs = []
         for f in Common.full_list(folder):
@@ -177,10 +183,10 @@ class Common:
     @staticmethod
     def print_dots(i: int = 0, threshold1: int = 200,
                    threshold2: int = 800) -> None:
-        """Print dots and flush for every n-th i."""
-        if i % threshold1 == 0:
+        """Print dots and flush, for every n-th i."""
+        if i > 0 and i % threshold1 == 0:
             print('.', end='')
-            if i > 0 and i % threshold2 == 0:
+            if i % threshold2 == 0:
                 print(f' ({threshold2} files)')
             sys.stdout.flush()
 

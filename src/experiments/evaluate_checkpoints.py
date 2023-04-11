@@ -29,8 +29,11 @@ class EvaulateCheckpoints:
     def __init__(self, input_files: list, ground_truth: str,
                  output_folder: str = 'eval_out',
                  name: str = 'Evaluated_checkpoints',
+                 chart_mode: str = 'part',
                  ignore_n_pred: int = 0,
                  ignore_n_gt: int = 0) -> None:
+        self.chart_mode = chart_mode
+
         # Read Ground_truth
         if not os.path.exists(ground_truth):
             raise FileNotFoundError(f'Ground truth file not found: {ground_truth}')
@@ -103,7 +106,10 @@ class EvaulateCheckpoints:
 
     def make_chart(self, results, output_folder, name):
         """Generate chart with iterations, WERs and CERs"""
-        threshold = 10 if len(results) > 20 else 0
+        if self.chart_mode == 'full':
+            threshold = 0
+        elif self.chart_mode == 'part':
+            threshold = len(results) // 2 if len(results) > 20 else 0
         iterations = [results[res]['iter'] for res in results][threshold:]
         wers = [results[res]['wer'] for res in results][threshold:]
         cers = [results[res]['cer'] for res in results][threshold:]
@@ -139,6 +145,9 @@ def parseargs():
         "-n", "--name", type=str, default='Evaluated_checkpoints',
         help="Name of generated files + chart heading.")
     parser.add_argument(
+        "-c", "--chart-mode", type=str, choices=['full', 'part'], default='part',
+        help="Chart mode, what subset of data to print to chart.")
+    parser.add_argument(
         "--ignore-n-words-gt", type=int, default=0,
         help="Ignore first n words in ground truth.")
     parser.add_argument(
@@ -158,6 +167,7 @@ def main():
         ground_truth=args.ground_truth,
         output_folder=args.output_folder,
         name=args.name,
+        chart_mode=args.chart_mode,
         ignore_n_gt=args.ignore_n_words_gt,
         ignore_n_pred=args.ignore_n_words_pred)
 

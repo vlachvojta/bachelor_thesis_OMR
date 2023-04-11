@@ -62,6 +62,8 @@ class PartSplitter:
 
         self.generated_files = 0
 
+        self.LINES_FOR_PAGE = 8
+
     def __call__(self):
         print(f'Going through {len(self.input_files)} files. (every dot is 200 files)')
 
@@ -289,14 +291,24 @@ class PartSplitter:
         return tree
 
     def change_new_page_to_new_system(self, tree: etree.Element) -> etree.Element:
-        """Go though all measures with change new-page to new-system.
+        """Go though all measures, change new-page to new-system.
         
+        Every n-th new-system change back to new-page.        
         Precise tags are: `<print new-page="yes" />` change to `<print new-system="yes" />`."""
         print_tags = tree.xpath('//measure/print[@new-page="yes"]')
 
         for print_tag in print_tags:
             print_tag.attrib.pop('new-page')
             print_tag.attrib['new-system'] = 'yes'
+
+        print_tags = tree.xpath('//measure/print[@new-system="yes"]')
+
+        for i, print_tag in enumerate(print_tags):
+            # Every n-th new-system change to new-page. N is lines_for_page
+            # (the first system in the score doesn't have a new-system tag)
+            if i % self.LINES_FOR_PAGE == self.LINES_FOR_PAGE - 1:
+                print_tag.attrib.pop('new-system')
+                print_tag.attrib['new-page'] = 'yes'
 
         return tree
 
