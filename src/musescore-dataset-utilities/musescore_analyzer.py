@@ -88,7 +88,7 @@ class MusescoreAnalyzer:
 
         # df.insert(df.count(axis='columns')[0], 'is_polyphonic', np.nan)
         new_columns = ['is_polyphonic', 'char_length', 'symbol_count', 'measure_count',
-                       'notes_count', 'rests_count', 'max_symbols_in_measure']
+                       'notes_count', 'rests_count', 'max_symbols_in_measure', 'density']
         for new_column in new_columns:
             df[new_column] = np.nan
             df[new_column] = df[new_column].astype('category')
@@ -132,6 +132,8 @@ class MusescoreAnalyzer:
         row['rests_count'] = len(re.findall(r'rest-\S+\s', label_sequence))
 
         row['max_symbols_in_measure'] = self.get_max_symbols_in_measure(label_sequence)
+
+        row['density'] = row['symbol_count'] / row['measure_count']
         logging.debug('---------------')
 
         return row
