@@ -13,8 +13,8 @@ Analyzed properties:
     - note and rest count for stave
 
 Usage:
-$ python3 musescore_analyzer.py -i labels.semantic -o stats.csv
-Generates statistics for labels in labels.semantic file to file stats.csv
+$ python3 musescore_analyzer.py -i labels.semantic -o mscz_analyzer_stats.csv
+Generates statistics for labels in labels.semantic file to file mscz_analyzer_stats.csv
 """
 
 import argparse
@@ -37,7 +37,7 @@ class MusescoreAnalyzer:
     EMPTY_SYSTEM_ID = 'EMPTY_SYSTEM_ID'
 
     def __init__(self, label_files: str, musicxml_files: str, input_folders: str,
-                 file_extensions_for_input_folders: list, output_file: str = 'stats.csv',
+                 file_extensions_for_input_folders: list, output_file: str = 'mscz_analyzer_stats.csv.csv',
                  verbose: bool = False):
         self.label_files = label_files if label_files else []
         self.musicxml_files = musicxml_files if musicxml_files else []
@@ -267,7 +267,7 @@ def parseargs():
         help=("Set file extensions for files in given input folders. " +
               "Use in combination with --input-folders."))
     parser.add_argument(
-        "-o", "--output-file", type=str, default='stats.csv',
+        "-o", "--output-file", type=str, default='mscz_analyzer_stats.csv.csv',
         help="Output file to export pandas csv to.")
     parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,

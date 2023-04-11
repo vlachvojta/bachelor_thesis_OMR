@@ -35,7 +35,7 @@ class Matchmaker:
         self.image_folder = image_folder if image_folder else []
         self.output_folder = output_folder
         self.verbose = verbose
-        self.stats_file = os.path.join(self.output_folder, '0_stats.json')
+        self.stats_file = os.path.join(self.output_folder, '0_matchmaker_stats.json')
         self.out_label_file = os.path.join(self.output_folder, '0_labels.semantic')
 
         if verbose:
