@@ -28,7 +28,7 @@ def parseargs():
     return parser.parse_args()
 
 
-def plot_chart(df: pd.DataFrame, column: str):
+def plot_charts(df: pd.DataFrame, column: str):
     fig, ax = plt.subplots()
     ax.hist(df[column], bins=20)
     ax.set_title(column)
@@ -44,13 +44,12 @@ def print_charts(df: pd.DataFrame):
             if (i * 2) >= len(int_columns):
                 break
             column = int_columns[i * 2]
-            plot_chart(df, column)
-            
+            plot_charts(df, column)
         with col2:
             if (i * 2 + 1) >= len(int_columns):
                 break
             column = int_columns[i * 2 + 1]
-            plot_chart(df, column)
+            plot_charts(df, column)
 
     for col in df.columns:
         st.write(col)
@@ -73,6 +72,7 @@ def main():
         if uploaded_file:
             df = pd.read_csv(uploaded_file)
             st.write(df)
+            print_charts(df)
     else:
         if not os.path.exists(args.dataframe) or not os.path.isfile(args.dataframe):
             st.error("File you've passed as a dataframe does not exist.")
