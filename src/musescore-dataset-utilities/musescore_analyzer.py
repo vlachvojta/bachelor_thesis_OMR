@@ -119,7 +119,7 @@ class MusescoreAnalyzer:
         row['is_polyphonic'] = self.is_sequence_polyphonic(label_sequence)
 
         # Get number of musical symbols
-        row['symbol_count'] = len(re.split(r'\s+', label_sequence) - 1)
+        row['symbol_count'] = len(re.split(r'\s+', label_sequence)) - 1
 
         # Get number of measures
         potential_measures = re.split(r'barline', label_sequence)
