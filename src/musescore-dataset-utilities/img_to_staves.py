@@ -59,7 +59,7 @@ class StaffCuter:
 
     def __call__(self):
         if not self.verbose:
-            print(f'Goint through {len(self.input_files)} input files, separating to staves. '
+            print(f'Going through {len(self.input_files)} input files, separating to staves. '
                   '(every dot is 200 files, every line is 1_000)')
 
         for i, file in enumerate(self.input_files):
