@@ -97,7 +97,7 @@ class Common:
     def write_to_file(data, file) -> None:
         """Caller is responsible for what is sent to which type of file."""
         file_dir = os.path.dirname(file)
-        if not os.path.exists(file_dir):
+        if file_dir and not os.path.exists(file_dir):
             os.makedirs(file_dir)
 
         file_extension = file.split('.')[-1]
