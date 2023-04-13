@@ -14,6 +14,7 @@ import time
 import logging
 # import numpy as np
 # import pandas as pd
+from shutil import copyfile
 from musescore_analyzer import MusescoreAnalyzer
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
@@ -34,6 +35,7 @@ class PairCopier:
         dirname = os.path.dirname(input_file)
         self.image_folder = dirname if dirname else '.'
         self.label_file = os.path.join(dirname, '0_labels.semantic')
+        self.out_label_file = os.path.join(self.output_folder, '0_labels.semantic')
 
         if verbose:
             logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
@@ -50,13 +52,42 @@ class PairCopier:
         self.system_ids = self.load_system_ids(self.input_file)
         print(f'Found {len(self.system_ids)} system IDs.')
 
+        # Create output part if necessary
+        if not os.path.exists(self.output_folder):
+            os.makedirs(self.output_folder)
+
     def __call__(self):
-        ...
-        # Analyze given labels
+        if not self.system_ids:
+            logging.error('No system IDs to copy. Select a different file')
 
-        # Select only labels with the condition
+        self.copied_labels = {}
+        success_files = 0
+        fail_files = 0
 
-        # Copy selected labels and corresponding images to output folder
+        with open(self.out_label_file, 'w', encoding='utf-8') as out_label_file:
+            for system_id in self.system_ids:
+                if system_id in self.labels and system_id in self.labels:
+                    self.copied_labels[system_id] = self.labels[system_id]
+
+                    img_source = os.path.join(self.image_folder, system_id)
+                    img_dest = os.path.join(self.output_folder, system_id)
+                    logging.debug(f'Copying image ({img_source}) => ({img_dest})')
+                    copyfile(img_source, img_dest)
+
+                    out_label_file.write(
+                        f"{system_id} {Common.PERO_LMDB_zero_tag} \"{self.copied_labels[system_id]}\"\n")
+                    
+                    success_files += 1
+                else:
+                    print(f'NOT FOUND: {system_id}')
+                    fail_files += 1
+        
+        print('')
+        print('--------------------------------------')
+        print('Results:')
+        print(f'From {len(self.system_ids)} system_ids:')
+        print(f'\t{success_files} copied successfully.')
+        print(f'\t{fail_files} failed.')
 
     def load_system_ids(self, input_file) -> list:
         """Get list of system IDs from input file.
@@ -85,7 +116,7 @@ def parseargs():
         "-i", "--input_file", type=str, required=True,
         help="File with system_ids of pairs to copy.")
     parser.add_argument(
-        "-o", "--output-folder", type=str, default='mscz_analyzer_stats.csv.csv',
+        "-o", "--output-folder", type=str, required=True,
         help="Output folder to copy selected pairs to.")
     parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,
