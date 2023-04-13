@@ -14,6 +14,7 @@ import time
 import logging
 # import numpy as np
 # import pandas as pd
+from musescore_analyzer import MusescoreAnalyzer
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
 sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
@@ -30,12 +31,24 @@ class PairCopier:
         self.output_folder = output_folder
         self.verbose = verbose
 
+        dirname = os.path.dirname(input_file)
+        self.image_folder = dirname if dirname else '.'
+        self.label_file = os.path.join(dirname, '0_labels.semantic')
+
         if verbose:
             logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
         else:
             logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
 
-        # TODO Load labels and image names, store only valid pairs
+        # Load list of images
+        self.images = [img for img in os.listdir(self.image_folder) if img.endswith('.png')]
+        print(f'Found {len(self.images)} images.')
+
+        self.labels = MusescoreAnalyzer.load_labels(self.label_file)
+        print(f'Found {len(self.labels)} labels.')
+
+        self.system_ids = self.load_system_ids(self.input_file)
+        print(f'Found {len(self.system_ids)} system IDs.')
 
     def __call__(self):
         ...
@@ -45,6 +58,22 @@ class PairCopier:
 
         # Copy selected labels and corresponding images to output folder
 
+    def load_system_ids(self, input_file) -> list:
+        """Get list of system IDs from input file.
+
+        Get only first word in every line (ignore after first whitespace)"""
+        file_lines = re.split(r'\n', Common.read_file(input_file))
+
+        system_ids = []
+        for line in file_lines:
+            splitted = re.split(r'\s+', line)
+            splitted = list(filter(None, splitted))
+            if splitted:
+                system_ids.append(splitted[0])
+
+        return system_ids
+
+
 def parseargs():
     """Parse arguments."""
     print('sys.argv: ')
@@ -53,7 +82,7 @@ def parseargs():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input_file", type=str, nargs='*',
+        "-i", "--input_file", type=str, required=True,
         help="File with system_ids of pairs to copy.")
     parser.add_argument(
         "-o", "--output-folder", type=str, default='mscz_analyzer_stats.csv.csv',
