@@ -36,7 +36,8 @@ class MusescoreAnalyzer:
     EMPTY_SYSTEM_ID = 'EMPTY_SYSTEM_ID'
 
     def __init__(self, label_files: str, musicxml_files: str, input_folders: str,
-                 file_extensions_for_input_folders: list, output_file: str = 'mscz_analyzer_stats.csv.csv',
+                 file_extensions_for_input_folders: list,
+                 output_file: str = 'mscz_analyzer_stats.csv.csv',
                  verbose: bool = False):
         self.label_files = label_files if label_files else []
         self.musicxml_files = musicxml_files if musicxml_files else []
@@ -83,7 +84,7 @@ class MusescoreAnalyzer:
             df[new_column] = np.nan
             df[new_column] = df[new_column].astype('category')
 
-        # df = df.iloc[:20]   # TODO delete this, only for development purposes
+        # df = df.iloc[:20]
         df = df.apply(self.get_stats_for_row, axis=1)
 
         ## Inplace sort by measure_count descending order
@@ -101,7 +102,7 @@ class MusescoreAnalyzer:
         print(f'Dataframe saved to {self.output_file}')
 
         self.save_big_density_indexes(df)
-    
+
     def save_big_density_indexes(self, df: pd.DataFrame) -> None:
         """Get big density subset and save system ids to new file."""
         big_density_subset = df[df['density'] >= 41.0]
@@ -110,7 +111,8 @@ class MusescoreAnalyzer:
         len_of_big_density = len(big_density_subset)
         output_file = f'{self.output_file}_big_density_staves.txt'
 
-        print(f'Found {len_of_big_density} staves with density bigger or equal to 41. Saving to {output_file}')
+        print(f'Found {len_of_big_density} staves with density bigger or equal to 41. '
+              f'Saving to {output_file}')
         output = '\n'.join(big_density_subset.index.tolist())
         Common.write_to_file(output, output_file)
 
