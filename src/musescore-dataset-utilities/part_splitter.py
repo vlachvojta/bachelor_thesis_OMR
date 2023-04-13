@@ -26,8 +26,8 @@ from common import Common  # noqa: E402
 
 class PartSplitter:
     """Split multi-part music score files to multiple files with only one part per file."""
-    def __init__(self, input_files: list = None,
-                 input_folder: str = None, output_folder: str = 'out'):
+    def __init__(self, input_files: list = None, input_folder: str = None,
+                 staves_on_page: int = 8, output_folder: str = 'out'):
         self.output_folder = output_folder
         self.input_folder = input_folder
 
@@ -62,13 +62,13 @@ class PartSplitter:
 
         self.generated_files = 0
 
-        self.LINES_FOR_PAGE = 8
+        self.STAVES_ON_PAGE = staves_on_page
 
     def __call__(self):
-        print(f'Going through {len(self.input_files)} files. (every dot is 200 files)')
+        print(f'Going through {len(self.input_files)} files. (every dot is 200 files, every line is 2_000)')
 
         for i, file_in in enumerate(self.input_files):
-            Common.print_dots(i, 200, 8_000)
+            Common.print_dots(i, 200, 2_000)
 
             try:
                 file_tree = etree.parse(file_in)
@@ -304,9 +304,9 @@ class PartSplitter:
         print_tags = tree.xpath('//measure/print[@new-system="yes"]')
 
         for i, print_tag in enumerate(print_tags):
-            # Every n-th new-system change to new-page. N is lines_for_page
+            # Every n-th new-system change to new-page. N is STAVES_ON_PAGE
             # (the first system in the score doesn't have a new-system tag)
-            if i % self.LINES_FOR_PAGE == self.LINES_FOR_PAGE - 1:
+            if i % self.STAVES_ON_PAGE == self.STAVES_ON_PAGE - 1:
                 print_tag.attrib.pop('new-system')
                 print_tag.attrib['new-page'] = 'yes'
 
@@ -378,6 +378,9 @@ def parseargs():
         "-i", "--input-folder", type=str, default=None,
         help="Input folder where to look for musicxml files to process.")
     parser.add_argument(
+        "-s", "--staves-on-page", type=int, default=8,
+        help="How many staves should be on one page.")
+    parser.add_argument(
         "-o", "--output-folder", type=str, default='out',
         help="Output folder to write files to.")
     return parser.parse_args()
@@ -392,6 +395,7 @@ def main():
     splitter = PartSplitter(
         input_files=args.input_files,
         input_folder=args.input_folder,
+        staves_on_page=args.staves_on_page,
         output_folder=args.output_folder)
     splitter()
 
