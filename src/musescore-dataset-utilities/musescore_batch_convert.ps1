@@ -16,7 +16,8 @@ echo "directory with input files: $in_dir"
 
 # $DIR = "D:\OneDrive - Vysoké učení technické v Brně\skola\BP\datasets\musescore_pipeline_44\1_musicxml_using_MuseScore4_native_CLI"
 
-Get-ChildItem $in_dir -Filter *.$in_ext | 
+Get-ChildItem $in_dir -Filter *.$in_ext -Recurse | 
+Sort-Object @{expression = {$_.fullname}} -descending | 
 ForEach-Object { 
 	if (-not(Test-Path "$($DIR)$($_).$out_ext")) 
 		{ 
