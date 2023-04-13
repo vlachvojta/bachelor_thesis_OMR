@@ -4,13 +4,12 @@
 Works with:
     - generated semantic labels (implementation in process)
         - works only on ORIGINAL SEMANTIC ENCODING, not any of shortened version
-    - musicxml separated parts (TBD)
-    - raw musicxml files exported from musescore (TBD)
 
 Analyzed properties:
     - polyphonic score (Yes or No)
     - note and rest count for measure
     - note and rest count for stave
+    - etc (see column names)
 
 Usage:
 $ python3 musescore_analyzer.py -i labels.semantic -o mscz_analyzer_stats.csv
@@ -43,7 +42,7 @@ class MusescoreAnalyzer:
         self.musicxml_files = musicxml_files if musicxml_files else []
         self.input_folders = input_folders if input_folders else []
         self.file_extensions_for_input_folders = file_extensions_for_input_folders
-        self.output_file = output_file if output_file.endswith('.csv') else f'{output_file}.csv'
+        self.output_file = output_file if output_file.endswith('csv') else f'{output_file}.csv'
         self.verbose = verbose
 
         if verbose:
@@ -55,20 +54,11 @@ class MusescoreAnalyzer:
         logging.info(f'Loading labels from {len(self.label_files)} files.')
         self.labels = {}
         for label_file in self.label_files:
-            self.labels.update(self.load_labels(label_file))
+            self.labels.update(MusescoreAnalyzer.load_labels(label_file))
         if not self.labels:
             logging.info('No valid semantic LABELS in given folders and files.')
         else:
             logging.info(f'\tFound {len(self.labels)} labels.')
-
-        # TODO Load musicxml files
-
-        # self.no_new_system_parts = {}
-        # self.not_fitting_staff_parts = {}
-        # self.total_parts_found = set()
-        # self.extra_label_parts = set()
-        # self.extra_image_parts = set()
-        # self.sum_values = 0
 
     def __call__(self):
         if not self.labels:
@@ -106,9 +96,23 @@ class MusescoreAnalyzer:
         print('------------------------------------------------------------------------')
 
         # df['xxx'].plot(kind='hist', bins=10)
-        
+
         df.to_csv(self.output_file)
         print(f'Dataframe saved to {self.output_file}')
+
+        self.save_big_density_indexes(df)
+    
+    def save_big_density_indexes(self, df: pd.DataFrame) -> None:
+        """Get big density subset and save system ids to new file."""
+        big_density_subset = df[df['density'] >= 41.0]
+        big_density_subset.to_csv('big_density_subset.csv')
+
+        len_of_big_density = len(big_density_subset)
+        output_file = f'{self.output_file}_big_density_staves.txt'
+
+        print(f'Found {len_of_big_density} staves with density bigger or equal to 41. Saving to {output_file}')
+        output = '\n'.join(big_density_subset.index.tolist())
+        Common.write_to_file(output, output_file)
 
     def get_stats_for_row(self, row: pd.Series) -> pd.Series:
         """Gets all stats needed for row from DataFrame."""
@@ -174,7 +178,8 @@ class MusescoreAnalyzer:
 
         return False
 
-    def load_labels(self, filename: str) -> dict:
+    @staticmethod
+    def load_labels(filename: str) -> dict:
         """Load labels from one file and return as a dictionary."""
         if not os.path.isfile(filename):
             return {}
@@ -189,16 +194,17 @@ class MusescoreAnalyzer:
 
         labels_dict = {}
         for label_line in labels_list:
-            system_id, sequence = self.parse_label_line(label_line)
+            system_id, sequence = MusescoreAnalyzer.parse_label_line(label_line)
             if system_id and sequence:
-                if system_id == self.EMPTY_SYSTEM_ID:
+                if system_id == MusescoreAnalyzer.EMPTY_SYSTEM_ID:
                     labels_dict[filename] = sequence
                 else:
                     labels_dict[system_id] = sequence
 
         return labels_dict
 
-    def parse_label_line(self, label_line) -> (str, str):
+    @staticmethod
+    def parse_label_line(label_line) -> (str, str):
         """Parse a label line. Return tuple of two strings (system id and sequence of labels).
 
         Label line consists of label header and sequence of labels.
@@ -210,7 +216,7 @@ class MusescoreAnalyzer:
         line_splitted = re.split(r'"', label_line)
 
         if len(line_splitted) == 1:
-            return self.EMPTY_SYSTEM_ID, label_line
+            return MusescoreAnalyzer.EMPTY_SYSTEM_ID, label_line
 
         label_header, *rest = line_splitted
         system_id, *_ = re.split(r'\s', label_header)
