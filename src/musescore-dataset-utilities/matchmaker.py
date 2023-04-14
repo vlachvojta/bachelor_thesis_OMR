@@ -282,7 +282,10 @@ class Matchmaker:
         labels = {}
         for label in labels_list:
             system_id, *sequence = re.split(r'\s', label)
-            labels[system_id] = ' '.join(sequence)
+            if system_id.endswith('.png'):
+                labels[system_id[:-4]] = ' '.join(sequence)
+            else:
+                labels[system_id] = ' '.join(sequence)
 
         return labels
 
