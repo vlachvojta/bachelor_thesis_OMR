@@ -1,6 +1,11 @@
 #!/usr/bin/python3.8
 """Separate images to individual music staves with very little white space arround.
 
+2 modes of splitting staves:
+    Naive mode: Uses white space horizontal strips to recognize space between staves
+    Informed mode: Needs n staff count, cuts whitespace horizontal strips
+        and then divedes the rest to n individual staves.
+
 Usage:
 $ python3 img_to_staves.py -i image.png -o out/
 resulting in creating cropped files out/image_s00.png, out/image_s01.png etc.
@@ -12,6 +17,7 @@ import sys
 import os
 import time
 import logging
+from enum import Enum
 
 import numpy as np
 # from PIL import Image
@@ -23,15 +29,23 @@ sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
 from common import Common  # noqa: E402
 
 
+class Mode(Enum):
+    """Class for splitting mode of StaffCuter"""
+    INFORMED = 1
+    NAIVE = 2
+
+
 class StaffCuter:
     """Separate images to individual music staves with very little white space arround."""
     def __init__(self, input_files: list = None, input_folder: str = None,
-                 output_folder: str = 'out', image_height: int = 100,
+                 output_folder: str = 'out', image_height: int = 100, stave_count: int = None,
                  verbose: bool = False):
         self.input_files = input_files
         self.output_folder = output_folder
         self.image_height = image_height
         self.verbose = verbose
+        self.mode = Mode.NAIVE if stave_count is None else Mode.INFORMED
+        self.stave_count = stave_count
 
         if verbose:
             logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
@@ -68,12 +82,11 @@ class StaffCuter:
                 print(f'\t{len(self.suspicious_files)} files was suspicious, writing to file.')
                 Common.write_to_file(self.suspicious_files, suspicious_files_path)
             if not self.verbose:
-                Common.print_dots(i, 200, 10_000)
+                Common.print_dots(i, 200, 1_000)
             logging.debug('Working with: %d, %s', i, file)
             image = cv.imread(file, cv.IMREAD_UNCHANGED)
             # image = Image.open(file)
             # image = np.asarray(image)
-            logging.debug('\tImage opened')
             data = self.grayscale(image)
             logging.debug('\tgot Grayscale picture.')
 
@@ -97,8 +110,9 @@ class StaffCuter:
                 #     print(f'TOO much cut staves: {len(cropped_staves)}')
                 # cropped_staff = cropped_staves[0].T
                 # print(f'before: {staff.shape}, after: {cropped_staff.shape}')
-                # Common.write_to_file(staff, os.path.join(self.output_folder, f'error_png_{i}.png'))
-                logging.debug(f'\t\tcropping {i}')
+                # Common.write_to_file(
+                #   staff, os.path.join(self.output_folder, f'error_png_{i}.png'))
+                # logging.debug(f'\t\tcropping {i}')
                 cropped_staff = self.crop_white_space(staff.T, strip_count=20).T
 
                 # Delete everything that has too short lentgh (page numbers, labels, etc)
@@ -149,11 +163,10 @@ class StaffCuter:
 
     def save_image(self, image: np.ndarray, file_name: str, staff_number: int):
         """Save image."""
-        # logging.debug(f'file_name: {file_name}')
         file_name_parts = re.split(r'\.', os.path.basename(file_name))
         file_name = '.'.join(file_name_parts[:-1]) + f'_s{staff_number:02}.png'
         file_name_path = os.path.join(self.output_folder, file_name)
-        # logging.debug(f'saving to: {file_name_path}')
+        logging.debug(f'saving to: {file_name_path}')
         Common.write_to_file(image, file_name_path)
         # image = Image.fromarray(image)
         # image.save(file_name_path)
@@ -163,20 +176,15 @@ class StaffCuter:
         """Convert image to grayscale and return as numpy array.
         
         Check if values are stored in RGB values or just in ALPHA values."""
-        # start_mean = time.time()
         means = []
         for i in range(4):
             means.append(np.mean(image[0,:,i]))
-        # end_mean = time.time()
-        # print(f'Mean counting time: {end_mean - start_mean:.5f} s')
 
         logging.debug(f'\tmeans: {means}')
 
         if sum(means[:3]) < 0.0001:
-            # print('Image is only ALPHA')
             # Image data is only in ALPHA channel
             return 255 - image[:,:,3]
-        # print('Image is NOT')
         return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
     def get_staves_new(self, data) -> list:
@@ -207,8 +215,9 @@ class StaffCuter:
                 # if back_strip.shape[0] == 0:
                 #     continue
                 # back_strip_min = np.min(back_strip)
-                # print(f'strip_i: {strip_i}, white_strip_indexes[-1]: {white_strip_indexes[-1]}')
-                previous_strip_is_white = (strip_i-1 == white_strip_indexes[-1][-1])
+                # print(
+                # f'strip_i: {strip_i}, white_strip_indexes[-1]: {white_strip_indexes[-1]}')
+                previous_strip_is_white = strip_i-1 == white_strip_indexes[-1][-1]
                 if previous_strip_is_white:
                     # print('previous_strip_is_white')
                     white_strip_indexes[-1].append(strip_i)
@@ -326,7 +335,11 @@ def parseargs():
         help="Output folder to write cut imgs to.")
     parser.add_argument(
         "--image-height", type=int, default=100,
-        help="Image height in px to resize all images to. If -1, height will be left unchanged.")
+        help="Image height in px to resize all images to.")
+    parser.add_argument(
+        "-s", "--stave-count", type=int, default=None,
+        help=("If None, do naive splitting, "
+              "else split to this number of staves using 'informed' algorithm."))
     parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,
         help="Activate verbose logging.")
@@ -344,6 +357,7 @@ def main():
         input_folder=args.input_folder,
         output_folder=args.output_folder,
         image_height=args.image_height,
+        stave_count=args.stave_count,
         verbose=args.verbose)
     cutter()
 
