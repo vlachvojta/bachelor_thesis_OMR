@@ -105,7 +105,7 @@ class MusescoreAnalyzer:
 
     def save_big_density_indexes(self, df: pd.DataFrame) -> None:
         """Get big density subset and save system ids to new file."""
-        big_density_subset = df[df['density'] >= 41.0]
+        big_density_subset = df[df['density'] >= 41.0]  # (df['density'] >= 30.0) & (df['density'] < 41.0)  #
         big_density_subset.to_csv('big_density_subset.csv')
 
         len_of_big_density = len(big_density_subset)
