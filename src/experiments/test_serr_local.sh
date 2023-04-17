@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+source ./.venv/bin/activate
+
 pwd
-EXPERIMENT="230123_local_decode_pth"
+EXPERIMENT="0_local_decode_pth"
 # echo "SCRATCH: "$SCRATCH
 # cd $SCRATCH
 # cp -r /storage/brno2/home/xvlach22/bp_omr/datasets $SCRATCH/datasets
@@ -15,16 +17,17 @@ EXPERIMENT="230123_local_decode_pth"
 # module add python36-modules-gcc
 pip3 install --upgrade pip
 # pip3 install safe_gpu lmdb opencv-python scipy brnolm
+pip3 install torch lmdb safe_gpu brnolm torchvision
 
-HOME="/home/vlachvojta/skola/BP"
-PERO_PATH=$HOME"/code_from_others/pero"
-PERO_OCR_PATH=$HOME"/code_from_others/pero-ocr"
+home="/home/vlachvojta/skola/BP"
+PERO_PATH=$home"/code_from_others/pero"
+PERO_OCR_PATH=$home"/code_from_others/pero-ocr"
 export PYTHONPATH=$PERO_PATH:$PERO_OCR_PATH
 export PATH=$PATH:$PYTHONPATH
 
 # Dataset
-LMDB=$HOME"/datasets/primus_full_converted_2_lmdb/images.lmdb"
-DATA_TST=$HOME"/datasets/primus_full_converted_2_lmdb/data_2.tst"
+LMDB=$home"/datasets/primus_full_converted_2_lmdb/images.lmdb"
+DATA_TST=$home"/datasets/primus_full_converted_2_lmdb/data_2.tst"
 
 # Python scripts
 EXPORT_PY=$PERO_PATH"/pytorch_ctc/export_model.py"
@@ -33,8 +36,8 @@ DECODE_PY=$PERO_PATH"/karelb-ocr-scripts/decode_logits.py"
 
 # Python script arguments
 NET=VGG_LSTM_B64_L17_S4_CB4
-CHECKPOINT_PATH=$HOME"/experiments/"$EXPERIMENT"/checkpoints/"
-TMP=$HOME"/experiments/"$EXPERIMENT"/tmp/"
+CHECKPOINT_PATH=$home"/experiments/"$EXPERIMENT"/checkpoints/"
+TMP=$home"/experiments/"$EXPERIMENT"/tmp/"
 OCR_JSON=$TMP"out.json"
 OCR_MODEL=$TMP"out.pt"
 PICKLE=$TMP"/pickle_out.pkl"
