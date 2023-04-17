@@ -1,14 +1,12 @@
 #!/usr/bin/python3.8
-"""Download musescore files from github repo."""
+"""Download musescore files from github repo given the link of repo and the list of files."""
 
 import argparse
 import re
 import sys
 import os
 import time
-# import logging
 import shutil
-# from datetime import datetime
 import requests
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
