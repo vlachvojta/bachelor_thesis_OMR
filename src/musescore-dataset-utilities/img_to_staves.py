@@ -191,7 +191,7 @@ class StaffCuter:
             return 255 - image[:,:,3]
         return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
-    def get_staves_informed(self, data, staff_count) -> list:
+    def get_staves_informed(self, data, staff_count: int = 1) -> list:
         """Cut individual staves from img. Return in a list of staves. Use Informed mode.
         
         Informed mode: Needs staff count n, cuts whitespace horizontal strips
