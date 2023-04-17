@@ -197,17 +197,38 @@ class StaffCuter:
         Informed mode: Needs staff count n, cuts whitespace horizontal strips
             and then divides the rest to n individual staves.
         """
+        division_margin_percent = 0.15
 
-        # TODOs of this method
         # crop white space of whole page
-        # get division points
-        # divide to staves WITH SOME MARGIN over the division points
+        data = self.crop_white_space(data, strip_count=20)
+
+        if staff_count <= 1:
+            staves = [data]
+        else:
+            # get division points
+            strip_width = data.shape[0] // staff_count
+            division_margin = int(strip_width * division_margin_percent)
+
+            division_points = [strip_width * i for i in range(staff_count)] + [data.shape[0]]
+            logging.debug(f'division_points: {division_points}')
+
+            staves = []
+            # divide to staves WITH MARGIN over the division points
+            for i, division_point in enumerate(division_points[:-1]):
+                staff_start = max(0, division_point - division_margin)
+                staff_end = min(division_points[i + 1] + division_margin, division_points[-1])
+                logging.debug(f"staff_start: {staff_start}, staff_end: {staff_end}")
+
+                staves.append(data[staff_start:staff_end])
+            # staves = [data]
+
         # crop white space of every stave and add border to every stave
+        staves_out = []
+        for staff in staves:
+            staves_out.append(self.crop_white_space(staff, strip_count=20))
 
-        staves = [self.crop_white_space(data, strip_count=20)]
-        staves = self.add_border(staves)
-
-        return staves
+        staves_out = self.add_border(staves_out)
+        return staves_out
 
     def get_staves_naive(self, data) -> list:
         """Cut individual staves from img. Return in a list of staves. Use Naive mode.
