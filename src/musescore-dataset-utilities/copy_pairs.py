@@ -1,5 +1,5 @@
 #!/usr/bin/python3.8
-"""Load label and image pairs with specific condition from pair folder.
+"""Load label and image pairs given by input file.
 
 Usage:
 $ python3 copy_pairs.py -i 6_copied_pairs/big_density_systems.txt -o 6_copied_pairs_subset
@@ -12,8 +12,6 @@ import sys
 import os
 import time
 import logging
-# import numpy as np
-# import pandas as pd
 from shutil import copyfile
 from musescore_analyzer import MusescoreAnalyzer
 
@@ -56,11 +54,12 @@ class PairCopier:
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
 
+        self.copied_labels = {}
+
     def __call__(self):
         if not self.system_ids:
             logging.error('No system IDs to copy. Select a different file')
 
-        self.copied_labels = {}
         success_files = 0
         fail_files = 0
 
@@ -74,14 +73,15 @@ class PairCopier:
                     logging.debug(f'Copying image ({img_source}) => ({img_dest})')
                     copyfile(img_source, img_dest)
 
+                    label_seq = self.copied_labels[system_id]
                     out_label_file.write(
-                        f"{system_id} {Common.PERO_LMDB_zero_tag} \"{self.copied_labels[system_id]}\"\n")
-                    
+                        f'{system_id} {Common.PERO_LMDB_zero_tag} "{label_seq}"\n')
+
                     success_files += 1
                 else:
                     print(f'NOT FOUND: {system_id}')
                     fail_files += 1
-        
+
         print('')
         print('--------------------------------------')
         print('Results:')
