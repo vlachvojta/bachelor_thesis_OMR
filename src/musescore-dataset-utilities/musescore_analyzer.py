@@ -2,7 +2,7 @@
 """Analyze semantic labels and musescore xml files and export to csv pandas file.
 
 Works with:
-    - generated semantic labels (implementation in process)
+    - generated semantic labels
         - works only on ORIGINAL SEMANTIC ENCODING, not any of shortened version
 
 Analyzed properties:
@@ -35,16 +35,18 @@ class MusescoreAnalyzer:
 
     EMPTY_SYSTEM_ID = 'EMPTY_SYSTEM_ID'
 
-    def __init__(self, label_files: str, musicxml_files: str, input_folders: str,
-                 file_extensions_for_input_folders: list,
+    def __init__(self, label_files: str,
                  output_file: str = 'mscz_analyzer_stats.csv.csv',
+                 high_dens_threshold: float = 41.0,
                  verbose: bool = False):
+                 # musicxml_files: str, input_folders: str, file_extensions_for_input_folders: list,
         self.label_files = label_files if label_files else []
-        self.musicxml_files = musicxml_files if musicxml_files else []
-        self.input_folders = input_folders if input_folders else []
-        self.file_extensions_for_input_folders = file_extensions_for_input_folders
         self.output_file = output_file if output_file.endswith('csv') else f'{output_file}.csv'
+        self.high_dens_threshold = high_dens_threshold
         self.verbose = verbose
+        # self.musicxml_files = musicxml_files if musicxml_files else []
+        # self.input_folders = input_folders if input_folders else []
+        # self.file_extensions_for_input_folders = file_extensions_for_input_folders
 
         if verbose:
             logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
@@ -101,19 +103,21 @@ class MusescoreAnalyzer:
         df.to_csv(self.output_file)
         print(f'Dataframe saved to {self.output_file}')
 
-        self.save_big_density_indexes(df)
+        self.save_high_density_indexes(df)
 
-    def save_big_density_indexes(self, df: pd.DataFrame) -> None:
+    def save_high_density_indexes(self, df: pd.DataFrame) -> None:
         """Get big density subset and save system ids to new file."""
-        big_density_subset = df[df['density'] >= 41.0]  # (df['density'] >= 30.0) & (df['density'] < 41.0)  #
-        big_density_subset.to_csv('big_density_subset.csv')
+        high_density_subset = df[df['density'] >= self.high_dens_threshold]  
+        # (df['density'] >= 30.0) & (df['density'] < 41.0)  #
 
-        len_of_big_density = len(big_density_subset)
-        output_file = f'{self.output_file}_big_density_staves.txt'
+        high_density_subset.to_csv('high_density_subset.csv')
 
-        print(f'Found {len_of_big_density} staves with density bigger or equal to 41. '
+        len_of_high_density = len(high_density_subset)
+        output_file = f'{self.output_file}_high_density_staves_{int(self.high_dens_threshold)}.txt'
+
+        print(f'Found {len_of_high_density} staves with density bigger or equal to {self.high_dens_threshold}. '
               f'Saving to {output_file}')
-        output = '\n'.join(big_density_subset.index.tolist())
+        output = '\n'.join(high_density_subset.index.tolist())
         Common.write_to_file(output, output_file)
 
     def get_stats_for_row(self, row: pd.Series) -> pd.Series:
@@ -266,22 +270,25 @@ def parseargs():
         "-l", "--label-files", type=str, nargs='*',
         help="Input files to load labels from.")
     parser.add_argument(
-        "-m", "--musicxml-files", type=str, nargs='*',
-        help="Input files to load musescore xml.")
-    parser.add_argument(
-        "-i", "--input-folders", type=str, nargs='*',
-        help=("Input folders to load labels or musescore xml from. "
-              "(use with --file-extensions-for-input-folders for better results)"))
-    parser.add_argument(
-        "-e", "--file-extensions-for-input-folders", nargs='*', default=['semantic', 'musicxml'],
-        help=("Set file extensions for files in given input folders. " +
-              "Use in combination with --input-folders."))
-    parser.add_argument(
         "-o", "--output-file", type=str, default='mscz_analyzer_stats.csv.csv',
         help="Output file to export pandas csv to.")
     parser.add_argument(
+        "-t", "--high-dens-threshold", type=float, default=41.0,
+        help="Threshold for measure density of labels to export to a separate file.")
+    parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,
         help="Activate verbose logging.")
+    # parser.add_argument(
+    #     "-m", "--musicxml-files", type=str, nargs='*',
+    #     help="Input files to load musescore xml.")
+    # parser.add_argument(
+    #     "-i", "--input-folders", type=str, nargs='*',
+    #     help=("Input folders to load labels or musescore xml from. "
+    #           "(use with --file-extensions-for-input-folders for better results)"))
+    # parser.add_argument(
+    #     "-e", "--file-extensions-for-input-folders", nargs='*', default=['semantic', 'musicxml'],
+    #     help=("Set file extensions for files in given input folders. " +
+    #           "Use in combination with --input-folders."))
     return parser.parse_args()
 
 def main():
@@ -292,11 +299,12 @@ def main():
 
     analyzer = MusescoreAnalyzer(
         label_files=args.label_files,
-        musicxml_files=args.musicxml_files,
-        input_folders=args.input_folders,
-        file_extensions_for_input_folders=args.file_extensions_for_input_folders,
         output_file=args.output_file,
+        high_dens_threshold=args.high_dens_threshold,
         verbose=args.verbose)
+        # musicxml_files=args.musicxml_files,
+        # input_folders=args.input_folders,
+        # file_extensions_for_input_folders=args.file_extensions_for_input_folders,
     analyzer()
 
     end = time.time()
