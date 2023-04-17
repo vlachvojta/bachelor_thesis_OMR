@@ -131,7 +131,7 @@ class StaffCuter:
                 suspicious_threshold = 500
                 logging.debug(f'\t{file}_s{i:02}.png: {staff.shape}')
 
-                if staff.shape[0] > suspicious_threshold:
+                if self.mode == Mode.NAIVE and staff.shape[0] > suspicious_threshold:
                     # image = Image.fromarray(staff)
                     base_file = os.path.basename(file)
                     self.suspicious_files.append(base_file)
@@ -210,19 +210,18 @@ class StaffCuter:
             division_margin = int(strip_width * division_margin_percent)
 
             division_points = [strip_width * i for i in range(staff_count)] + [data.shape[0]]
-            logging.debug(f'division_points: {division_points}')
+            # logging.debug(f'division_points: {division_points}')
 
-            staves = []
             # divide to staves WITH MARGIN over the division points
+            staves = []
             for i, division_point in enumerate(division_points[:-1]):
                 staff_start = max(0, division_point - division_margin)
                 staff_end = min(division_points[i + 1] + division_margin, division_points[-1])
-                logging.debug(f"staff_start: {staff_start}, staff_end: {staff_end}")
+                # logging.debug(f"staff_start: {staff_start}, staff_end: {staff_end}")
 
                 staves.append(data[staff_start:staff_end])
-            # staves = [data]
 
-        # crop white space of every stave and add border to every stave
+        # crop white space of every staff and add border to every stave
         staves_out = []
         for staff in staves:
             staves_out.append(self.crop_white_space(staff, strip_count=20))
@@ -318,7 +317,7 @@ class StaffCuter:
         return staves
 
     def add_border(self, staves:list, height: int=20) -> list:
-        border_width = max([stave.shape[1] for stave in staves])
+        border_width = max([staff.shape[1] for staff in staves])
         border = np.zeros((height, border_width), dtype='uint8') + 255
 
         new_staves = []
