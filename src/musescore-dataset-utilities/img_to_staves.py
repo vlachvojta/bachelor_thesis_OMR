@@ -4,7 +4,7 @@
 2 modes of splitting staves:
     Naive mode: Uses white space horizontal strips to recognize space between staves
     Informed mode: Needs n staff count, cuts whitespace horizontal strips
-        and then divedes the rest to n individual staves.
+        and then divides the rest to n individual staves.
 
 Usage:
 $ python3 img_to_staves.py -i image.png -o out/
@@ -38,14 +38,14 @@ class Mode(Enum):
 class StaffCuter:
     """Separate images to individual music staves with very little white space arround."""
     def __init__(self, input_files: list = None, input_folder: str = None,
-                 output_folder: str = 'out', image_height: int = 100, stave_count: int = None,
+                 output_folder: str = 'out', image_height: int = 100, staff_count: int = None,
                  verbose: bool = False):
         self.input_files = input_files
         self.output_folder = output_folder
         self.image_height = image_height
         self.verbose = verbose
-        self.mode = Mode.NAIVE if stave_count is None else Mode.INFORMED
-        self.stave_count = stave_count
+        self.mode = Mode.NAIVE if staff_count is None else Mode.INFORMED
+        self.staff_count = staff_count
 
         if verbose:
             logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
@@ -98,8 +98,12 @@ class StaffCuter:
             # plt.plot(means)
             # plt.savefig('chart_mean.png')
 
-            # staves = self.get_staves(data)
-            staves = self.get_staves_new(data)
+            if self.mode == Mode.NAIVE:
+                # staves = self.get_staves(data)
+                staves = self.get_staves_naive(data)
+            elif self.mode == Mode.INFORMED:
+                staves = self.get_staves_informed(data, self.staff_count)
+
             logging.debug('\tgot %d staves', len(staves))
 
             cropped_staves = []
@@ -187,8 +191,29 @@ class StaffCuter:
             return 255 - image[:,:,3]
         return cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
-    def get_staves_new(self, data) -> list:
-        """Cut individual staves from img. Return in a list of staves."""
+    def get_staves_informed(self, data, staff_count) -> list:
+        """Cut individual staves from img. Return in a list of staves. Use Informed mode.
+        
+        Informed mode: Needs staff count n, cuts whitespace horizontal strips
+            and then divides the rest to n individual staves.
+        """
+
+        # TODOs of this method
+        # crop white space of whole page
+        # get division points
+        # divide to staves WITH SOME MARGIN over the division points
+        # crop white space of every stave and add border to every stave
+
+        staves = [self.crop_white_space(data, strip_count=20)]
+        staves = self.add_border(staves)
+
+        return staves
+
+    def get_staves_naive(self, data) -> list:
+        """Cut individual staves from img. Return in a list of staves. Use Naive mode.
+        
+        Naive mode uses white space horizontal strips to recognize space between staves.
+        """
         # def strip_is_white(strip: np.ndarray()) -> bool:
         #     strip_min = np.min(strip)
         #     return strip_min > line_min_threshold
@@ -283,8 +308,11 @@ class StaffCuter:
         return new_staves
 
     def crop_white_space(self, data: np.ndarray,
-                   strip_count: int = 5) -> np.ndarray:
-        """Crop image iteratively and stop when it finds the staff."""
+                         strip_count: int = 5) -> np.ndarray:
+        """Crop image iteratively and stop when it finds the staff.
+        
+        Crop horizontal white_space strips.
+        """
         safety_threshold = 3
         for _ in range(safety_threshold):
             cropped_data = 'empty'
@@ -337,7 +365,7 @@ def parseargs():
         "--image-height", type=int, default=100,
         help="Image height in px to resize all images to.")
     parser.add_argument(
-        "-s", "--stave-count", type=int, default=None,
+        "-s", "--staff-count", type=int, default=None,
         help=("If None, do naive splitting, "
               "else split to this number of staves using 'informed' algorithm."))
     parser.add_argument(
@@ -357,7 +385,7 @@ def main():
         input_folder=args.input_folder,
         output_folder=args.output_folder,
         image_height=args.image_height,
-        stave_count=args.stave_count,
+        staff_count=args.staff_count,
         verbose=args.verbose)
     cutter()
 
