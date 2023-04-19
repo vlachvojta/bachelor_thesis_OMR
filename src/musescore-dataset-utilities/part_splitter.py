@@ -122,21 +122,17 @@ class PartSplitter:
                 if self.is_dual_staff_part(new_tree):
                     self.dual_staff_parts.append(os.path.basename(file_out))
                     self.dual_staff_parts_count += 1
-                    second_tree, file_out_2 = self.separate_dual_staff(new_tree, file_out)
-                    self.save_part_to_file(second_tree, file_out_2)
-
-                    if self.is_polyphonic_part(second_tree):
-                        self.polyphonic_parts.append(os.path.basename(file_out_2))
-                        self.polyphonic_parts_count += 1
-                    if self.is_polyphonic_part(new_tree):
-                        self.polyphonic_parts.append(os.path.basename(file_out))
-                        self.polyphonic_parts_count += 1
+                    new_trees, files_out = self.separate_multiple_staff_part(new_tree, file_out)
                 else:
+                    new_trees = [new_tree]
+                    files_out = [file_out]
+
+                for new_tree, file_out in zip(new_trees, files_out):
+                    self.save_part_to_file(new_tree, file_out)
+
                     if self.is_polyphonic_part(new_tree):
                         self.polyphonic_parts.append(os.path.basename(file_out))
                         self.polyphonic_parts_count += 1
-
-                self.save_part_to_file(new_tree, file_out)
 
         self.print_results()
 
@@ -312,13 +308,15 @@ class PartSplitter:
 
         return tree
 
-    def separate_dual_staff(self, tree_orig: etree.Element, file_out: str) -> (etree.Element, str):
-        """Seaparate dual staff part to two one staff parts. 
-        
-        Return second staff part and its file name to save.
-        First staff part is updated here but doesn't have to be returned 
-            for it to be saved back in __call__."""
-        file_split = os.path.basename(file_out).split('.')[0]
+    def separate_multiple_staff_part(self, tree_orig: etree.Element, file_out_orig: str
+                                    ) -> (list, list):
+        """Seaparate multiple staff part to one staff parts.
+
+        Return tuple:
+            first value: all separated part trees
+            second value: output file names
+        """
+        file_split = os.path.basename(file_out_orig).split('.')[0]
         file_out = f'{file_split}a.musicxml'
         file_out = os.path.join(self.output_folder, file_out)
 
@@ -328,7 +326,7 @@ class PartSplitter:
 
         self.dual_staff_separate_second(new_tree)
 
-        return new_tree, file_out
+        return [tree_orig, new_tree], [file_out_orig, file_out]
 
     def dual_staff_separate_first(self, part: etree.Element) -> None:
         """Remove second staff."""
