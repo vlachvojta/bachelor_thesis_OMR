@@ -296,6 +296,15 @@ class PartSplitter:
 
         print_tags = tree.xpath('//measure/print[@new-system="yes"]')
 
+        # if Last page is NOT copmlete, delete it
+        if not len(print_tags) - 1 % self.staves_on_page == self.staves_on_page - 1:
+            extra_systems = len(print_tags) % self.staves_on_page + 1
+            first_measure_to_delete = print_tags[-extra_systems].getparent().get('number')
+            measures_to_delete = tree.xpath(f'//measure[@number>={first_measure_to_delete}]')
+
+            for measure in measures_to_delete:
+                measure.getparent().remove(measure)
+
         for i, print_tag in enumerate(print_tags):
             # Every n-th new-system change to new-page. N is staves_on_page
             # (the first system in the score doesn't have a new-system tag)
