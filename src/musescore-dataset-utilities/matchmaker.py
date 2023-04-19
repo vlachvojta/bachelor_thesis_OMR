@@ -158,7 +158,7 @@ class Matchmaker:
         not_fit_len = len(self.not_fitting_staff_parts)
         not_fit_ratio = not_fit_len / total_parts_found_len * 100
         print(f'\t{not_fit_len} ({not_fit_ratio:.1f} %) parts '
-              'had differenct counts of labels and images.')
+              'had different counts of labels and images.')
 
         sus_ratio = len(sus_img_parts) / total_parts_found_len * 100
         print(f'\t{len(sus_img_parts)} ({sus_ratio:.1f} %) parts generated suspicious images.')
