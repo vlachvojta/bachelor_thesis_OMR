@@ -63,6 +63,11 @@ class MusescoreAnalyzer:
         else:
             logging.info(f'\tFound {len(self.labels)} labels.')
 
+        # Create output directory if needed
+        output_dir = os.path.dirname(self.output_file)
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
     def __call__(self):
         if not self.labels:
             logging.error("No images or labels where found, cannot generate stats.")
@@ -107,18 +112,32 @@ class MusescoreAnalyzer:
 
     def save_high_density_indexes(self, df: pd.DataFrame) -> None:
         """Get big density subset and save system ids to new file."""
-        high_density_subset = df[df['density'] >= self.high_dens_threshold]  
+        high_density_subset = df[df['density'] >= self.high_dens_threshold]
         # (df['density'] >= 30.0) & (df['density'] < 41.0)  #
 
         high_density_subset.to_csv('high_density_subset.csv')
 
         len_of_high_density = len(high_density_subset)
-        output_file = f'{self.output_file}_high_density_staves_{int(self.high_dens_threshold)}.txt'
+        density = int(self.high_dens_threshold)
+        output_file_staves = f'{self.output_file}_high_density_staves_{density}.txt'
+        output_file_parts = f'{self.output_file}_high_density_parts_{density}.txt'
+        output_file_mscz = f'{self.output_file}_high_density_mscz_{density}.txt'
 
-        print(f'Found {len_of_high_density} staves with density bigger or equal to {self.high_dens_threshold}. '
-              f'Saving to {output_file}')
-        output = '\n'.join(high_density_subset.index.tolist())
-        Common.write_to_file(output, output_file)
+        print(f'Found {len_of_high_density} staves with density bigger or equal to {density}. '
+              f'Saving to {output_file_staves}')
+        staves = high_density_subset.index.tolist()
+        Common.write_to_file('\n'.join(staves), output_file_staves)
+
+        # Get unique parts and mscz file names
+        parts = set()
+        msczs = set()
+        for stave_id in staves:
+            mscz, part, *_ = re.split(r'_', stave_id)
+            msczs.add(mscz)
+            parts.add(f'{mscz}_{part}')
+
+        Common.write_to_file('\n'.join(sorted(parts)), output_file_parts)
+        Common.write_to_file('\n'.join(sorted(msczs)), output_file_mscz)
 
     def get_stats_for_row(self, row: pd.Series) -> pd.Series:
         """Gets all stats needed for row from DataFrame."""
