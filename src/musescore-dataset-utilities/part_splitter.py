@@ -62,10 +62,11 @@ class PartSplitter:
 
         self.generated_files = 0
 
-        self.STAVES_ON_PAGE = staves_on_page
+        self.staves_on_page = staves_on_page
 
     def __call__(self):
-        print(f'Going through {len(self.input_files)} files. (every dot is 200 files, every line is 2_000)')
+        print(f'Going through {len(self.input_files)} files. '
+              '(every dot is 200 files, every line is 2_000)')
 
         for i, file_in in enumerate(self.input_files):
             Common.print_dots(i, 200, 2_000)
@@ -107,19 +108,16 @@ class PartSplitter:
                 for part in parts:
                     if part.get('id') == part_id:
                         part_copy = deepcopy(part)
-                        # part_str = etree.tostring(part)
-                        # part_copy = etree.fromstring(part_str)
                         new_tree.insert(7, part_copy)
 
                 self.change_new_page_to_new_system(new_tree)
-                # self.change_new_system_to_new_page(new_tree)
 
                 # Ignore percussion parts
                 if self.is_percussion_part(new_tree):
                     continue
 
-                # Separate dual staff part + detect polyphonic for both
-                if self.is_dual_staff_part(new_tree):
+                # Detect multi staff and polyphonic parts
+                if self.get_number_of_staves(new_tree) > 1:
                     self.dual_staff_parts.append(os.path.basename(file_out))
                     self.dual_staff_parts_count += 1
                     new_trees, files_out = self.separate_multiple_staff_part(new_tree, file_out)
@@ -222,13 +220,13 @@ class PartSplitter:
             elem.text = ''
         for elem in tree.xpath('//part-abbreviation'):
             elem.text = ''
-    
+
     def remove_element(self, tree: etree.Element, element: str) -> None:
         """Remove all element by name from given tree."""
         for elem in tree.xpath(f'//{element}'):
             elem.getparent().remove(elem)
 
-    def is_dual_staff_part(self, part: etree.Element) -> bool:
+    def get_number_of_staves(self, part: etree.Element) -> bool:
         """Check if part is a dual staff part using "<attributes>" tag in the first measure."""
         staves = part.xpath('//measure[@number=1]/attributes/staves')
 
@@ -237,13 +235,13 @@ class PartSplitter:
             try:
                 number = int(number)
                 if number > 1:
-                    return True
+                    return number
             except ValueError:
                 print(f'WARNING: Number of staves in first measure cannot be parsed to int. '
                       f'({number})')
-                return True
+                return 1
 
-        return False
+        return 1
 
     def is_percussion_part(self, part: etree.Element) -> bool:
         """Check if part is percussion part using "<clef><sign>percussion" tag."""
@@ -277,7 +275,6 @@ class PartSplitter:
         """Go though all measures with change new-page to new-system.
         
         Precise tags are: `<print new-page="yes" />` change to `<print new-system="yes" />`."""
-        # TODO TEST: z nějakýho důvodu to moc nefungovalo při prvním testu, potřeba udělat TDD
         print_tags = tree.xpath('//measure/print[@new-system="yes"]')
 
         for print_tag in print_tags:
@@ -300,9 +297,9 @@ class PartSplitter:
         print_tags = tree.xpath('//measure/print[@new-system="yes"]')
 
         for i, print_tag in enumerate(print_tags):
-            # Every n-th new-system change to new-page. N is STAVES_ON_PAGE
+            # Every n-th new-system change to new-page. N is staves_on_page
             # (the first system in the score doesn't have a new-system tag)
-            if i % self.STAVES_ON_PAGE == self.STAVES_ON_PAGE - 1:
+            if i % self.staves_on_page == self.staves_on_page - 1:
                 print_tag.attrib.pop('new-system')
                 print_tag.attrib['new-page'] = 'yes'
 
@@ -316,50 +313,51 @@ class PartSplitter:
             first value: all separated part trees
             second value: output file names
         """
+        staves = self.get_number_of_staves(tree_orig)
+        print(f'staves: {staves}')
+
         file_split = os.path.basename(file_out_orig).split('.')[0]
-        file_out = f'{file_split}a.musicxml'
-        file_out = os.path.join(self.output_folder, file_out)
+        file_out_names = []
 
-        new_tree = deepcopy(tree_orig)
+        for i in range(staves):
+            file_out = f"{file_split}{chr(ord('a') + i)}.musicxml"
+            file_out_names.append(os.path.join(self.output_folder, file_out))
 
-        self.dual_staff_separate_first(tree_orig)
+        part_trees = [tree_orig]
+        for _ in range(staves - 1):
+            part_trees.append(deepcopy(tree_orig))
 
-        self.dual_staff_separate_second(new_tree)
+        for i, part_tree in enumerate(part_trees, start=1):
+            print(f'separating staff number: {i}')
+            self.separate_specific_part(part_tree, i)
 
-        return [tree_orig, new_tree], [file_out_orig, file_out]
+        return part_trees, file_out_names
 
-    def dual_staff_separate_first(self, part: etree.Element) -> None:
-        """Remove second staff."""
+    def separate_specific_part(self, part: etree.Element, staff_to_leave: int) -> None:
+        """Separate one staff from whole part. Remove the others."""
         staves = part.xpath('.//measure[@number=1]/attributes/staves')
         if staves:
             staves[0].text = "1"
 
-        clefs = part.xpath('.//measure[@number=1]/attributes/clef[@number=2]')
-        if clefs:
-            clefs[0].getparent().remove(clefs[0])
-
-        second_staff_notes = part.xpath('.//measure/note[staff="2"]')
-        for note in second_staff_notes:
-            note.getparent().remove(note)
-
-    def dual_staff_separate_second(self, part: etree.Element) -> None:
-        """Remove first staff."""
-        staves = part.xpath('.//measure[@number=1]/attributes/staves')
-        if staves:
-            staves[0].text = "1"
+        staff_layouts = part.xpath('.//measure/print/staff-layout')
+        for layout in staff_layouts:
+            layout.getparent().remove(layout)
 
         clefs = part.xpath('.//measure[@number=1]/attributes/clef')
         if len(clefs) > 1:
-            clefs[0].getparent().remove(clefs[0])
-            clefs[1].attrib['number'] = '1'
+            for i, clef in enumerate(clefs, start=1):
+                if i == staff_to_leave:
+                    clef.attrib['number'] = '1'
+                else:
+                    clef.getparent().remove(clef)
 
-        second_staff_notes = part.xpath('.//measure/note[staff="1"]')
-        for note in second_staff_notes:
-            note.getparent().remove(note)
-
-        second_staff_notes = part.xpath('.//measure/note/staff')
-        for note in second_staff_notes:
-            note.text = '1'
+        notes = part.xpath('.//measure/note')
+        for note in notes:
+            staff = note.xpath('.//staff')[0]
+            if int(staff.text) == staff_to_leave:
+                staff.text = '1'
+            else:
+                note.getparent().remove(note)
 
 
 def parseargs():
