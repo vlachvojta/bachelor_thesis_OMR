@@ -26,8 +26,8 @@ class EvaulateCheckpoints:
 
     ERROR_ERROR = 200.42
 
-    def __init__(self, input_files: list, ground_truth: str,
-                 output_folder: str = 'eval_out',
+    def __init__(self, input_files: list, ground_truths: list,
+                 output_folder: str = 'evaluated_checkpoints',
                  name: str = 'Evaluated_checkpoints',
                  chart_mode: str = 'part',
                  ignore_n_pred: int = 0,
@@ -35,35 +35,81 @@ class EvaulateCheckpoints:
         self.chart_mode = chart_mode
 
         # Read Ground_truth
-        if not os.path.exists(ground_truth):
-            raise FileNotFoundError(f'Ground truth file not found: {ground_truth}')
-        ground_truth = Common.read_file(ground_truth)
-        ground_truth = [line for line in re.split(r'\n', ground_truth)
-                        if not line == '']
-        if ignore_n_gt > 0:
-            ground_truth = self.ignore_n_words(ignore_n_gt, ground_truth)
+        self.ground_truths = self.read_gound_truths(ground_truths, ignore_n_gt)
+        if not self.ground_truths:
+            raise FileNotFoundError('No ground truth files found!')
 
         # Check input files
         input_files = [file for file in input_files if os.path.isfile(file)]
 
-        results = {}
+        self.results = Results()
         for file_name in input_files:
-            iteration = int(re.findall(r"\d+", file_name)[-1])
+            file_name_base = os.path.basename(file_name)
+            if re.match(r'checkpoint_\d+(\.pth)\.tst_out', file_name_base):
+                set_id = ''
+            else:
+                splitted = re.split(r'checkpoint_\d+|(\.pth)?\.tst_out', file_name_base)
 
-            wer, cer = self.get_errs(file_name, ground_truth, ignore_n_pred)
+                if len(splitted) == 3:
+                    set_id = splitted[1]
+                elif len(splitted) == 5:
+                    set_id = splitted[2]
+                else:
+                    print(f'INFO: No test set id found in file_name ({file_name}), SKIPPING.')
+                    continue
+
+            if set_id not in self.ground_truths:
+                print(f'INFO: No ground_truth for set id ({set_id}), SKIPPING.')
+                continue
+
+            iteration = int(re.findall(r"\d+", file_name)[0])
+
+            wer, cer = self.get_errs(file_name, self.ground_truths[set_id], ignore_n_pred)
 
             if wer == cer == self.ERROR_ERROR:
                 continue
 
-            results[iteration] = {'iter': iteration, 'wer': wer, 'cer': cer}
-            print(f'Iteration: {iteration} wer: {results[iteration]}')
+            self.results.add_result(iteration, set_id, wer, cer)
 
-        self.make_chart(results, output_folder, name)
+            print(f'Iteration: {iteration}, set_id: {set_id}, wer: {wer}, cer: {cer}')
+
+        self.make_chart(self.results, output_folder, name)
 
         json_file_path = os.path.join(output_folder, name + '.json')
-        Common.write_to_file(results, json_file_path)
-
+        self.results.save_to_file(json_file_path)
         print(f'Chart and json file saved to {output_folder}')
+
+    def read_gound_truths(self, ground_truths: list, ignore_n_gt: int = 0) -> dict:
+        """Read the ground truth files if exist.
+
+        Returns a dictionary:
+            k: name or id of the test set
+            v: lines from the file
+        """
+        existing_files = [ground_truth for ground_truth in ground_truths
+                          if os.path.isfile(ground_truth)]
+        ground_truths_dict = {}
+
+        for file in existing_files:
+            # Get set_id
+            gt_basename = os.path.basename(file)
+            splitted = re.split(r'ground_truth|\.tst_out', gt_basename)
+
+            if not len(splitted) == 3:
+                raise NameError('Ground truth file name has wrong format. '
+                                'Cannot separate test set names.')
+            set_id = splitted[1]
+
+            # Read file
+            ground_truth = Common.read_file(file)
+            ground_truth = [line for line in re.split(r'\n', ground_truth)
+                            if not line == '']
+            if ignore_n_gt > 0:
+                ground_truth = self.ignore_n_words(ignore_n_gt, ground_truth)
+
+            ground_truths_dict[set_id] = ground_truth
+
+        return ground_truths_dict
 
     def ignore_n_words(self, ignore_n_words: int, file: list) -> None:
         """Ignore n words in a file."""
@@ -106,18 +152,34 @@ class EvaulateCheckpoints:
 
     def make_chart(self, results, output_folder, name):
         """Generate chart with iterations, WERs and CERs"""
+        # set_colors = ['c', 'y', 'm', 'g', 'b', 'r', 'w', 'k']
+        set_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd']
+
         if self.chart_mode == 'full':
             threshold = 0
         elif self.chart_mode == 'part':
-            threshold = len(results) // 2 if len(results) > 20 else 0
-        iterations = [results[res]['iter'] for res in results][threshold:]
-        wers = [results[res]['wer'] for res in results][threshold:]
-        cers = [results[res]['cer'] for res in results][threshold:]
+            threshold = results.len() // 2 if results.len > 20 else 0
 
-        # fig, ax = plt.subplots()
-        plt.title(name)
-        plt.plot(np.array(iterations), np.array(wers), label = 'Symbol error rate')
-        plt.plot(np.array(iterations), np.array(cers), label = 'Character error rate')
+        for set_id, set_color in zip(results.get_set_ids(), set_colors):
+            # set_id = results.get_set_ids()[1]
+            # set_color = set_colors[0]
+            # iterations = results.get_iterations()
+            wer_iterations, wers = results.get_wers(set_id, threshold)
+            cer_iterations, cers = results.get_cers(set_id, threshold)
+
+            if len(results.get_set_ids()) == 1:
+                wer_label = 'Symbol error rate'
+                cer_label = 'Character error rate'
+            else:
+                wer_label = f'Symbol error rate for set {set_id}'
+                cer_label = f'Character error rate for set {set_id}'
+
+
+            # fig, ax = plt.subplots()
+            plt.title(name)
+            plt.plot(wer_iterations, np.array(wers), color=set_color, label = wer_label)
+            plt.plot(cer_iterations, np.array(cers), ':', color=set_color, label = cer_label)
+
         plt.xlabel('Iteration')
         plt.ylabel('Rate [%]')
         plt.legend()
@@ -126,6 +188,64 @@ class EvaulateCheckpoints:
             os.makedirs(output_folder)
 
         plt.savefig(os.path.join(output_folder, name + '.png'))
+
+class Results:
+    """Simple class to store error results and return in correct format to make charts."""
+    results: dict
+    set_ids: set
+
+    def __init__(self):
+        self.results = {}
+        self.set_ids = set()
+
+    def add_result(self, iteration, set_id, wer,cer) -> None:
+        if iteration in self.results:
+            self.results[iteration][set_id] = {'wer': wer, 'cer': cer}
+        else:
+            self.results[iteration] = {set_id: {'wer': wer, 'cer': cer}}
+
+        self.set_ids.add(set_id)
+
+    def get_data(self) -> dict:
+        return self.results
+
+    def get_iterations(self) -> list:
+        return sorted(self.results.keys())
+
+    def get_wers(self, set_id, threshold) -> (list, list):
+        wers = []
+        wer_iterations = []
+
+        for iteration in self.get_iterations()[threshold:]:
+            if set_id in self.results[iteration]:
+                wers.append(self.results[iteration][set_id]['wer'])
+                wer_iterations.append(iteration)
+
+        return wer_iterations, wers
+
+    def get_cers(self, set_id, threshold) -> (list, list):
+        cers = []
+        cer_iterations = []
+
+        for iteration in self.get_iterations()[threshold:]:
+            if set_id in self.results[iteration]:
+                cers.append(self.results[iteration][set_id]['cer'])
+                cer_iterations.append(iteration)
+
+        return cer_iterations, cers
+
+    def get_set_ids(self):
+        return sorted(self.set_ids)
+
+    def __repr__(self) -> str:
+        return str(self.results)
+
+    def save_to_file(self, file_path: str) -> None:
+        Common.write_to_file(self.results, file_path)
+
+    @property
+    def len(self) -> int:
+        return len(self.results)
 
 
 def parseargs():
@@ -136,8 +256,9 @@ def parseargs():
         "-i", "--input-files", nargs='+',
         help="List of input files (checkpoint outputs)")
     parser.add_argument(
-        "-g", "--ground-truth", required=True,
-        help="Ground truth to compare files with.")
+        "-g", "--ground-truth", nargs='+', required=True,
+        help=("Ground truths to compare files with, "
+              "number of ground truths determines how many sets are there."))
     parser.add_argument(
         "-o", "--output-folder", type=str, default='evaluated_checkpoints',
         help="Output folder to write outputs to.")
@@ -164,7 +285,7 @@ def main():
 
     EvaulateCheckpoints(
         input_files=args.input_files,
-        ground_truth=args.ground_truth,
+        ground_truths=args.ground_truth,
         output_folder=args.output_folder,
         name=args.name,
         chart_mode=args.chart_mode,
