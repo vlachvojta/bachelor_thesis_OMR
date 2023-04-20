@@ -59,6 +59,7 @@ class PartSplitter:
         self.dual_staff_parts = []
         self.polyphonic_parts_count = 0
         self.polyphonic_parts = []
+        self.no_complete_pages_parts = []
 
         self.generated_files = 0
 
@@ -110,7 +111,10 @@ class PartSplitter:
                         part_copy = deepcopy(part)
                         new_tree.insert(7, part_copy)
 
-                self.change_new_page_to_new_system(new_tree)
+                result = self.change_new_page_to_new_system(new_tree)
+                if not result:
+                    self.no_complete_pages_parts.append(os.path.basename(file_out))
+                    continue
 
                 # Ignore percussion parts
                 if self.is_percussion_part(new_tree):
@@ -179,6 +183,19 @@ class PartSplitter:
                 # TODO concat existing file to new and save
                 print(f'WARNING: {polyphonic_file} already exists, printing to stdout instead')    
                 print(self.polyphonic_parts)
+
+        if self.no_complete_pages_parts > 0:
+            out_file_name = os.path.join(self.output_folder, '0_no_complete_pages_parts.json')
+            print(f'\t{len(self.no_complete_pages_parts)} no complete pages parts '
+                  f'(saved into {out_file_name})')
+
+            # TODO test this
+            if not os.path.exists(out_file_name):
+                Common.write_to_file(self.no_complete_pages_parts, out_file_name)
+            else:
+                # TODO concat existing file to new and save
+                print(f'WARNING: {out_file_name} already exists, printing to stdout instead')    
+                print(self.no_complete_pages_parts)
 
     def check_files(self, files: list) -> list:
         """Check existing files with correct extension and return only valid files"""
@@ -296,11 +313,22 @@ class PartSplitter:
 
         print_tags = tree.xpath('//measure/print[@new-system="yes"]')
 
+        if len(print_tags) == 0:
+            return False
+
         # if Last page is NOT copmlete, delete it
         if not len(print_tags) - 1 % self.staves_on_page == self.staves_on_page - 1:
             extra_systems = len(print_tags) % self.staves_on_page + 1
-            first_measure_to_delete = print_tags[-extra_systems].getparent().get('number')
-            measures_to_delete = tree.xpath(f'//measure[@number>={first_measure_to_delete}]')
+            # print(f'extra_systems: {extra_systems}')
+            # print(f'len(print_tags): {len(print_tags)}')
+
+            if extra_systems >= len(print_tags):
+                # part doesn't have even one complete page
+                measures_to_delete = tree.xpath(f'//measure')
+                return False
+            else:
+                first_measure_to_delete = print_tags[-extra_systems].getparent().get('number')
+                measures_to_delete = tree.xpath(f'//measure[@number>={first_measure_to_delete}]')
 
             for measure in measures_to_delete:
                 measure.getparent().remove(measure)
@@ -312,7 +340,7 @@ class PartSplitter:
                 print_tag.attrib.pop('new-system')
                 print_tag.attrib['new-page'] = 'yes'
 
-        return tree
+        return True
 
     def separate_multiple_staff_part(self, tree_orig: etree.Element, file_out_orig: str
                                     ) -> (list, list):
@@ -323,7 +351,7 @@ class PartSplitter:
             second value: output file names
         """
         staves = self.get_number_of_staves(tree_orig)
-        print(f'staves: {staves}')
+        # print(f'staves: {staves}')
 
         file_split = os.path.basename(file_out_orig).split('.')[0]
         file_out_names = []
@@ -337,7 +365,7 @@ class PartSplitter:
             part_trees.append(deepcopy(tree_orig))
 
         for i, part_tree in enumerate(part_trees, start=1):
-            print(f'separating staff number: {i}')
+            # print(f'separating staff number: {i}')
             self.separate_specific_part(part_tree, i)
 
         return part_trees, file_out_names
