@@ -117,6 +117,8 @@ class StaffCuter:
                 # Common.write_to_file(
                 #   staff, os.path.join(self.output_folder, f'error_png_{i}.png'))
                 # logging.debug(f'\t\tcropping {i}')
+
+                # Crop horizontal white space
                 cropped_staff = self.crop_white_space(staff.T, strip_count=20).T
 
                 # Delete everything that has too short lentgh (page numbers, labels, etc)
@@ -197,10 +199,10 @@ class StaffCuter:
         Informed mode: Needs staff count n, cuts whitespace horizontal strips
             and then divides the rest to n individual staves.
         """
-        division_margin_percent = 0.15
+        division_margin_percent = 0.25
 
         # crop white space of whole page
-        data = self.crop_white_space(data, strip_count=20)
+        data = self.crop_white_space(data, strip_count=40, safety_threshold=1)
 
         if staff_count <= 1:
             staves = [data]
@@ -210,23 +212,24 @@ class StaffCuter:
             division_margin = int(strip_width * division_margin_percent)
 
             division_points = [strip_width * i for i in range(staff_count)] + [data.shape[0]]
-            # logging.debug(f'division_points: {division_points}')
+            # logging.debug(f'\tdivision_points: {division_points}')
 
             # divide to staves WITH MARGIN over the division points
             staves = []
             for i, division_point in enumerate(division_points[:-1]):
                 staff_start = max(0, division_point - division_margin)
                 staff_end = min(division_points[i + 1] + division_margin, division_points[-1])
-                # logging.debug(f"staff_start: {staff_start}, staff_end: {staff_end}")
+                # logging.debug(f"\tstaff_start: {staff_start}, staff_end: {staff_end}")
 
                 staves.append(data[staff_start:staff_end])
 
         # crop white space of every staff and add border to every stave
         staves_out = []
         for staff in staves:
-            staves_out.append(self.crop_white_space(staff, strip_count=20))
+            staves_out.append(self.crop_white_space(staff, strip_count=20, safety_threshold=1))
 
         staves_out = self.add_border(staves_out)
+        logging.debug(f'\tReturning {len(staves_out)} staves')
         return staves_out
 
     def get_staves_naive(self, data) -> list:
@@ -323,17 +326,16 @@ class StaffCuter:
         new_staves = []
 
         for staff in staves:
-            if staff.shape[0] > 20:
+            if staff.shape[0] > 10:
                 new_staves.append(np.concatenate((border, staff, border), axis=0))
         return new_staves
 
-    def crop_white_space(self, data: np.ndarray,
-                         strip_count: int = 5) -> np.ndarray:
+    def crop_white_space(self, data: np.ndarray, strip_count: int = 5,
+                         safety_threshold: int = 3) -> np.ndarray:
         """Crop image iteratively and stop when it finds the staff.
         
         Crop horizontal white_space strips.
         """
-        safety_threshold = 3
         for _ in range(safety_threshold):
             cropped_data = 'empty'
 
@@ -350,9 +352,10 @@ class StaffCuter:
                 # check if strip is not too thin
                 min_width_threshold = 20
                 if strip.shape[0] < min_width_threshold:
-                    return strip
+                    return data
 
-                if np.min(strip) == 0:
+                strip_is_not_white_space = np.min(strip) == 0
+                if strip_is_not_white_space:
                     if isinstance(cropped_data, str):
                         cropped_data = strip
                     else:
