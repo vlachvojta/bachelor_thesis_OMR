@@ -108,7 +108,16 @@ class MusescoreAnalyzer:
         df.to_csv(self.output_file)
         print(f'Dataframe saved to {self.output_file}')
 
+        self.save_polyphonic_indexes(df)
         self.save_high_density_indexes(df)
+
+    def save_polyphonic_indexes(self, df: pd.DataFrame) -> None:
+        """Get polyphonic staff_ids and save to new file."""
+        poly_staves = df[(df['is_polyphonic'])].index.tolist()
+        output_file_poly = f'{self.output_file}_polyphonic_staves.txt'
+
+        print(f'Found {len(poly_staves)} polyphonic staves. Saving to {output_file_poly}')
+        Common.write_to_file('\n'.join(sorted(poly_staves)), output_file_poly)
 
     def save_high_density_indexes(self, df: pd.DataFrame) -> None:
         """Get big density subset and save system ids to new file."""
