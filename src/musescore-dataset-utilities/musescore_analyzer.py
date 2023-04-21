@@ -36,13 +36,15 @@ class MusescoreAnalyzer:
     EMPTY_SYSTEM_ID = 'EMPTY_SYSTEM_ID'
 
     def __init__(self, label_files: str,
-                 output_file: str = 'mscz_analyzer_stats.csv.csv',
-                 high_dens_threshold: float = 41.0,
+                 output_file: str = 'stats.csv',
+                 high_dens_threshold_min: float = 41.0,
+                 high_dens_threshold_max: float = None,
                  verbose: bool = False):
                  # musicxml_files: str, input_folders: str, file_extensions_for_input_folders: list,
         self.label_files = label_files if label_files else []
         self.output_file = output_file if output_file.endswith('csv') else f'{output_file}.csv'
-        self.high_dens_threshold = high_dens_threshold
+        self.high_dens_threshold_min = high_dens_threshold_min
+        self.high_dens_threshold_max = high_dens_threshold_max
         self.verbose = verbose
         # self.musicxml_files = musicxml_files if musicxml_files else []
         # self.input_folders = input_folders if input_folders else []
@@ -121,13 +123,18 @@ class MusescoreAnalyzer:
 
     def save_high_density_indexes(self, df: pd.DataFrame) -> None:
         """Get big density subset and save system ids to new file."""
-        high_density_subset = df[df['density'] >= self.high_dens_threshold]
-        # (df['density'] >= 30.0) & (df['density'] < 41.0)  #
+        if self.high_dens_threshold_max:
+            high_density_subset = df[
+                (df['density'] >= self.high_dens_threshold_min) &
+                (df['density'] < self.high_dens_threshold_max)]
+            density = f'{int(self.high_dens_threshold_min)}_to_{int(self.high_dens_threshold_max)}'
+        else:
+            high_density_subset = df[df['density'] >= self.high_dens_threshold_min]
+            density = f'{int(self.high_dens_threshold_min)}'
 
         high_density_subset.to_csv('high_density_subset.csv')
 
         len_of_high_density = len(high_density_subset)
-        density = int(self.high_dens_threshold)
         output_file_staves = f'{self.output_file}_high_density_staves_{density}.txt'
         output_file_parts = f'{self.output_file}_high_density_parts_{density}.txt'
         output_file_mscz = f'{self.output_file}_high_density_mscz_{density}.txt'
@@ -301,8 +308,11 @@ def parseargs():
         "-o", "--output-file", type=str, default='mscz_analyzer_stats.csv.csv',
         help="Output file to export pandas csv to.")
     parser.add_argument(
-        "-t", "--high-dens-threshold", type=float, default=41.0,
-        help="Threshold for measure density of labels to export to a separate file.")
+        "-t", "--high-dens-threshold-min", type=float, default=41.0,
+        help="Minimal threshold for measure density of labels to export to a separate file.")
+    parser.add_argument(
+        "-T", "--high-dens-threshold-max", type=float, default=None,
+        help="Maximal threshold for measure density of labels to export to a separate file.")
     parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,
         help="Activate verbose logging.")
@@ -328,7 +338,8 @@ def main():
     analyzer = MusescoreAnalyzer(
         label_files=args.label_files,
         output_file=args.output_file,
-        high_dens_threshold=args.high_dens_threshold,
+        high_dens_threshold_min=args.high_dens_threshold_min,
+        high_dens_threshold_max=args.high_dens_threshold_max,
         verbose=args.verbose)
         # musicxml_files=args.musicxml_files,
         # input_folders=args.input_folders,
