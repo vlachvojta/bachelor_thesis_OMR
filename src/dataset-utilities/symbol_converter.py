@@ -1,4 +1,8 @@
 #!/usr/bin/python3.8
+"""Simple script for converting symbols using external translator dictionary.
+
+Used to convert symbols from agnostic and semantic encoding to a shorter form and back.
+"""
 
 import argparse
 import re
@@ -8,7 +12,7 @@ import time
 from common import Common
 
 
-class Symbol_converter:
+class SymbolConverter:
     """Module for converting symbols.
 
     Used to convert symbols from agnostic and semantic encoding
@@ -20,8 +24,8 @@ class Symbol_converter:
     def __init__(self, translator_file: str = 'translator.agnostic.json',
                  input_files: list = [], output: str = 'stdout',
                  reverse: bool = False, mode: str = "orig"):
-        print('\tSC: Hello form SYMBOL_CONVERTER (SC)')
-        print(f'\tSC: dictionary: {translator_file}, input_files {input_files}'
+        print('\tHello form SYMBOL_CONVERTER (SC)')
+        print(f'\tDictionary: {translator_file}, input_files {input_files}'
               f', output: {output}, reverse: {reverse}')
 
         self.dictionary = Common.read_file(translator_file)
@@ -35,11 +39,11 @@ class Symbol_converter:
 
         input_files = Common.check_existing_files(input_files)
 
-        print(f'\tSC: Loading symbols from {len(input_files)} file(s).')
+        print(f'\tLoading symbols from {len(input_files)} file(s).')
         input_ = self.load_symbols_from_files(input_files)
 
         if self.mode == 'orig':
-            print(f'\tSC: {len(input_)} symbols loaded.')
+            print(f'\t{len(input_)} symbols loaded.')
             symbols_out = self.convert_list(input_, reverse)
 
             if output == 'stdout':
@@ -48,7 +52,7 @@ class Symbol_converter:
                 Common.write_to_file(' '.join(symbols_out), output)
                 print(f'Converted labels saved to {output}')
         elif self.mode == 'matchmaker':
-            print(f'\tSC: {len(input_)} lines of labels loaded.')
+            print(f'\tLoaded {len(input_)} lines of labels.')
             lines_out = self.convert_lines(input_, reverse)
             if output == 'stdout':
                 print('\n'.join(lines_out))
@@ -143,15 +147,15 @@ class Symbol_converter:
         If reverse, convert to smaller, else convert to larger.
         """
         if reverse:
-            dictionary = Symbol_converter._reverse_dict(self.dictionary)
+            dictionary = SymbolConverter._reverse_dict(self.dictionary)
         else:
             dictionary = self.dictionary
 
         try:
             return dictionary[symbol]
         except KeyError:
-            print(f'\tSC: [INFO] Neexistující konverze pro symbol ({symbol})',
-                  file=sys.stderr)
+            # print(f'\tSC: [INFO] Neexistující konverze pro symbol ({symbol})',
+            #       file=sys.stderr)
             self.n_existing_labels.add(symbol)
             return ''
 
@@ -187,7 +191,7 @@ def main():
     args = parseargs()
 
     start = time.time()
-    Symbol_converter(
+    SymbolConverter(
         input_files=args.input_files,
         output=args.output_file,
         reverse=args.reverse,
