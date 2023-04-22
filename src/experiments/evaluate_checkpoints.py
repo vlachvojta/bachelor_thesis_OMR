@@ -188,6 +188,7 @@ class EvaulateCheckpoints:
             os.makedirs(output_folder)
 
         plt.savefig(os.path.join(output_folder, name + '.png'))
+        # TODO export vector graphs
 
 class Results:
     """Simple class to store error results and return in correct format to make charts."""
@@ -256,7 +257,7 @@ def parseargs():
         "-i", "--input-files", nargs='+',
         help="List of input files (checkpoint outputs)")
     parser.add_argument(
-        "-g", "--ground-truth", nargs='+', required=True,
+        "-g", "--ground-truths", nargs='+', required=True,
         help=("Ground truths to compare files with, "
               "number of ground truths determines how many sets are there."))
     parser.add_argument(
@@ -285,7 +286,7 @@ def main():
 
     EvaulateCheckpoints(
         input_files=args.input_files,
-        ground_truths=args.ground_truth,
+        ground_truths=args.ground_truths,
         output_folder=args.output_folder,
         name=args.name,
         chart_mode=args.chart_mode,
