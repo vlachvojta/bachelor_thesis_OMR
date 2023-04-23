@@ -20,7 +20,7 @@ pip3.6 install jiwer 1>/dev/null
 echo "============== Running evaluation script =============="
 
 python3.6 $SCRIPT \
-    --input-files checkpoints/checkpoint_*.pth.tst_out \
+    --input-files checkpoints/checkpoint_*.tst_out \
     --ground-truths checkpoints/ground_truth*.tst_out \
     --output-folder $OUTPUT_FOLDER \
     --name $NAME | tee $TXT_OUT

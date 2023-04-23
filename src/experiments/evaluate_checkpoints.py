@@ -81,7 +81,7 @@ class EvaulateCheckpoints:
 
         json_file_path = os.path.join(output_folder, name + '.json')
         self.results.save_to_file(json_file_path)
-        print(f'Chart and json file saved to {output_folder}')
+        print(f'Chart(s) and json file saved to {output_folder}')
 
     def read_gound_truths(self, ground_truths: list, ignore_n_gt: int = 0) -> dict:
         """Read the ground truth files if exist.
@@ -135,10 +135,11 @@ class EvaulateCheckpoints:
             file = self.ignore_n_words(ignore_n_words, file)
 
         if len(ground_truth) != len(file):
-            if len(file) == len(ground_truth) * 2:
-                print('INFO: file is 2 times longer than ground truth.'
-                      ' Using only second half.')
-                file = file[:len(file) // 2]
+            if len(file) % len(ground_truth) == 0:
+                times = len(file) // len(ground_truth)
+                print(f'INFO: file is {times} times longer than ground truth.'
+                      ' Using only last part of mathing length.')
+                file = file[-len(ground_truth):]
             else:
                 print(f'ERR: Number of lines in ground truth ({len(ground_truth)}) '
                     f'and file ({len(file)}) do not match. SKIPPING.')
@@ -186,9 +187,12 @@ class EvaulateCheckpoints:
             os.makedirs(output_folder)
 
         if threshold > 0:
-            plt.savefig(os.path.join(output_folder, name + '_part.png'))
+            chart_out = os.path.join(output_folder, name + '_part.png')
+            plt.savefig(chart_out)
         else:
-            plt.savefig(os.path.join(output_folder, name + '.png'))
+            chart_out = os.path.join(output_folder, name + '.png')
+            plt.savefig(chart_out)
+        print(f'Chart saved to {chart_out}')
         plt.clf()
         # TODO export vector graphs
 
