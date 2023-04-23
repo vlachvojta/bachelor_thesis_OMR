@@ -158,7 +158,7 @@ class EvaulateCheckpoints:
         if self.chart_mode == 'full':
             threshold = 0
         elif self.chart_mode == 'part':
-            threshold = results.len() // 2 if results.len > 20 else 0
+            threshold = results.len // 2 if results.len > 20 else 0
 
         for set_id, set_color in zip(results.get_set_ids(), set_colors):
             # set_id = results.get_set_ids()[1]

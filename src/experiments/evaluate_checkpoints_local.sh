@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
-home=$HOME"/bp_omr/"
-BP_GIT_EXP=$home"/bp-git/src/experiments"
-
-export PYTHONPATH=$BP_GIT_EXP
-export PATH=$PATH:$PYTHONPATH
+root=`cd ~ && pwd`
+BP_GIT_EXP="$root/skola/BP/bp-git/src/experiments"
 
 SCRIPT=$BP_GIT_EXP"/evaluate_checkpoints.py"
 NAME=`basename $(pwd)`
@@ -13,13 +10,9 @@ TXT_OUT=$OUTPUT_FOLDER/$NAME".txt"
 mkdir -p $OUTPUT_FOLDER
 touch $TXT_OUT
 
-module add python36-modules-gcc
-pip3.6 install --upgrade pip 1>/dev/null
-pip3.6 install jiwer 1>/dev/null
-
 echo "============== Running evaluation script =============="
 
-python3.6 $SCRIPT \
+python3.8 $SCRIPT \
     --input-files checkpoints/checkpoint_*.pth.tst_out \
     --ground-truths checkpoints/ground_truth.tst_out \
     --output-folder $OUTPUT_FOLDER \
