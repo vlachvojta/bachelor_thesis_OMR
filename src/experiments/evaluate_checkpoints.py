@@ -1,8 +1,9 @@
 #!/usr/bin/python3.8
 """Simple script to evaluate checkpoint outputs created while training newer version of PERO
 Example run:
-$ python3 evaluate_checkpoints.py --ground-truth data.tst \
-        --checkpoint-folder checkpoints
+$ python3 evaluate_checkpoints.py \
+    --input-files checkpoints/checkpoint_*.pth.tst_out \
+    --ground-truths checkpoints/ground_truth*.tst_out \
 """
 
 import argparse
@@ -29,11 +30,8 @@ class EvaulateCheckpoints:
     def __init__(self, input_files: list, ground_truths: list,
                  output_folder: str = 'evaluated_checkpoints',
                  name: str = 'Evaluated_checkpoints',
-                 chart_mode: str = 'part',
                  ignore_n_pred: int = 0,
                  ignore_n_gt: int = 0) -> None:
-        self.chart_mode = chart_mode
-
         # Read Ground_truth
         self.ground_truths = self.read_gound_truths(ground_truths, ignore_n_gt)
         if not self.ground_truths:
@@ -72,6 +70,12 @@ class EvaulateCheckpoints:
             self.results.add_result(iteration, set_id, wer, cer)
 
             print(f'Iteration: {iteration}, set_id: {set_id}, wer: {wer}, cer: {cer}')
+
+        if self.results.len < 20:
+            self.make_chart(self.results, output_folder, name, threshold=0)
+        else:
+            self.make_chart(self.results, output_folder, name, threshold=0)
+            self.make_chart(self.results, output_folder, name, threshold=self.results.len // 2)
 
         self.make_chart(self.results, output_folder, name)
 
@@ -150,15 +154,9 @@ class EvaulateCheckpoints:
 
         return my_wer(), my_wer(get='cer')
 
-    def make_chart(self, results, output_folder, name):
+    def make_chart(self, results, output_folder, name, threshold: int = 0):
         """Generate chart with iterations, WERs and CERs"""
-        # set_colors = ['c', 'y', 'm', 'g', 'b', 'r', 'w', 'k']
         set_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd']
-
-        if self.chart_mode == 'full':
-            threshold = 0
-        elif self.chart_mode == 'part':
-            threshold = results.len // 2 if results.len > 20 else 0
 
         for set_id, set_color in zip(results.get_set_ids(), set_colors):
             # set_id = results.get_set_ids()[1]
@@ -187,7 +185,11 @@ class EvaulateCheckpoints:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
-        plt.savefig(os.path.join(output_folder, name + '.png'))
+        if threshold > 0:
+            plt.savefig(os.path.join(output_folder, name + '_part.png'))
+        else:
+            plt.savefig(os.path.join(output_folder, name + '.png'))
+        plt.clf()
         # TODO export vector graphs
 
 class Results:
@@ -267,9 +269,6 @@ def parseargs():
         "-n", "--name", type=str, default='Evaluated_checkpoints',
         help="Name of generated files + chart heading.")
     parser.add_argument(
-        "-c", "--chart-mode", type=str, choices=['full', 'part'], default='part',
-        help="Chart mode, what subset of data to print to chart.")
-    parser.add_argument(
         "--ignore-n-words-gt", type=int, default=0,
         help="Ignore first n words in ground truth.")
     parser.add_argument(
@@ -289,7 +288,6 @@ def main():
         ground_truths=args.ground_truths,
         output_folder=args.output_folder,
         name=args.name,
-        chart_mode=args.chart_mode,
         ignore_n_gt=args.ignore_n_words_gt,
         ignore_n_pred=args.ignore_n_words_pred)
 

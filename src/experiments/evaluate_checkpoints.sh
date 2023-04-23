@@ -21,6 +21,6 @@ echo "============== Running evaluation script =============="
 
 python3.6 $SCRIPT \
     --input-files checkpoints/checkpoint_*.pth.tst_out \
-    --ground-truths checkpoints/ground_truth.tst_out \
+    --ground-truths checkpoints/ground_truth*.tst_out \
     --output-folder $OUTPUT_FOLDER \
     --name $NAME | tee $TXT_OUT
