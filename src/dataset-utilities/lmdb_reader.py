@@ -12,7 +12,7 @@ def read_lmdb_key_from_file(file: str, key: str):
         with txn.cursor() as curs:
             print(f'Reading key ({key}) from file ({file})')
             print(curs.get(key.encode()))
-            # For decoding byte sings use: 
+            # For decoding byte sings use:
             # print(curs.get(key.encode()).decode())
 
 

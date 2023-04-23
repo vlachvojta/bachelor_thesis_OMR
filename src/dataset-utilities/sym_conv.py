@@ -156,7 +156,7 @@ def main():
         }
     )
 
-    # semantic lengths 
+    # semantic lengths
     convertor.replace_dict(
         {
             'double_whole': 'w',

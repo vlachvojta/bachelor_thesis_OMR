@@ -40,7 +40,7 @@ class LMDB_generator:
         files1 = files2 = []
 
         if not self.ignore_texts:
-            print('Exporting text to lmdb is deprecated because it list its use case.')
+            print('Exporting text to lmdb is deprecated because it lost its use case.')
             # print('Getting all text file names')
             # files1 = Common.get_files_from_folders(
             #     self.in_folders, self.exts1[0], False)
@@ -61,7 +61,7 @@ class LMDB_generator:
         if not self.ignore_images:
             self.files_to_lmdb(files2, os.path.join(self.output, 'images.lmdb'))
 
-    def files_to_lmdb(self, files: list = [], output: str = 'output.lmdb'):
+    def files_to_lmdb(self, files: list, output: str = 'images.lmdb'):
         print(f'Writing {len(files)} files to {output} '
               '(every dot is 200 files, every line is 10_000 files)')
 
@@ -81,7 +81,7 @@ class LMDB_generator:
                 c_out.put(key.encode(), data)
         print('')
 
-    def files_to_lmdb_text(self, files: list = [],
+    def files_to_lmdb_text(self, files: list,
                            output: str = 'output_lmdb'):
         """OLD and deprecated. DO NOT USE."""
         print(f'Reading {len(files)} files (every dot is 1000 files)')

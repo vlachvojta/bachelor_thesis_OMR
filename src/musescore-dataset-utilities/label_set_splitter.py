@@ -15,8 +15,6 @@ import os
 import time
 import random
 import re
-# import logging
-# from shutil import copyfile
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
 sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
@@ -61,7 +59,7 @@ def parseargs():
         help="Input file with all labels.")
     parser.add_argument(
         "-o", "--output-file-name",
-        help="Output file name, script will add .tst and .trn) at the end of each file.")
+        help="Output file name, script will add .tst and .trn at the end of each file.")
     parser.add_argument(
         "-l", "--tst-len", type=int, default=2000,
         help="Length of the tst subset.")
