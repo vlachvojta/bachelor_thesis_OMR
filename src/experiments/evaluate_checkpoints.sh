@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-home=$HOME"/bp_omr/"
+home="/storage/brno2/home/xvlach22/bp_omr"
 BP_GIT_EXP=$home"/bp-git/src/experiments"
 
 export PYTHONPATH=$BP_GIT_EXP
