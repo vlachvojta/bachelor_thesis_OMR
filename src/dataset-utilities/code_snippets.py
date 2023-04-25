@@ -18,6 +18,36 @@ import sys
 sys.path.append(os.path.join('..', 'dataset-utilities'))
 from common import Common  # noqa: E402
 
+# %% Clean file from extra zeros
+
+folder = '../../../datasets/deploy/musescore/mashup_115k_with_hard_old'
+
+# file = os.path.join(folder, 'data.SSemantic')
+# file = os.path.join(folder, 'data.SSemantic.trn')
+file = os.path.join(folder, 'data.SSemantic.tst')
+
+label_lines = re.split(r'\n', Common.read_file(file))
+
+new_label_lines = []
+
+for line in label_lines:
+    if not line:
+        continue
+
+    id, labels, _ = re.split(r'"', line)
+
+    try:
+        stave_id, zeros, _, _ = re.split(r'\s+', id)
+        new_label_lines.append(f'{stave_id} {zeros} "{labels}"')
+    except ValueError:
+        new_label_lines.append(line)
+        print(new_label_lines[-1])
+
+
+output = '\n'.join(new_label_lines)
+Common.write_to_file(output, f'{file}-corrected')
+
+
 # %% Get image size (only widths) form all images in folder, print the first 100.
 
 import imagesize
