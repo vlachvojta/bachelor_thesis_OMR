@@ -1,7 +1,11 @@
 #!/usr/bin/python3.8
-# -*- coding: utf-8 -*-
-"""Module contains one class called Common for common tasks with dataset,
-files, folders and symbols.
+"""Module contains one class for common tasks used by multiple other scripts in this repo.
+
+The script implements functions such as: 
+file reading +writing, getting files form folders + checking and basic iamge processing
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import re
@@ -219,7 +223,6 @@ class Common:
         file_parts = re.split(r'\.', file)[:-1]
         return '.'.join(file_parts) + f'.{new_ext}'
 
-
     @staticmethod
     def sum_lists_in_dict(data: dict) -> int:
         """Return sum of all unique symbols found."""
@@ -229,15 +232,7 @@ class Common:
         return sum_
 
     @staticmethod
-    def serialize_dict_to_list(data: dict = {}) -> list:
-        return data.values()
-        # result = []
-        # for v in data.values():
-        #     result += v
-        # return result
-
-    @staticmethod
-    def get_complete_group_names(files: list = [], exts: list = []) -> list:
+    def get_complete_group_names(files: list, exts: list ) -> list:
         """Get list of all files, check if for every file name
         all extensions are present.
         Return list of complete file groups."""
@@ -247,25 +242,14 @@ class Common:
         def get_ext(file: str = '') -> str:
             return re.split(r'\.', file)[-1]
 
-        # print('GET_COMPLETE_GROUPS_NAMES')
-        # print('========================')
-
         files = sorted(files)
         file_groups = []
 
         for i, file in enumerate(files):
-            # print(f'file: {file}')
-            # if len(file_groups) > 0: print(file_groups[-1][0])
-            # print(f'cut_ext: {cut_ext(file)}')
-            # print(f'get_ext: {get_ext(file)}')
-
             if len(file_groups) > 0 and file_groups[-1][0] == cut_ext(file):
                 file_groups[-1].append(get_ext(file))
-                # print('appending new ext')
             else:
                 file_groups.append([cut_ext(file), get_ext(file)])
-                # print('appending new file')
-        # print(file_groups)
 
         complete_file_groups = []
         for file_group in file_groups:
@@ -273,9 +257,6 @@ class Common:
                 complete_file_groups.append(file_group[0])
             else:
                 print(f'{file_group[0]} is incomplete, because {file_group}')
-        # print('========================')
-        # print(f'complete_file_groups: {complete_file_groups}')
-        # print('========================')
 
         return complete_file_groups
 
@@ -290,6 +271,7 @@ class Common:
     def get_img_resolution(file_name: str) -> int:
         return cv.imread(file_name).shape[0:2]
 
+    @staticmethod
     def add_black_border(img, new_height: int = 0, new_width: int = 0):
         """if new params are 0 or smaller than actual size, do nothing."""
         def calculate_border_sizes(in_res: int, new_res: int):
@@ -322,6 +304,7 @@ class Common:
 
         return img
 
+    @staticmethod
     def resize_img(img, height=0, width=0, inter=cv.INTER_AREA):
         dim = (height, width)
         (h, w) = img.shape[:2]

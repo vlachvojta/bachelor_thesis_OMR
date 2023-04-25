@@ -1,8 +1,12 @@
 #!/usr/bin/python3.8
 """Simple script to evaluate predictions from trained models
+
 Example run:
 $ python3.8 evaluate_predictions.py -ground-truth data.tst \
         --input-files checkpoint*.pth.out
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import argparse

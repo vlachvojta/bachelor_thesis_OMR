@@ -1,4 +1,4 @@
-# bachelor_thesis_OMR
+# Bachelor thesis OMR
 My bachelor thesis on FIT (V|B)ut Brno, assembled in 2022/2023
 
 ## Primus links
@@ -16,3 +16,8 @@ My bachelor thesis on FIT (V|B)ut Brno, assembled in 2022/2023
 7. Vytvořte jednoduchou demonstrační aplikaci, která bude využívat implementovaný systém.
 8. Vytvořte stručné video prezentující vaši práci, její cíle a výsledky.
 
+## Cobebase
+
+Codebase consists of individual scripts in `src` folder where each one has its own purpose and documentation.
+
+TODO docu where is what.

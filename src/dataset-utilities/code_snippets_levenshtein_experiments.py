@@ -1,7 +1,15 @@
 #!/usr/bin/python3.8
-"""Script with examples of how to compute Word Error using jiwer library,
+"""This script contains some code snippets used as an example for coding with Levenshtein library.
 
-In the second example exports simple chart from given wer data.
+File is divided by "# %%" marker, which was also used
+    for vscode inside run with jupyter functions.
+
+The first example shows how to compute Word Error using jiwer library,
+
+The second example exports simple chart from given wer data.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 # %%
