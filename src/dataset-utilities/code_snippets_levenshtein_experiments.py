@@ -1,7 +1,8 @@
 #!/usr/bin/python3.8
-"""This little script contains only small examples of how
-to compute Word Error sing jiwer library,
-in the second example exports simple chart from given wer data"""
+"""Script with examples of how to compute Word Error using jiwer library,
+
+In the second example exports simple chart from given wer data.
+"""
 
 # %%
 import jiwer
