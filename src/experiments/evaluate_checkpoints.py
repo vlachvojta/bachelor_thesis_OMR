@@ -34,7 +34,19 @@ class EvaulateCheckpoints:
                  ignore_n_gt: int = 0) -> None:
         # Read Ground_truth
         self.ground_truths = self.read_gound_truths(ground_truths, ignore_n_gt)
-        if not self.ground_truths:
+        del_keys = []
+        for set_id, gt_labels in self.ground_truths.items():
+            if len(gt_labels) == 0:
+                print(f'WARNING: Ground-truth file for set {set_id} is empty, deleting key.')
+                del_keys.append(set_id)
+
+        for del_key in del_keys:
+            del self.ground_truths[del_key]
+
+        if self.ground_truths:
+            print(f'INFO: Loaded {len(self.ground_truths)} groundtruths '
+                  f'with sets: {list(self.ground_truths.keys())}')
+        else:
             raise FileNotFoundError('No ground truth files found!')
 
         # Check input files
