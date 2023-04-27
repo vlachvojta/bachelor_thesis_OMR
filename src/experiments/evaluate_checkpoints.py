@@ -150,7 +150,7 @@ class EvaulateCheckpoints:
             if len(file) % len(ground_truth) == 0:
                 times = len(file) // len(ground_truth)
                 print(f'INFO: file is {times} times longer than ground truth.'
-                      ' Using only last part of mathing length.')
+                      ' Using only last part of matching length.')
                 file = file[-len(ground_truth):]
             else:
                 print(f'ERR: Number of lines in ground truth ({len(ground_truth)}) '
