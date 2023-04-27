@@ -62,10 +62,14 @@ print(lens)
 
 # %% Load lable lines from file, get labels lens and print sorted by label lens.
 
-# file = '../../../datasets/deploy/musescore/mashup_115k_with_hard_old/data_hard.SSemantic.tst'
-# file = '../../../datasets/deploy/musescore/mashup_115k_with_hard_old/data.SSemantic.trn'
-file = '../../../datasets/deploy/musescore/mashup_115k_with_hard_old/data.SSemantic.tst'
-label_lines = re.split(r'\n', Common.read_file(file))
+files = ['../../../datasets/deploy/musescore/mashup_115k_with_hard/data_hard.SSemantic.tst',
+         '../../../datasets/deploy/musescore/mashup_115k_with_hard/data.SSemantic.trn',
+         '../../../datasets/deploy/musescore/mashup_115k_with_hard/data.SSemantic.tst']
+label_lines = []
+for file in files:
+    label_lines += re.split(r'\n', Common.read_file(file))
+
+print(f'loaded {len(label_lines)} label lines')
 
 lens = [len(line) for line in label_lines]
 
@@ -84,6 +88,14 @@ sorted_lens = [len(line) for line in sorted_lines]
 
 print('Sorted tuples:')
 print(sorted_tuples[:100])
+
+plt.hist(lens, bins=30)
+plt.title('Histogram počtu znaků GT ve všech sadách.')
+plt.xlabel('Počet znaků v řádku GT')
+plt.ylabel('')
+plt.yscale('log')
+
+plt.show()
 
 # %% Count the number of each symbol in list. Print the first 100 most frequent symbols.
 count_dict = {}
@@ -161,3 +173,20 @@ listos_pairs.sort(key=lambda x: x[1])
 sorted_listos = [os.path.join(dir, file) for dir, file in listos_pairs]
 
 print(sorted_listos)
+
+
+# %% Count 999 overflow parts
+
+# folder = 'D:/OneDrive - Vysoké učení technické v Brně/skola/BP/datasets/musescore-poly-mashup-2/6_copied_pairs_concat_all_images_but_labels_without_high_dense_41_odd_corrected/'
+folder = '../../../datasets/musescore-poly-mashup-2/6_copied_pairs_concat_all_images_but_labels_without_high_dense_41_odd_corrected/'
+files = os.listdir(folder)
+
+len(files)
+
+# overflow_999 = [file for file in file if re.match(r'\d+_p\d+_s\d{2}', file)][:100]
+overflow_999 = [file for file in files if re.match(r'\d+_p\d+\S?_s\d{4}\S*', file)]
+
+print(len(overflow_999))
+overflow_999_parts = set([re.split(r'_', file)[0] for file in overflow_999])
+
+print(overflow_999_parts)
