@@ -11,6 +11,7 @@ import re
 import sys
 import os
 import time
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from customwer import CustomWer
@@ -31,7 +32,14 @@ class EvaulateCheckpoints:
                  output_folder: str = 'evaluated_checkpoints',
                  name: str = 'Evaluated_checkpoints',
                  ignore_n_pred: int = 0,
-                 ignore_n_gt: int = 0) -> None:
+                 ignore_n_gt: int = 0,
+                 verbose: bool = False) -> None:
+        self.verbose = verbose
+        if verbose:
+            logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
+        else:
+            logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
+
         # Read Ground_truth
         self.ground_truths = self.read_gound_truths(ground_truths, ignore_n_gt)
         del_keys = []
@@ -83,13 +91,10 @@ class EvaulateCheckpoints:
 
             print(f'Iteration: {iteration}, set_id: {set_id}, wer: {wer}, cer: {cer}')
 
-        if self.results.len < 20:
-            self.make_chart(self.results, output_folder, name, threshold=0)
-        else:
-            self.make_chart(self.results, output_folder, name, threshold=0)
+        if self.results.len >= 20:
             self.make_chart(self.results, output_folder, name, threshold=self.results.len // 2)
 
-        self.make_chart(self.results, output_folder, name)
+        self.make_chart(self.results, output_folder, name, threshold=0)
 
         json_file_path = os.path.join(output_folder, name + '.json')
         self.results.save_to_file(json_file_path)
@@ -290,6 +295,9 @@ def parseargs():
     parser.add_argument(
         "--ignore-n-words-pred", type=int, default=0,
         help="Ignore first n words in checkpoint predictions.")
+    parser.add_argument(
+        '-v', "--verbose", action='store_true', default=False,
+        help="Activate verbose logging.")
     return parser.parse_args()
 
 
@@ -305,7 +313,8 @@ def main():
         output_folder=args.output_folder,
         name=args.name,
         ignore_n_gt=args.ignore_n_words_gt,
-        ignore_n_pred=args.ignore_n_words_pred)
+        ignore_n_pred=args.ignore_n_words_pred,
+        verbose=args.verbose)
 
     end = time.time()
     print(f'Total time: {end - start:.2f} s')
