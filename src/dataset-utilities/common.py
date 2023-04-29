@@ -205,6 +205,8 @@ class Common:
 
         Working only for extensions without '.' at the beggining.
         """
+        if not exts or not exts[0]:
+            return file
         if isinstance(exts, str):
             exts = [exts]
 
