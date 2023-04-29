@@ -267,6 +267,10 @@ class Common:
         """Return intersection of two lists."""
         return [x for x in lst1 if x in lst2]
 
+    @staticmethod
+    def print_line_after_sys_argv() -> None:
+        print('----------------------------------------------------------------------')
+
     # ======================== Image stats and manipulation ==================
 
     @staticmethod

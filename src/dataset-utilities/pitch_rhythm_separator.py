@@ -6,7 +6,10 @@ Rhythm: note_LENGTH, gracenote_LENGTH and the rest of symbols
 
 Used for evaluation of model outputs.
 
-!!! WORKS ONLY ON SEMANTIC ENCODING SO FAR. !!!
+SUPPORTED ENCODING:
+- plain semantic encoding from PrIMus dataset
+- pseudo-semantic encoding generated from musescore files by gen_labels.py in https://github.com/vlachvojta/polyphonic-omr-by-sachindae.git
+- One spacific translation of pseudo-semantic encoding to shorter version
 """
 
 import argparse
@@ -84,8 +87,8 @@ class PRSeparator:
 
             pitches, rhythms = PRSeparator.separate_labels(body)
 
-            out_pitches = f"{head}\"{' '.join(pitches)}\""
-            out_rhythms = f"{head}\"{' '.join(rhythms)}\""
+            out_pitches = f"{head}\"{pitches}\""
+            out_rhythms = f"{head}\"{rhythms}\""
 
         # print(out_pitches)
         # print(out_rhythms)
@@ -104,28 +107,26 @@ class PRSeparator:
         pitches = []
 
         labels = re.split(r'\s+', labels)
-        print(f'Loaded {len(labels)} labels on this line.')
 
         for label in labels:
+            # Check for Semantic labels
             if label.startswith('note') or label.startswith('gracenote'):
                 note, pitch, *rest = re.split(r'-|_', label)
                 pitches.append(f'{note}-{pitch}')
                 rhythms.append(f"{note}-{'_'.join(rest)}")
-                # print(f'pitch: {note}-{pitch}')
-                # print(f'rhythm: {note}-{"_".join(rest)}')
-            else:
-                rhythms.append(label)
+                continue
 
-        return pitches, rhythms
+            # Check for specific type of shortened semantic-like encoding
+            match = re.match(r'[A-Ga-g](N|#+|b+)?\d', label)
+            if match:
+                pitches.append(match.group(0))
+                match_len = len(match.group(0))
+                rhythms.append(f'N{label[match_len:]}')
+                continue
 
+            rhythms.append(label)
 
-# """"note-Gb6_half": "Gb6H", "note-Gb6_half.": "Gb6H.", "note-Gb6_quarter": "Gb6q", 
-# "note-Gb6_quarter.": "Gb6q.", "note-Gb6_sixteenth": "Gb6S", 
-# "note-Gb6_sixteenth.": "Gb6S.", "note-Gb6_sixty_fourth": "Gb6s", 
-# "note-Gb6_sixty_fourth.": "Gb6s.", "note-Gb6_thirty_second": "Gb6T", 
-# "note-Gb6_whole": "Gb6W", "note-Gb6_whole.": "Gb6W.", "note-Gb7_eighth": "Gb7z", 
-# "note-Gb7_half": "Gb7H", "note-Gb7_hundred_twenty_eighth": "Gb7h", 
-# "note-Gb7_quarter": "Gb7q", "note-Gb7_sixteenth": "Gb7S", "note-Gb7_sixty_fourth": "Gb7s", "note-Gb7_sixty_fourth.": "Gb7s.", "note-Gb7_thirty_second": "Gb7T", "note-Gbb2_eighth": "Gbb2z", "note-Gbb3_eighth": "Gbb3z", "note-Gbb3_half": "Gbb3H", "note-Gbb3_sixteenth": "Gbb3S", "note-Gbb4_half": "Gbb4H", "note-Gbb4_sixteenth": "Gbb4S", "note-Gbb5_eighth": "Gbb5z", "note-Gbb5_half": "Gbb5H", "note-Gbb5_sixteenth": "Gbb5S", "note-Gbb6_sixteenth": "Gbb6S", """"
+        return ' '.join(pitches), ' '.join(rhythms)
 
 
 def parseargs():

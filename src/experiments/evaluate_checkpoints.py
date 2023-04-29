@@ -19,6 +19,7 @@ from customwer import CustomWer
 rel_dir = os.path.dirname(os.path.relpath(__file__))
 sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
 from common import Common  # noqa: E402
+from pitch_rhythm_separator import PRSeparator
 
 
 class EvaulateCheckpoints:
@@ -27,6 +28,7 @@ class EvaulateCheckpoints:
     """
 
     ERROR_ERROR = 200.42
+    EMPTY_PITCH = '@'
 
     def __init__(self, input_files: list, ground_truths: list,
                  output_folder: str = 'evaluated_checkpoints',
@@ -58,7 +60,10 @@ class EvaulateCheckpoints:
             raise FileNotFoundError('No ground truth files found!')
 
         # Check input files
+        # print(input_files)
         input_files = [file for file in input_files if os.path.isfile(file)]
+
+        print(f'Getting data from {len(input_files)} files.')
 
         self.results = Results()
         for file_name in input_files:
@@ -82,19 +87,21 @@ class EvaulateCheckpoints:
 
             iteration = int(re.findall(r"\d+", file_name)[0])
 
-            wer, cer = self.get_errs(file_name, self.ground_truths[set_id], ignore_n_pred)
+            cer, wer, pitch_ser, rhythm_ser  = self.get_errs(
+                file_name, self.ground_truths[set_id], ignore_n_pred)
 
-            if wer == cer == self.ERROR_ERROR:
+            if wer == cer == pitch_ser == rhythm_ser == self.ERROR_ERROR:
                 continue
 
-            self.results.add_result(iteration, set_id, wer, cer)
+            self.results.add_result(iteration, set_id, wer, cer, pitch_ser, rhythm_ser)
 
-            print(f'Iteration: {iteration}, set_id: {set_id}, wer: {wer}, cer: {cer}')
+            print(f'(set {set_id}) Iteration: {iteration}, cer: {cer}, wer: {wer}, '
+                  f'pitch_ser: {pitch_ser}, rhythm_ser: {rhythm_ser}')
 
         if self.results.len >= 20:
-            self.make_chart(self.results, output_folder, name, threshold=self.results.len // 2)
+            self.make_chart(self.results, output_folder, name, threshold=self.results.len // 2, print_pitch_and_rhythm = True)
 
-        self.make_chart(self.results, output_folder, name, threshold=0)
+        self.make_chart(self.results, output_folder, name, threshold=0, print_pitch_and_rhythm = True)
 
         json_file_path = os.path.join(output_folder, name + '.json')
         self.results.save_to_file(json_file_path)
@@ -144,8 +151,9 @@ class EvaulateCheckpoints:
 
         return new_file
 
-    def get_errs(self, file_name, ground_truth, ignore_n_words: int = 0) -> tuple:
-        """Get WER and CER of file."""
+    def get_errs(self, file_name, ground_truth, ignore_n_words: int = 0
+                ) -> (float, float, float, float):
+        """Get CER, WER, pitch_SER and rhythm_SER of file."""
         file = Common.read_file(file_name)
         file = [line for line in re.split(r'\n', file) if not line == '']
         if ignore_n_words > 0:
@@ -160,19 +168,35 @@ class EvaulateCheckpoints:
             else:
                 print(f'ERR: Number of lines in ground truth ({len(ground_truth)}) '
                     f'and file ({len(file)}) do not match. SKIPPING.')
-                return self.ERROR_ERROR, self.ERROR_ERROR
+                return self.ERROR_ERROR, self.ERROR_ERROR, self.ERROR_ERROR, self.ERROR_ERROR
 
         # Custom wer with continues counting
         my_wer = CustomWer()
+        pitch_err = CustomWer()
+        rhythm_err = CustomWer()
 
         # Add lines in two different ways to demonstrate
         for truth, pred in zip(ground_truth[:50], file[:50]):
             my_wer.add_lines(truth, pred)
         my_wer.add_lines(ground_truth[50:], file[50:])
 
-        return my_wer(), my_wer(get='cer')
+        for truth, pred in zip(ground_truth, file):
+            pred_pitch, pred_rhythm = PRSeparator.separate_labels(pred)
+            truth_pitch, truth_rhythm = PRSeparator.separate_labels(truth)
 
-    def make_chart(self, results, output_folder, name, threshold: int = 0):
+            if not truth_pitch:
+                truth_pitch = self.EMPTY_PITCH
+            if not pred_pitch:
+                pred_pitch = self.EMPTY_PITCH
+
+            pitch_err.add_lines(truth_pitch, pred_pitch)
+            rhythm_err.add_lines(truth_rhythm, pred_rhythm)
+
+        print(f"cer: {my_wer(get='cer')}, my_wer(): {my_wer()}, pitch_err(): {pitch_err()}, rhythm_err(): {rhythm_err()}")
+
+        return my_wer(get='cer'), my_wer(), pitch_err(), rhythm_err()
+
+    def make_chart(self, results, output_folder, name, threshold: int = 0, print_pitch_and_rhythm: bool = False):
         """Generate chart with iterations, WERs and CERs"""
         set_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd']
 
@@ -183,18 +207,30 @@ class EvaulateCheckpoints:
             wer_iterations, wers = results.get_wers(set_id, threshold)
             cer_iterations, cers = results.get_cers(set_id, threshold)
 
-            if len(results.get_set_ids()) == 1:
-                wer_label = 'Symbol error rate'
-                cer_label = 'Character error rate'
-            else:
-                wer_label = f'Symbol error rate for set {set_id}'
-                cer_label = f'Character error rate for set {set_id}'
+            if print_pitch_and_rhythm:
+                p_ser_iterations, p_sers = results.get_rhythm_ser(set_id, threshold)
+                r_ser_iterations, r_sers = results.get_pitch_ser(set_id, threshold)
 
+            wer_label = 'Symbol error rate'
+            cer_label = 'Character error rate'
+            pitch_label = 'Pitch error rate'
+            rhythm_label = 'Rhythm error rate'
+
+            if len(results.get_set_ids()) > 1:
+                wer_label += f' for set {set_id}'
+                cer_label += f' for set {set_id}'
+                pitch_label += f' for set {set_id}'
+                rhythm_label += f' for set {set_id}'
 
             # fig, ax = plt.subplots()
             plt.title(name)
             plt.plot(wer_iterations, np.array(wers), color=set_color, label = wer_label)
             plt.plot(cer_iterations, np.array(cers), ':', color=set_color, label = cer_label)
+            if print_pitch_and_rhythm:
+                plt.plot(p_ser_iterations, np.array(p_sers), "-.",
+                         color=set_color, label = pitch_label)
+                plt.plot(r_ser_iterations, np.array(r_sers), '--' ,
+                         color=set_color, label = rhythm_label)
 
         plt.xlabel('Iteration')
         plt.ylabel('Rate [%]')
@@ -218,15 +254,19 @@ class Results:
     results: dict
     set_ids: set
 
+    EMPTY = 200.42
+
     def __init__(self):
         self.results = {}
         self.set_ids = set()
 
-    def add_result(self, iteration, set_id, wer,cer) -> None:
+    def add_result(self, iteration, set_id, wer, cer, pitch_ser, rhythm_ser) -> None:
+        dict_to_add = {'wer': wer, 'cer': cer, 'pitch_ser': pitch_ser, 'rhythm_ser': rhythm_ser}
+
         if iteration in self.results:
-            self.results[iteration][set_id] = {'wer': wer, 'cer': cer}
+            self.results[iteration][set_id] = dict_to_add
         else:
-            self.results[iteration] = {set_id: {'wer': wer, 'cer': cer}}
+            self.results[iteration] = dict_to_add
 
         self.set_ids.add(set_id)
 
@@ -236,27 +276,28 @@ class Results:
     def get_iterations(self) -> list:
         return sorted(self.results.keys())
 
-    def get_wers(self, set_id, threshold) -> (list, list):
-        wers = []
-        wer_iterations = []
+    def get_results_of(self, set_id, threshold, key = 'wer'):
+        values = []
+        iterations = []
 
         for iteration in self.get_iterations()[threshold:]:
             if set_id in self.results[iteration]:
-                wers.append(self.results[iteration][set_id]['wer'])
-                wer_iterations.append(iteration)
+                values.append(self.results[iteration][set_id][key])
+                iterations.append(iteration)
 
-        return wer_iterations, wers
+        return iterations, values
+
+    def get_wers(self, set_id, threshold) -> (list, list):
+        return self.get_results_of(set_id, threshold, 'wer')
 
     def get_cers(self, set_id, threshold) -> (list, list):
-        cers = []
-        cer_iterations = []
+        return self.get_results_of(set_id, threshold, 'cer')
 
-        for iteration in self.get_iterations()[threshold:]:
-            if set_id in self.results[iteration]:
-                cers.append(self.results[iteration][set_id]['cer'])
-                cer_iterations.append(iteration)
+    def get_pitch_ser(self, set_id, threshold) -> (list, list):
+        return self.get_results_of(set_id, threshold, 'pitch_ser')
 
-        return cer_iterations, cers
+    def get_rhythm_ser(self, set_id, threshold) -> (list, list):
+        return self.get_results_of(set_id, threshold, 'rhythm_ser')
 
     def get_set_ids(self):
         return sorted(self.set_ids)
@@ -275,6 +316,8 @@ class Results:
 def parseargs():
     """Parse arguments."""
     print(' '.join(sys.argv))
+    Common.print_line_after_sys_argv()
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i", "--input-files", nargs='+',
