@@ -36,6 +36,7 @@ class EvaulateCheckpoints:
                  ignore_n_pred: int = 0,
                  ignore_n_gt: int = 0,
                  verbose: bool = False) -> None:
+        self.output_folder = output_folder
         self.verbose = verbose
         if verbose:
             logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
@@ -95,14 +96,26 @@ class EvaulateCheckpoints:
 
             self.results.add_result(iteration, set_id, wer, cer, pitch_ser, rhythm_ser)
 
-            print(f'(set {set_id}) Iteration: {iteration}, cer: {cer}, wer: {wer}, '
-                  f'pitch_ser: {pitch_ser}, rhythm_ser: {rhythm_ser}')
+            print(f'It: {iteration} (set {set_id}), \tcer: {cer}, \twer: {wer}, '
+                  f'\tpitch_ser: {pitch_ser}, \trhythm_ser: {rhythm_ser}')
+
+        if not os.path.exists(self.output_folder):
+            os.makedirs(self.output_folder)
+
+        # Print charts
+        for set_id in self.results.get_set_ids():
+            if self.results.len >= 20:
+                self.make_chart(f'{name}{set_id}', threshold=self.results.len // 2,
+                                print_pitch_and_rhythm = True, set_select=set_id)
+            self.make_chart(f'{name}{set_id}', threshold=0,
+                            print_pitch_and_rhythm = True, set_select=set_id)
 
         if self.results.len >= 20:
-            self.make_chart(self.results, output_folder, name, threshold=self.results.len // 2, print_pitch_and_rhythm = True)
+            self.make_chart(f'{name}_all', threshold=self.results.len // 2)
 
-        self.make_chart(self.results, output_folder, name, threshold=0, print_pitch_and_rhythm = True)
+        self.make_chart(f'{name}_all', threshold=0)
 
+        # Save results to json file
         json_file_path = os.path.join(output_folder, name + '.json')
         self.results.save_to_file(json_file_path)
         print(f'Chart(s) and json file saved to {output_folder}')
@@ -192,31 +205,39 @@ class EvaulateCheckpoints:
             pitch_err.add_lines(truth_pitch, pred_pitch)
             rhythm_err.add_lines(truth_rhythm, pred_rhythm)
 
-        print(f"cer: {my_wer(get='cer')}, my_wer(): {my_wer()}, pitch_err(): {pitch_err()}, rhythm_err(): {rhythm_err()}")
-
         return my_wer(get='cer'), my_wer(), pitch_err(), rhythm_err()
 
-    def make_chart(self, results, output_folder, name, threshold: int = 0, print_pitch_and_rhythm: bool = False):
-        """Generate chart with iterations, WERs and CERs"""
-        set_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd']
+    def make_chart(self, name, threshold: int = 0, print_pitch_and_rhythm: bool = False,
+                   set_select: str = None):
+        """Generate chart with iterations, WERs and CERs
 
-        for set_id, set_color in zip(results.get_set_ids(), set_colors):
-            # set_id = results.get_set_ids()[1]
-            # set_color = set_colors[0]
-            # iterations = results.get_iterations()
-            wer_iterations, wers = results.get_wers(set_id, threshold)
-            cer_iterations, cers = results.get_cers(set_id, threshold)
+        If set_id is None, print all sets to one chart."""
+        colors_default = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd']
+
+        if set_select is None:
+            sets = self.results.get_set_ids()
+            color_sets = [[color] * 4 for color in colors_default]
+        elif set_select in self.results.get_set_ids():
+            sets = [set_select]
+            color_sets = [colors_default]
+        else:
+            print(f'Set {set_select} not found, not printing.')
+            return
+
+        for set_id, color_set in zip(sets, color_sets):
+            wer_iterations, wers = self.results.get_wers(set_id, threshold)
+            cer_iterations, cers = self.results.get_cers(set_id, threshold)
 
             if print_pitch_and_rhythm:
-                p_ser_iterations, p_sers = results.get_rhythm_ser(set_id, threshold)
-                r_ser_iterations, r_sers = results.get_pitch_ser(set_id, threshold)
+                p_ser_iterations, p_sers = self.results.get_rhythm_ser(set_id, threshold)
+                r_ser_iterations, r_sers = self.results.get_pitch_ser(set_id, threshold)
 
             wer_label = 'Symbol error rate'
             cer_label = 'Character error rate'
             pitch_label = 'Pitch error rate'
             rhythm_label = 'Rhythm error rate'
 
-            if len(results.get_set_ids()) > 1:
+            if set_select is None and len(sets) > 1:
                 wer_label += f' for set {set_id}'
                 cer_label += f' for set {set_id}'
                 pitch_label += f' for set {set_id}'
@@ -224,27 +245,23 @@ class EvaulateCheckpoints:
 
             # fig, ax = plt.subplots()
             plt.title(name)
-            plt.plot(wer_iterations, np.array(wers), color=set_color, label = wer_label)
-            plt.plot(cer_iterations, np.array(cers), ':', color=set_color, label = cer_label)
+            plt.plot(wer_iterations, np.array(wers), color=color_set[0], label = wer_label)
+            plt.plot(cer_iterations, np.array(cers), ':', color=color_set[1], label = cer_label)
             if print_pitch_and_rhythm:
                 plt.plot(p_ser_iterations, np.array(p_sers), "-.",
-                         color=set_color, label = pitch_label)
+                         color=color_set[2], label = pitch_label)
                 plt.plot(r_ser_iterations, np.array(r_sers), '--' ,
-                         color=set_color, label = rhythm_label)
+                         color=color_set[3], label = rhythm_label)
 
         plt.xlabel('Iteration')
         plt.ylabel('Rate [%]')
         plt.legend()
 
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
-
         if threshold > 0:
-            chart_out = os.path.join(output_folder, name + '_part.png')
-            plt.savefig(chart_out)
+            chart_out = os.path.join(self.output_folder, f'{name}_part.png')
         else:
-            chart_out = os.path.join(output_folder, name + '.png')
-            plt.savefig(chart_out)
+            chart_out = os.path.join(self.output_folder, f'{name}.png')
+        plt.savefig(chart_out)
         print(f'Chart saved to {chart_out}')
         plt.clf()
         # TODO export vector graphs
@@ -266,7 +283,7 @@ class Results:
         if iteration in self.results:
             self.results[iteration][set_id] = dict_to_add
         else:
-            self.results[iteration] = dict_to_add
+            self.results[iteration] = {set_id: dict_to_add}
 
         self.set_ids.add(set_id)
 
