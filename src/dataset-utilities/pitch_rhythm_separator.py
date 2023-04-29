@@ -1,5 +1,8 @@
 #!/usr/bin/python3.8
-"""Simple script for separating rythm and pitch aspect of symbols. 
+"""Simple script for separating rythm and pitch aspect of symbols.
+
+Pitch: note-HEIGHT, gracenote-HEIGHT
+Rhythm: note_LENGTH, gracenote_LENGTH and the rest of symbols
 
 Used for evaluation of model outputs.
 
@@ -9,8 +12,8 @@ Used for evaluation of model outputs.
 import argparse
 import re
 import os
-import sys
 import time
+# import sys
 
 from common import Common
 
@@ -21,13 +24,14 @@ class PRSeparator:
     Used for evaluation of model outputs.
     """
 
-    def __init__(self, input_folder: str = '.', file_extension: str = 'semantic',
+    def __init__(self, input_folder: str = '.', file_extension: str = None,
                  input_mode: str = 'raw', output_folder: str = '.'):
         self.input_folder = input_folder
         self.file_extension = file_extension
         self.input_mode = input_mode
         self.output_folder = output_folder
 
+        print(f'Trying to load files from {self.input_folder} with extension {self.file_extension}')
         # Load input file names
         self.input_files = Common.listdir(self.input_folder, [self.file_extension])
         print(f'Loaded {len(self.input_files)} input file(s).')
@@ -53,7 +57,7 @@ class PRSeparator:
             for line in lines:
                 if not line:
                     continue
-                pitch, rhythm = self.separate(line)
+                pitch, rhythm = self.separate_line(line)
                 pitch_lines.append(pitch)
                 rhythm_lines.append(rhythm)
 
@@ -66,19 +70,40 @@ class PRSeparator:
             Common.write_to_file('\n'.join(rhythm_lines), output_file_rhythm)
 
 
-    def separate(self, line: str) -> (str, str):
+    def separate_line(self, line: str) -> (str, str):
         """Separate line of labels to pitch and rhythm.
 
         Return two strings. Pitch symbols and rhythm symbols IN THIS ORDER."""
+        if self.input_mode == 'raw':
+            pitches, rhythms = PRSeparator.separate_labels(line)
+            # labels = re.split(r'\s+', line)
+            out_pitches = ' '.join(pitches)
+            out_rhythms = ' '.join(rhythms)
+        elif self.input_mode == 'pero':
+            head, body, _ = re.split(r'\"', line)
+
+            pitches, rhythms = PRSeparator.separate_labels(body)
+
+            out_pitches = f"{head}\"{' '.join(pitches)}\""
+            out_rhythms = f"{head}\"{' '.join(rhythms)}\""
+
+        # print(out_pitches)
+        # print(out_rhythms)
+
+        return out_pitches, out_rhythms
+
+    @staticmethod
+    def separate_labels(labels: str = '') -> (str, str):
+        """Get clean line of labels as a string, divide into into pitch and rhythm symbols
+
+        Pitch: note-HEIGHT, gracenote-HEIGHT
+        Rhythm: note_LENGTH, gracenote_LENGTH and the rest of symbols
+
+        Return str lines of PITCH and RHYTHM IN THIS OREDER."""
         rhythms = []
         pitches = []
 
-        if self.input_mode == 'raw':
-            labels = re.split(r'\s+', line)
-        elif self.input_mode == 'pero':
-            head, body, _ = re.split(r'\"', line)
-            labels = re.split(r'\s+', body)
-
+        labels = re.split(r'\s+', labels)
         print(f'Loaded {len(labels)} labels on this line.')
 
         for label in labels:
@@ -91,16 +116,8 @@ class PRSeparator:
             else:
                 rhythms.append(label)
 
-        if self.input_mode == 'raw':
-            out_pitches = ' '.join(pitches)
-            out_rhythms = ' '.join(rhythms)
-        elif self.input_mode == 'pero':
-            out_pitches = f"{head}\"{' '.join(pitches)}\""
-            out_rhythms = f"{head}\"{' '.join(rhythms)}\""
-        # print(out_pitches)
-        # print(out_rhythms)
+        return pitches, rhythms
 
-        return out_pitches, out_rhythms
 
 # """"note-Gb6_half": "Gb6H", "note-Gb6_half.": "Gb6H.", "note-Gb6_quarter": "Gb6q", 
 # "note-Gb6_quarter.": "Gb6q.", "note-Gb6_sixteenth": "Gb6S", 
@@ -117,7 +134,7 @@ def parseargs():
         "-i", "--input-folder", type=str, default='.',
         help="Folder to read all files from. USE WITH EXTENSION")
     parser.add_argument(
-        "-e", "--file-extension", type=str, default='semantic',
+        "-e", "--file-extension", type=str, default=None,
         help="File extesions to look for in input folder.")
     parser.add_argument(
         "-m", "--input-mode", default='raw', choices=['raw', 'pero'],
