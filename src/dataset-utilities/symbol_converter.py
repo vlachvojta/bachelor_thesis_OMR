@@ -138,6 +138,11 @@ class SymbolConverter:
         for sym in symbols_in:
             if not sym:
                 continue
+            if sym.startswith('"'):
+                sym = sym[1:]
+            elif sym.endswith('"'):
+                sym = sym[:-1]
+
             symbols_out.append(self.convert(sym, reverse=reverse))
         return symbols_out
 
