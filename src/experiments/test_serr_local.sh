@@ -43,7 +43,7 @@ OCR_MODEL=$TMP"out.pt"
 PICKLE=$TMP"/pickle_out.pkl"
 CONFIDENCE=$TMP"/confidence.del"
 
-for checkpoint in `ls $CHECKPOINT_PATH/checkpoint_*.pth`; do
+for checkpoint in `ls -r $CHECKPOINT_PATH/checkpoint_*.pth`; do
     SECONDS=0  # start meassuring time
     echo ""
     echo "=================================== $checkpoint"
