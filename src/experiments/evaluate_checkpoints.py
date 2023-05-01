@@ -96,8 +96,10 @@ class EvaulateCheckpoints:
 
             self.results.add_result(iteration, set_id, wer, cer, pitch_ser, rhythm_ser)
 
-            print(f'It: {iteration} (set {set_id}), \tcer: {cer}, \twer: {wer}, '
-                  f'\tpitch_ser: {pitch_ser}, \trhythm_ser: {rhythm_ser}')
+            ES = '' if set_id == '_0' else '   '    # ES = Extra Space
+
+            print(f'It: {iteration} (set {set_id}), \t{ES}cer: {cer}, \t{ES}wer: {wer}, '
+                  f'\t{ES}pitch_ser: {pitch_ser}, \t{ES}rhythm_ser: {rhythm_ser}')
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
@@ -179,7 +181,7 @@ class EvaulateCheckpoints:
                       ' Using only last part of matching length.')
                 file = file[-len(ground_truth):]
             else:
-                print(f'ERR: Number of lines in ground truth ({len(ground_truth)}) '
+                print(f'WARNING: Number of lines in ground truth ({len(ground_truth)}) '
                     f'and file ({len(file)}) do not match. SKIPPING.')
                 return self.ERROR_ERROR, self.ERROR_ERROR, self.ERROR_ERROR, self.ERROR_ERROR
 
