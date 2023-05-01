@@ -15,6 +15,9 @@ class CustomWer:
     cer_err = 0
     cer_total = 0
 
+    seq_err = 0
+    seq_total = 0
+
     def __init__(self):
         self.dele = 0
         self.hits = 0
@@ -49,6 +52,11 @@ class CustomWer:
             err = Levenshtein.distance(ground_truth, predictions)
             self.cer_err += err
             self.cer_total += len(ground_truth)
+
+            self.seq_total += 1
+            if not ground_truth == predictions:
+                self.seq_err += 1
+
             return True
 
         # otherwise, assume it's a list of strings
@@ -61,6 +69,10 @@ class CustomWer:
             err = Levenshtein.distance(truth, pred)
             self.cer_err += err
             self.cer_total += len(truth)
+
+            self.seq_total += 1
+            if not truth == pred:
+                self.seq_err += 1
         return True
 
     def __call__(self, get: str='wer') -> float:
@@ -77,6 +89,9 @@ class CustomWer:
             elif get == 'cer':
                 true_cer = 100.0 * self.cer_err / self.cer_total
                 return round(true_cer, 4)
+            elif get == 'seqer':
+                true_seqer = 100.0 * self.seq_err / self.seq_total
+                return round(true_seqer, 4)
         except ZeroDivisionError as error:
             print(f'ERROR: ZeroDivisionError: unsuccessfull final wer '
                   f'calculations {str(error)}')

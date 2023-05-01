@@ -64,6 +64,10 @@ class EvaulateCheckpoints:
         # print(input_files)
         input_files = [file for file in input_files if os.path.isfile(file)]
 
+        if not input_files:
+            print('INFO: No files loaded, ending.')
+            return
+
         print(f'Getting data from {len(input_files)} files.')
 
         self.results = Results()
@@ -75,9 +79,9 @@ class EvaulateCheckpoints:
                 splitted = re.split(r'checkpoint_\d+|(\.pth)?\.tst_out', file_name_base)
 
                 if len(splitted) == 3:
-                    set_id = splitted[1]
+                    set_id = splitted[1] if splitted[1] else ''
                 elif len(splitted) == 5:
-                    set_id = splitted[2]
+                    set_id = splitted[2] if splitted[2] else ''
                 else:
                     print(f'INFO: No test set id found in file_name ({file_name}), SKIPPING.')
                     continue
@@ -88,18 +92,15 @@ class EvaulateCheckpoints:
 
             iteration = int(re.findall(r"\d+", file_name)[0])
 
-            cer, wer, pitch_ser, rhythm_ser  = self.get_errs(
+            cer, wer, pitch_ser, rhythm_ser, seq_err  = self.get_errs(
                 file_name, self.ground_truths[set_id], ignore_n_pred)
 
-            if wer == cer == pitch_ser == rhythm_ser == self.ERROR_ERROR:
+            if wer == cer == pitch_ser == rhythm_ser == seq_err == self.ERROR_ERROR:
                 continue
 
-            self.results.add_result(iteration, set_id, wer, cer, pitch_ser, rhythm_ser)
+            self.results.add_result(iteration, set_id, wer, cer, pitch_ser, rhythm_ser, seq_err)
 
-            ES = '' if set_id == '_0' else '    '    # ES = Extra Space
-
-            print(f'It: {iteration} (set {set_id}), \t{ES}cer: {cer:.2f}, \t{ES}wer: {wer:.2f}, '
-                  f'\t{ES}pitch_ser: {pitch_ser:.2f}, \t{ES}rhythm_ser: {rhythm_ser:.2f}')
+            self.results.print_results_of_iteration_with_set_id(iteration, set_id)
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
@@ -121,6 +122,9 @@ class EvaulateCheckpoints:
         json_file_path = os.path.join(output_folder, name + '.json')
         self.results.save_to_file(json_file_path)
         print(f'Chart(s) and json file saved to {output_folder}')
+
+        for set_id in self.results.get_set_ids():
+            self.results.print_minimal_wer_of_set(set_id)
 
     def read_gound_truths(self, ground_truths: list, ignore_n_gt: int = 0) -> dict:
         """Read the ground truth files if exist.
@@ -167,8 +171,8 @@ class EvaulateCheckpoints:
         return new_file
 
     def get_errs(self, file_name, ground_truth, ignore_n_words: int = 0
-                ) -> (float, float, float, float):
-        """Get CER, WER, pitch_SER and rhythm_SER of file."""
+                ) -> (float, float, float, float, float):
+        """Get CER, WER, pitch_SER, rhythm_SER and Sequence error of file."""
         file = Common.read_file(file_name)
         file = [line for line in re.split(r'\n', file) if not line == '']
         if ignore_n_words > 0:
@@ -183,7 +187,7 @@ class EvaulateCheckpoints:
             else:
                 print(f'WARNING: Number of lines in ground truth ({len(ground_truth)}) '
                     f'and file ({len(file)}) do not match. SKIPPING.')
-                return self.ERROR_ERROR, self.ERROR_ERROR, self.ERROR_ERROR, self.ERROR_ERROR
+                return self.ERROR_ERROR, self.ERROR_ERROR, self.ERROR_ERROR, self.ERROR_ERROR, self.ERROR_ERROR
 
         # Custom wer with continues counting
         my_wer = CustomWer()
@@ -207,18 +211,18 @@ class EvaulateCheckpoints:
             pitch_err.add_lines(truth_pitch, pred_pitch)
             rhythm_err.add_lines(truth_rhythm, pred_rhythm)
 
-        return my_wer(get='cer'), my_wer(), pitch_err(), rhythm_err()
+        return my_wer(get='cer'), my_wer(), pitch_err(), rhythm_err(), my_wer(get='seqer')
 
     def make_chart(self, name, threshold: int = 0, print_pitch_and_rhythm: bool = False,
                    set_select: str = None):
         """Generate chart with iterations, WERs and CERs
 
         If set_id is None, print all sets to one chart."""
-        colors_default = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd']
+        colors_default = ['#1f77b4', '#ff7f0e', '#2ca02c', '#9467bd', '#17bcef']
 
         if set_select is None:
             sets = self.results.get_set_ids()
-            color_sets = [[color] * 4 for color in colors_default]
+            color_sets = [[color] * 5 for color in colors_default]
         elif set_select in self.results.get_set_ids():
             sets = [set_select]
             color_sets = [colors_default]
@@ -231,19 +235,22 @@ class EvaulateCheckpoints:
             cer_iterations, cers = self.results.get_cers(set_id, threshold)
 
             if print_pitch_and_rhythm:
-                p_ser_iterations, p_sers = self.results.get_rhythm_ser(set_id, threshold)
-                r_ser_iterations, r_sers = self.results.get_pitch_ser(set_id, threshold)
+                p_ser_iterations, p_sers = self.results.get_pitch_ser(set_id, threshold)
+                r_ser_iterations, r_sers = self.results.get_rhythm_ser(set_id, threshold)
+                seqer_iterations, seqers = self.results.get_seqer(set_id, threshold)
 
             wer_label = 'Symbol error rate'
             cer_label = 'Character error rate'
             pitch_label = 'Pitch error rate'
             rhythm_label = 'Rhythm error rate'
+            seqer_label = 'Sequence error rate'
 
             if set_select is None and len(sets) > 1:
                 wer_label += f' for set {set_id}'
                 cer_label += f' for set {set_id}'
                 pitch_label += f' for set {set_id}'
                 rhythm_label += f' for set {set_id}'
+                seqer_label += f' for set {set_id}'
 
             # fig, ax = plt.subplots()
             plt.title(name)
@@ -254,6 +261,8 @@ class EvaulateCheckpoints:
                          color=color_set[2], label = pitch_label)
                 plt.plot(r_ser_iterations, np.array(r_sers), '--' ,
                          color=color_set[3], label = rhythm_label)
+                plt.plot(seqer_iterations, np.array(seqers),
+                         color=color_set[4], label = seqer_label)
 
         plt.xlabel('Iteration')
         plt.ylabel('Rate [%]')
@@ -261,8 +270,10 @@ class EvaulateCheckpoints:
 
         if threshold > 0:
             chart_out = os.path.join(self.output_folder, f'{name}_part.png')
+            chart_out = os.path.join(self.output_folder, f'{name}_part.svg')
         else:
             chart_out = os.path.join(self.output_folder, f'{name}.png')
+            chart_out = os.path.join(self.output_folder, f'{name}.svg')
         plt.savefig(chart_out)
         print(f'Chart saved to {chart_out}')
         plt.clf()
@@ -279,8 +290,8 @@ class Results:
         self.results = {}
         self.set_ids = set()
 
-    def add_result(self, iteration, set_id, wer, cer, pitch_ser, rhythm_ser) -> None:
-        dict_to_add = {'wer': wer, 'cer': cer, 'pitch_ser': pitch_ser, 'rhythm_ser': rhythm_ser}
+    def add_result(self, iteration, set_id, wer, cer, pitch_ser, rhythm_ser, seq_err) -> None:
+        dict_to_add = {'wer': wer, 'cer': cer, 'pitch_ser': pitch_ser, 'rhythm_ser': rhythm_ser, 'seqer': seq_err}
 
         if iteration in self.results:
             self.results[iteration][set_id] = dict_to_add
@@ -318,6 +329,9 @@ class Results:
     def get_rhythm_ser(self, set_id, threshold) -> (list, list):
         return self.get_results_of(set_id, threshold, 'rhythm_ser')
 
+    def get_seqer(self, set_id, threshold) -> (list, list):
+        return self.get_results_of(set_id, threshold, 'seqer')
+
     def get_set_ids(self):
         return sorted(self.set_ids)
 
@@ -326,6 +340,40 @@ class Results:
 
     def save_to_file(self, file_path: str) -> None:
         Common.write_to_file(self.results, file_path)
+    
+    def get_results_of_iteration(self, iteration, set_id) -> (float, float, float, float, float): #, set = None):
+        """Get results of iteration. IF set is None, return results for all sets.
+        
+        Return cer, wer, pitch_ser, rhythm_ser, seq_err IN THIS ORDER
+        """
+        if not iteration in self.results or not set_id in self.results[iteration]:
+            return [self.EMPTY] * 5
+
+        result = self.results[iteration][set_id]
+
+        return result['cer'], result['wer'], result['pitch_ser'], result['rhythm_ser'], result['seqer']
+
+    def print_results_of_iteration(self, iteration) -> None:
+        """Print Iteration from results."""
+        for set_id in self.get_set_ids():
+            self.print_results_of_iteration_with_set_id(iteration, set_id)
+
+    def print_results_of_iteration_with_set_id(self, iteration, set_id) -> None:
+        """Print Iteration from results."""
+        ES = '' if set_id == '_0' else '    '    # ES = Extra Space
+
+        cer, wer, pser, rser, seqer = self.get_results_of_iteration(iteration, set_id)
+        print(f'It: {iteration} (set {set_id}), \t{ES}cer: {cer:.2f}, \t{ES}wer: {wer:.2f}, '
+                f'\t{ES}pitch_ser: {pser:.2f}, \t{ES}rhythm_ser: {rser:.2f}, '
+                f'\t{ES}seq_err: {seqer:.2f}')
+
+    def print_minimal_wer_of_set(self, set_id) -> None:
+        iters, wers = self.get_wers(set_id, 0)
+        tuples = list(zip(iters, wers))
+        tuples = sorted(tuples, key=lambda x: x[1], reverse=True)
+
+        print(f'Minimal WER found for set {set_id}:')
+        self.print_results_of_iteration_with_set_id(tuples[-1][0], set_id)
 
     @property
     def len(self) -> int:
@@ -357,6 +405,9 @@ def parseargs():
     parser.add_argument(
         "--ignore-n-words-pred", type=int, default=0,
         help="Ignore first n words in checkpoint predictions.")
+    # parser.add_argument(
+    #     "-l", "--label-language", type=str, default=None,
+    #     help="Label language for translating back to the original.")
     parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,
         help="Activate verbose logging.")
