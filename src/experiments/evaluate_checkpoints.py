@@ -269,13 +269,14 @@ class EvaulateCheckpoints:
         plt.legend()
 
         if threshold > 0:
-            chart_out = os.path.join(self.output_folder, f'{name}_part.png')
-            chart_out = os.path.join(self.output_folder, f'{name}_part.svg')
+            chart_out_png = os.path.join(self.output_folder, f'{name}_part.png')
+            chart_out_svg = os.path.join(self.output_folder, f'{name}_part.svg')
         else:
-            chart_out = os.path.join(self.output_folder, f'{name}.png')
-            chart_out = os.path.join(self.output_folder, f'{name}.svg')
-        plt.savefig(chart_out)
-        print(f'Chart saved to {chart_out}')
+            chart_out_png = os.path.join(self.output_folder, f'{name}.png')
+            chart_out_svg = os.path.join(self.output_folder, f'{name}.svg')
+        plt.savefig(chart_out_png)
+        plt.savefig(chart_out_svg)
+        print(f'Chart saved to {chart_out_png} and {chart_out_svg}')
         plt.clf()
         # TODO export vector graphs
 
