@@ -96,10 +96,10 @@ class EvaulateCheckpoints:
 
             self.results.add_result(iteration, set_id, wer, cer, pitch_ser, rhythm_ser)
 
-            ES = '' if set_id == '_0' else '   '    # ES = Extra Space
+            ES = '' if set_id == '_0' else '    '    # ES = Extra Space
 
-            print(f'It: {iteration} (set {set_id}), \t{ES}cer: {cer}, \t{ES}wer: {wer}, '
-                  f'\t{ES}pitch_ser: {pitch_ser}, \t{ES}rhythm_ser: {rhythm_ser}')
+            print(f'It: {iteration} (set {set_id}), \t{ES}cer: {cer:.2f}, \t{ES}wer: {wer:.2f}, '
+                  f'\t{ES}pitch_ser: {pitch_ser:.2f}, \t{ES}rhythm_ser: {rhythm_ser:.2f}')
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
