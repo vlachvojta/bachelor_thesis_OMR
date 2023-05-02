@@ -17,8 +17,22 @@ import re
 import os
 import time
 # import sys
+from enum import Enum
 
 from common import Common
+
+
+class Language(Enum):
+    """
+    Enum Description: 
+    """
+    SEMANTIC = 0
+    AGNOSTIC = 1
+    SSEMANTIC = 2
+    SAGNOSTIC = 3
+    SSEMANTIC_EMPIR = 4
+
+    UNKNOWN = 42
 
 
 class PRSeparator:
@@ -96,37 +110,122 @@ class PRSeparator:
         return out_pitches, out_rhythms
 
     @staticmethod
-    def separate_labels(labels: str = '') -> (str, str):
+    def separate_labels(labels: str = '', language = Language.UNKNOWN) -> (str, str):
         """Get clean line of labels as a string, divide into into pitch and rhythm symbols
 
         Pitch: note-HEIGHT, gracenote-HEIGHT
         Rhythm: note_LENGTH, gracenote_LENGTH and the rest of symbols
 
         Return str lines of PITCH and RHYTHM IN THIS OREDER."""
-        rhythms = []
-        pitches = []
+
+        labels = PRSeparator.strip_to_only_labels(labels)
+
+        if language == Language.UNKNOWN:
+            language = PRSeparator.guess_label_language(labels)
+            if language == Language.UNKNOWN:
+                return '', labels
 
         labels = re.split(r'\s+', labels)
 
+        pitches = []
+        rhythms = []
+
         for label in labels:
-            # Check for Semantic labels
-            if label.startswith('note') or label.startswith('gracenote'):
-                note, pitch, *rest = re.split(r'-|_', label)
-                pitches.append(f'{note}-{pitch}')
-                rhythms.append(f"{note}-{'_'.join(rest)}")
-                continue
+            if language == Language.SEMANTIC:
+                new_p, new_r = PRSeparator.separate_label_semantic(label)
+            if language == Language.AGNOSTIC:
+                new_p, new_r = PRSeparator.separate_label_agnostic(label)
+            if language == Language.SSEMANTIC:
+                new_p, new_r = PRSeparator.separate_label_ssemantic(label)
+            if language == Language.SAGNOSTIC:
+                new_p, new_r = PRSeparator.separate_label_sagnostic(label)
+            if language == Language.SSEMANTIC_EMPIR:
+                new_p, new_r = PRSeparator.separate_label_ssemantic_empir(label)
 
-            # Check for specific type of shortened semantic-like encoding
-            match = re.match(r'[A-Ga-g](N|#+|b+)?\d', label)
-            if match:
-                pitches.append(match.group(0))
-                match_len = len(match.group(0))
-                rhythms.append(f'N{label[match_len:]}')
-                continue
-
-            rhythms.append(label)
+            if new_p:
+                pitches.append(new_p)
+            if new_r:
+                rhythms.append(new_r)
 
         return ' '.join(pitches), ' '.join(rhythms)
+
+    @staticmethod
+    def separate_label_semantic(label: str) -> (str, str):
+        if label.startswith('note-') or label.startswith('gracenote-'):
+            note, pitch, *rest = re.split(r'-|_', label)
+            return f'{note}-{pitch}', f"{note}-{'_'.join(rest)}"
+        return '', label
+
+    @staticmethod
+    def separate_label_agnostic(label: str) -> (str, str):
+        # if label.startswith('note.') or label.startswith('gracenote.'):
+        #     length, *height = re.split(r'-', label)
+        #     height = '-'.join(height)
+        #     return f'{note}-{pitch}', f"{note}-{'_'.join(rest)}"
+        return '', label
+
+    @staticmethod
+    def separate_label_ssemantic(label: str) -> (str, str):
+        if label.startswith('n') or label.startswith('g'):
+            height, *rest = re.split(r'\d', label)
+            return label[:len(height)+1], f'{label[0]}{rest}'
+        return '', label
+
+    @staticmethod
+    def separate_label_sagnostic(label: str) -> (str, str):
+        if label.startswith('N') or label.startswith('G'):
+            length, height = re.split(r'/', label)
+            return f'{label[0]}/{height}', length
+        return '', label
+
+    @staticmethod
+    def separate_label_ssemantic_empir(label: str) -> (str, str):
+        match = re.match(r'[A-Ga-g](N|#+|b+)?\d', label)
+        if match:
+            # pitches.append(match.group(0))
+            match_len = len(match.group(0))
+            return match.group(0),  f'N{label[match_len:]}'
+        return '', label
+
+    @staticmethod
+    def guess_label_language(line: str = '') -> int:
+        """Guess labels language accoring to the first symbol in a line.
+        
+        Return one of Language enum items
+        """
+        line = PRSeparator.strip_to_only_labels(line)
+
+        line = line[1:50] if line[0] == '"' else line[:50]
+        # print(f'guessing language from ({line})')
+
+        if re.match(r'^[<>=]\d\s+\+', line):
+            return Language.SSEMANTIC_EMPIR
+
+        if re.match(r'^clef-[CFG]\d', line):
+            return Language.SEMANTIC
+
+        if re.match(r'^clef.[CFG]-L\d', line):
+            return Language.AGNOSTIC
+
+        if re.match(r'^[cfg]\/\d\s+', line):
+            return Language.SAGNOSTIC
+
+        if re.match(r'^c[cfg]\d', line):
+            return Language.SSEMANTIC
+
+        return Language.UNKNOWN
+
+    @staticmethod
+    def strip_to_only_labels(line: str = '') -> str:
+        """Cut stuff around the line to reveal only labels"""
+        splitted = re.split(r'"', line)
+
+        if len(splitted) == 3:
+            return splitted[1]
+        if len(splitted) == 5:
+            return splitted[2]
+
+        return line
 
 
 def parseargs():

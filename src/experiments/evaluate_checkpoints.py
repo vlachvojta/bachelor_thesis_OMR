@@ -19,7 +19,7 @@ from customwer import CustomWer
 rel_dir = os.path.dirname(os.path.relpath(__file__))
 sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
 from common import Common  # noqa: E402
-from pitch_rhythm_separator import PRSeparator
+from pitch_rhythm_separator import PRSeparator #, Language
 
 
 class EvaulateCheckpoints:
@@ -60,8 +60,9 @@ class EvaulateCheckpoints:
         else:
             raise FileNotFoundError('No ground truth files found!')
 
+        self.language = self.get_language(self.ground_truths)
+
         # Check input files
-        # print(input_files)
         input_files = [file for file in input_files if os.path.isfile(file)]
 
         if not input_files:
@@ -125,6 +126,16 @@ class EvaulateCheckpoints:
 
         for set_id in self.results.get_set_ids():
             self.results.print_minimal_wer_of_set(set_id)
+
+    def get_language(self, ground_truths: dict) -> int:
+        """Get language from ground truths using PRSeparator funcion."""
+        languages = []
+
+        for set_id, gts in ground_truths.items():
+            languages.append(PRSeparator.guess_label_language(gts[0]))
+            print(languages[-1])
+
+        return languages[0]
 
     def read_gound_truths(self, ground_truths: list, ignore_n_gt: int = 0) -> dict:
         """Read the ground truth files if exist.
@@ -200,13 +211,22 @@ class EvaulateCheckpoints:
         my_wer.add_lines(ground_truth[50:], file[50:])
 
         for truth, pred in zip(ground_truth, file):
-            pred_pitch, pred_rhythm = PRSeparator.separate_labels(pred)
-            truth_pitch, truth_rhythm = PRSeparator.separate_labels(truth)
+            pred_pitch, pred_rhythm = PRSeparator.separate_labels(pred, self.language)
+            truth_pitch, truth_rhythm = PRSeparator.separate_labels(truth, self.language)
 
-            if not truth_pitch:
+            if not truth_pitch or re.match(r'^\s+$', truth_pitch):
                 truth_pitch = self.EMPTY_PITCH
-            if not pred_pitch:
+            if not pred_pitch or re.match(r'^\s+$', pred_pitch):
                 pred_pitch = self.EMPTY_PITCH
+
+            # print(f'final language is: {self.language}')
+            # print(f'truth: {truth}')
+            # print(f'    pser: ({truth_pitch})')
+            # print(f'    rser: {truth_rhythm}')
+
+            # print(f'pred: {pred}')
+            # print(f'    pser: ({pred_pitch})')
+            # print(f'    rser: {pred_rhythm}')
 
             pitch_err.add_lines(truth_pitch, pred_pitch)
             rhythm_err.add_lines(truth_rhythm, pred_rhythm)
@@ -276,7 +296,8 @@ class EvaulateCheckpoints:
             chart_out_svg = os.path.join(self.output_folder, f'{name}.svg')
         plt.savefig(chart_out_png)
         plt.savefig(chart_out_svg)
-        print(f'Chart saved to {chart_out_png} and {chart_out_svg}')
+        print(f'Chart saved to {chart_out_png}')
+        print(f'           and {chart_out_svg}')
         plt.clf()
         # TODO export vector graphs
 
@@ -361,7 +382,7 @@ class Results:
 
     def print_results_of_iteration_with_set_id(self, iteration, set_id) -> None:
         """Print Iteration from results."""
-        ES = '' if set_id == '_0' else '    '    # ES = Extra Space
+        ES = '' if set_id == '_0' else ' '    # ES = Extra Space
 
         cer, wer, pser, rser, seqer = self.get_results_of_iteration(iteration, set_id)
         print(f'It: {iteration} (set {set_id}), \t{ES}cer: {cer:.2f}, \t{ES}wer: {wer:.2f}, '
