@@ -259,11 +259,11 @@ class EvaulateCheckpoints:
                 r_ser_iterations, r_sers = self.results.get_rhythm_ser(set_id, threshold)
                 seqer_iterations, seqers = self.results.get_seqer(set_id, threshold)
 
-            wer_label = 'Symbol error rate'
-            cer_label = 'Character error rate'
-            pitch_label = 'Pitch error rate'
-            rhythm_label = 'Rhythm error rate'
-            seqer_label = 'Sequence error rate'
+            wer_label = 'Symbol Error Eate'
+            cer_label = 'Character Error Eate'
+            pitch_label = 'Pitch Error Eate'
+            rhythm_label = 'Rhythm Error Rate'
+            seqer_label = 'Sequence Error Rate'
 
             if set_select is None and len(sets) > 1:
                 wer_label += f' for set {set_id}'
@@ -284,8 +284,8 @@ class EvaulateCheckpoints:
                 plt.plot(seqer_iterations, np.array(seqers),
                          color=color_set[4], label = seqer_label)
 
-        plt.xlabel('Iteration')
-        plt.ylabel('Rate [%]')
+        plt.xlabel('Počet trénovacích epoch')
+        plt.ylabel('Chybovost přepisů [%]')
         plt.legend()
 
         if threshold > 0:
@@ -362,7 +362,7 @@ class Results:
 
     def save_to_file(self, file_path: str) -> None:
         Common.write_to_file(self.results, file_path)
-    
+
     def get_results_of_iteration(self, iteration, set_id) -> (float, float, float, float, float): #, set = None):
         """Get results of iteration. IF set is None, return results for all sets.
         
@@ -386,8 +386,8 @@ class Results:
 
         cer, wer, pser, rser, seqer = self.get_results_of_iteration(iteration, set_id)
         print(f'It: {iteration} (set {set_id}), \t{ES}cer: {cer:.2f}, \t{ES}wer: {wer:.2f}, '
-                f'\t{ES}pitch_ser: {pser:.2f}, \t{ES}rhythm_ser: {rser:.2f}, '
-                f'\t{ES}seq_err: {seqer:.2f}')
+                f'\t{ES}seq_err: {seqer:.2f}'
+                f'\t{ES}pitch_ser: {pser:.2f}, \t{ES}rhythm_ser: {rser:.2f}, ')
 
     def print_minimal_wer_of_set(self, set_id) -> None:
         iters, wers = self.get_wers(set_id, 0)

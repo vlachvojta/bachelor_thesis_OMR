@@ -174,8 +174,12 @@ class PRSeparator:
     @staticmethod
     def separate_label_sagnostic(label: str) -> (str, str):
         if label.startswith('N') or label.startswith('G'):
-            length, height = re.split(r'/', label)
-            return f'{label[0]}/{height}', length
+            # print(label)
+            try:
+                length, height = re.split(r'/', label)
+                return f'{label[0]}/{height}', length
+            except ValueError:
+                return '', label
         return '', label
 
     @staticmethod
