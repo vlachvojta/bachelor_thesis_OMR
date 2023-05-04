@@ -30,7 +30,7 @@ sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
 from common import Common  # noqa: E402
 
 
-class MusescoreAnalyzer:
+class LabelAnalyzer:
     """Analyze semantic labels and musescore xml files and export to csv pandas file."""
 
     EMPTY_SYSTEM_ID = 'EMPTY_SYSTEM_ID'
@@ -59,7 +59,7 @@ class MusescoreAnalyzer:
         logging.info(f'Loading labels from {len(self.label_files)} files.')
         self.labels = {}
         for label_file in self.label_files:
-            self.labels.update(MusescoreAnalyzer.load_labels(label_file))
+            self.labels.update(LabelAnalyzer.load_labels(label_file))
         if not self.labels:
             logging.info('No valid semantic LABELS in given folders and files.')
         else:
@@ -235,9 +235,9 @@ class MusescoreAnalyzer:
 
         labels_dict = {}
         for label_line in labels_list:
-            system_id, sequence = MusescoreAnalyzer.parse_label_line(label_line)
+            system_id, sequence = LabelAnalyzer.parse_label_line(label_line)
             if system_id and sequence:
-                if system_id == MusescoreAnalyzer.EMPTY_SYSTEM_ID:
+                if system_id == LabelAnalyzer.EMPTY_SYSTEM_ID:
                     labels_dict[filename] = sequence
                 else:
                     labels_dict[system_id] = sequence
@@ -257,7 +257,7 @@ class MusescoreAnalyzer:
         line_splitted = re.split(r'"', label_line)
 
         if len(line_splitted) == 1:
-            return MusescoreAnalyzer.EMPTY_SYSTEM_ID, label_line
+            return LabelAnalyzer.EMPTY_SYSTEM_ID, label_line
 
         label_header, *rest = line_splitted
         system_id, *_ = re.split(r'\s', label_header)
@@ -335,7 +335,7 @@ def main():
 
     start = time.time()
 
-    analyzer = MusescoreAnalyzer(
+    analyzer = LabelAnalyzer(
         label_files=args.label_files,
         output_file=args.output_file,
         high_dens_threshold_min=args.high_dens_threshold_min,
