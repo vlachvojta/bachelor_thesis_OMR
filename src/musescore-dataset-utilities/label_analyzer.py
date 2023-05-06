@@ -88,13 +88,29 @@ class LabelAnalyzer:
 
         # df.insert(df.count(axis='columns')[0], 'is_polyphonic', np.nan)
         new_columns = ['is_polyphonic', 'char_length', 'symbol_count', 'measure_count',
-                       'notes_count', 'rests_count', 'max_symbols_in_measure', 'density']
+                       'notes_count', 'rests_count', 'max_symbols_in_measure', 'density', 
+                       'min_voices', 'mean_voices', 'max_voices']
         for new_column in new_columns:
             df[new_column] = np.nan
             df[new_column] = df[new_column].astype('category')
 
+        df['voices'] = np.nan
+
         # df = df.iloc[:20]
         df = df.apply(self.get_stats_for_row, axis=1)
+
+        print('------------------------------- STATS: -------------------------------')
+        for column in new_columns:
+            if not column in df:
+                print(f'col: {column} not in df')
+                continue
+
+            print(f'Col: {column} values. min: {df[column].min()}, '
+                  f'mean: {df[column].mean():.2f}, max: {df[column].max()}')
+
+        voices_flat = [item for sublist in df['voices'] for item in sublist]
+        print(f'Col: voices_flat. values. min: {min(voices_flat)}, '
+                f'mean: {np.mean(voices_flat):.2f}, max: {max(voices_flat)}')
 
         ## Inplace sort by measure_count descending order
         # df.sort_values("symbol_count", inplace = True, ascending = False)
@@ -163,11 +179,16 @@ class LabelAnalyzer:
 
         row['is_polyphonic'] = self.is_sequence_polyphonic(label_sequence)
 
+        # print(f'seq: {label_sequence}')
+        # splitted = re.split(r'\s+', label_sequence)
+        # print(f"split to symbols: {splitted}")
+        # len_ = len(re.split(r'\s+', label_sequence)) - 1
+        # print(f"len: {len_}")
         # Get number of musical symbols
         row['symbol_count'] = len(re.split(r'\s+', label_sequence)) - 1
 
         # Get number of measures
-        potential_measures = re.split(r'barline', label_sequence)
+        potential_measures = re.split(r'barline|\|', label_sequence)
         row['measure_count'] = len(list(filter(None, potential_measures)))
 
         # Get number of notes and gracenotes
@@ -179,6 +200,13 @@ class LabelAnalyzer:
         row['max_symbols_in_measure'] = self.get_max_symbols_in_measure(label_sequence)
 
         row['density'] = row['symbol_count'] / row['measure_count']
+
+        row['voices'] = self.get_voices(label_sequence)
+        voices = self.get_voices(label_sequence)
+        row['min_voices'] = min(voices)
+        row['mean_voices'] = np.mean(voices)
+        row['max_voices'] = max(voices)
+
         logging.debug('---------------')
 
         return row
@@ -218,6 +246,17 @@ class LabelAnalyzer:
                 return True
 
         return False
+
+    def get_voices(self, sequence: str) -> list:
+        """Get label sequence as a string, count length of symbols in every chord.
+        
+        Return in a list."""
+        # print(f'in: {sequence}')
+
+        chords = re.split(r'\s+\+\s+', sequence)
+        # print(f'chords: {chords}')
+
+        return [len(re.split(r'\s+', chord)) for chord in chords]
 
     @staticmethod
     def load_labels(filename: str) -> dict:
