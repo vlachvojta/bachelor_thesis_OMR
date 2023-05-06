@@ -9,6 +9,9 @@
 Usage:
 $ python3 img_to_staves.py -i image.png -o out/
 resulting in creating cropped files out/image_s00.png, out/image_s01.png etc.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import argparse
@@ -85,21 +88,11 @@ class StaffCuter:
                 Common.print_dots(i, 200, 1_000)
             logging.debug('Working with: %d, %s', i, file)
             image = cv.imread(file, cv.IMREAD_UNCHANGED)
-            # image = Image.open(file)
-            # image = np.asarray(image)
             data = self.grayscale(image)
             logging.debug('\tgot Grayscale picture.')
 
-            # # Calculate means of each row
-            # means = []
-            # for line in data:
-            #     means.append(np.mean(line))
-
-            # plt.plot(means)
-            # plt.savefig('chart_mean.png')
 
             if self.mode == Mode.NAIVE:
-                # staves = self.get_staves(data)
                 staves = self.get_staves_naive(data)
             elif self.mode == Mode.INFORMED:
                 staves = self.get_staves_informed(data, self.staff_count)
@@ -108,16 +101,6 @@ class StaffCuter:
 
             cropped_staves = []
             for i, staff in enumerate(staves):
-                # cropped_staves = self.get_staves_new(data.T)
-                # # print(f'len(cropped_staves): {len(cropped_staves)}')
-                # if len(cropped_staves) > 1:
-                #     print(f'TOO much cut staves: {len(cropped_staves)}')
-                # cropped_staff = cropped_staves[0].T
-                # print(f'before: {staff.shape}, after: {cropped_staff.shape}')
-                # Common.write_to_file(
-                #   staff, os.path.join(self.output_folder, f'error_png_{i}.png'))
-                # logging.debug(f'\t\tcropping {i}')
-
                 # Crop horizontal white space
                 cropped_staff = self.crop_white_space(staff.T, strip_count=20).T
 
@@ -129,19 +112,16 @@ class StaffCuter:
             logging.debug('\tSeparated into %d staff images.', len(cropped_staves))
 
             for i, staff in enumerate(cropped_staves):
-                # logging.debug(staff.shape)
                 suspicious_threshold = 500
                 logging.debug(f'\t{file}_s{i:02}.png: {staff.shape}')
 
                 if self.mode == Mode.NAIVE and staff.shape[0] > suspicious_threshold:
-                    # image = Image.fromarray(staff)
                     base_file = os.path.basename(file)
                     self.suspicious_files.append(base_file)
                     self.save_image(staff, f'z_{base_file}', i)
 
                 else:
                     staff = Common.resize_img(staff, self.image_height)
-                    # image = Image.fromarray(staff)
                     self.save_image(staff, file, i)
 
         self.print_results()
@@ -174,8 +154,6 @@ class StaffCuter:
         file_name_path = os.path.join(self.output_folder, file_name)
         logging.debug(f'saving to: {file_name_path}')
         Common.write_to_file(image, file_name_path)
-        # image = Image.fromarray(image)
-        # image.save(file_name_path)
         self.generated_staves += 1
 
     def grayscale(self, image: np.ndarray):
@@ -212,15 +190,12 @@ class StaffCuter:
             division_margin = int(strip_width * division_margin_percent)
 
             division_points = [strip_width * i for i in range(staff_count)] + [data.shape[0]]
-            # logging.debug(f'\tdivision_points: {division_points}')
 
             # divide to staves WITH MARGIN over the division points
             staves = []
             for i, division_point in enumerate(division_points[:-1]):
                 staff_start = max(0, division_point - division_margin)
                 staff_end = min(division_points[i + 1] + division_margin, division_points[-1])
-                # logging.debug(f"\tstaff_start: {staff_start}, staff_end: {staff_end}")
-
                 staves.append(data[staff_start:staff_end])
 
         # crop white space of every staff and add border to every stave
@@ -237,19 +212,13 @@ class StaffCuter:
         
         Naive mode uses white space horizontal strips to recognize space between staves.
         """
-        # def strip_is_white(strip: np.ndarray()) -> bool:
-        #     strip_min = np.min(strip)
-        #     return strip_min > line_min_threshold
-
         lines_in_strip = 5
         line_min_threshold = 249
 
         # Round image size to the nearest multiple of lines_in_group
         max_height = (data.shape[0] // lines_in_strip) * lines_in_strip
         data = data[:max_height]
-        # print(f'data.shape: {data.shape}')
         data_strips = data.reshape([-1,lines_in_strip,data.shape[1]])
-        # print(f'data_strips.shape: {data_strips.shape}')
 
         white_strip_indexes = [[0]]
 
@@ -257,27 +226,12 @@ class StaffCuter:
             strip_min = np.min(strip)
 
             strip_is_white = strip_min > line_min_threshold
-            # print(f'{strip_i}, np.min(strip): {strip_min}, strip_is_white: {strip_is_white}')
             if strip_is_white:
-                # back_strip = data_strips[strip_i-2: strip_i]
-                # if back_strip.shape[0] == 0:
-                #     continue
-                # back_strip_min = np.min(back_strip)
-                # print(
-                # f'strip_i: {strip_i}, white_strip_indexes[-1]: {white_strip_indexes[-1]}')
                 previous_strip_is_white = strip_i-1 == white_strip_indexes[-1][-1]
                 if previous_strip_is_white:
-                    # print('previous_strip_is_white')
                     white_strip_indexes[-1].append(strip_i)
                 else:
-                    # if white_strip_indexes == []:
-                    #     white_strip_indexes.append([strip_i])
-                    # else:
                     white_strip_indexes.append([strip_i])
-                    # logging.debug(f'Staves[-1].shape: {staves[-1].shape}')
-
-        # print(white_strip_indexes)
-        # print(f'len(white_strip_indexes): {len(white_strip_indexes)}')
 
         staves = []
         for white_strip_i in range(len(white_strip_indexes) - 1):
@@ -294,13 +248,10 @@ class StaffCuter:
         staves = []
         line_mean_threshold = 250
 
-        # logging.debug(data.shape)
 
         for i, line in enumerate(data[1:]):
             if self.verbose and i % 500 == 0:
                 logging.debug(f'\t\ti: {i}, len(line): {len(staves)}')
-            # if i < 20: logging.debug(f'{i}: np.min(line): {np.min(line)}')
-            # if i % 50 == 0: logging.debug(f'i: {i}, len(staves): {len(staves)}')
             if np.min(line) < line_mean_threshold:
                 strip = data[i-20 : i]
                 if strip.shape[0] == 0:
@@ -313,7 +264,6 @@ class StaffCuter:
                         staves.append(np.array([line]))
                     else:
                         staves[-1] = np.concatenate((staves[-1], [line]), axis=0)
-                        # logging.debug(f'Staves[-1].shape: {staves[-1].shape}')
 
         staves = self.add_border(staves)
 
@@ -340,14 +290,9 @@ class StaffCuter:
             cropped_data = 'empty'
 
             strip_height = max(len(data) // strip_count, 1)
-            # logging.debug(f'len(data): {len(data)}, strip_count: {strip_count}, '
-            #       f'strip_height: {strip_height}')
 
             for i in range(strip_count):
                 strip = data[(strip_height * i) : (strip_height * (i + 1))]
-                # logging.debug(f'i: {i}, data.shape: {data.shape}, strip.shape: {strip.shape}')
-                # logging.debug(f'strip_height: {strip_height}')
-                # logging.debug(strip)
 
                 # check if strip is not too thin
                 min_width_threshold = 20
