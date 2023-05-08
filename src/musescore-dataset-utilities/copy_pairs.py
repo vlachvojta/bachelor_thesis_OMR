@@ -4,6 +4,9 @@
 Usage:
 $ python3 copy_pairs.py -i 6_copied_pairs/ -I big_density_systems.txt -o 6_copied_pairs_subset
 Copies pairs of labels and images with name in big_density_systems.txt to 6_copied_pairs_subset.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import argparse

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3.8
 # -*- coding: utf-8 -*-
+"""
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
+"""
 
 
 import lmdb

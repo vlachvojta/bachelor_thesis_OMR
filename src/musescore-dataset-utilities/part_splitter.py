@@ -6,9 +6,12 @@ Script also removes unwanted elements in remove_credits_and_stuff function.
 File naming conventions: file.musicxml -> file_p[1-n].musicxml
     where n is the number of parts.
 
-Example run:
+Usage:
 $ python3 part_splitter.py -i 100.musicxml -o parts_out/
 resulting in creating files parts_out/100_p00.musicxml, parts_out/100_p01.musicxml etc.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import argparse

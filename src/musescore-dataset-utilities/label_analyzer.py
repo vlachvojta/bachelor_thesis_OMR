@@ -14,6 +14,9 @@ Analyzed properties:
 Usage:
 $ python3 musescore_analyzer.py -i labels.semantic -o mscz_analyzer_stats.csv
 Generates statistics for labels in labels.semantic file to file mscz_analyzer_stats.csv
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import argparse

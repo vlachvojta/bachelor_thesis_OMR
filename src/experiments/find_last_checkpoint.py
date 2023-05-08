@@ -2,7 +2,12 @@
 """Simple script to find the last checkpoint in folder.
 
 Used for automatic continuing of paused experiments.
-Usage: $python3 find_last_checkpoint.py experiment/checkpoints
+
+Usage: 
+$ python3 find_last_checkpoint.py experiment/checkpoints
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 
@@ -14,7 +19,7 @@ import argparse
 def parseargs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        dest='directory', help=("Folder where to look for checkpoints"))
+        dest='directory', help="Folder where to look for checkpoints")
     return parser.parse_args()
 
 

@@ -1,9 +1,13 @@
 #!/usr/bin/python3.8
 """Simple script to evaluate checkpoint outputs created while training newer version of PERO
-Example run:
+
+Usage:
 $ python3 evaluate_checkpoints.py \
     --input-files checkpoints/checkpoint_*.pth.tst_out \
-    --ground-truths checkpoints/ground_truth*.tst_out \
+    --ground-truths checkpoints/ground_truth*.tst_out
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import argparse

@@ -7,6 +7,9 @@ Usage:
 $ python3 labels_to_trn_and_tst.py -i labels.semantic -l 2000
 Resulting in creating two files labels.semantic.tst and labels.semantic.trn,
     tst set having 2000 lines.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import argparse

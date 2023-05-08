@@ -4,6 +4,9 @@
 Usage:
 $ streamlit run show_dataframe.py -- -d stats.csv
 Runs a server which you can connect to via internet browser and IP adderss given by the server.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import os

@@ -1,4 +1,8 @@
-"""Module with one class CustomWer."""
+"""Module with one class CustomWer.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
+"""
 
 import jiwer
 import Levenshtein

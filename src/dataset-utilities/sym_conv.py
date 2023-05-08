@@ -1,6 +1,10 @@
-"""NOT A STAND-ALONE script... 
-    It was used Manually as an in-line script for simpler creation 
-    of symbol conversion dictionary.
+"""
+NOT A STAND-ALONE script... 
+It was used Manually as an in-line script for simpler creation 
+of symbol conversion dictionary.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 # %%

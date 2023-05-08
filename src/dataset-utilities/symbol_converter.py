@@ -2,6 +2,9 @@
 """Simple script for converting symbols using external translator dictionary.
 
 Used to convert symbols from agnostic and semantic encoding to a shorter form and back.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import argparse

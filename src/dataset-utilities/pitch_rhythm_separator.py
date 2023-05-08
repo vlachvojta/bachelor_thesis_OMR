@@ -6,10 +6,17 @@ Rhythm: note_LENGTH, gracenote_LENGTH and the rest of symbols
 
 Used for evaluation of model outputs.
 
-SUPPORTED ENCODING:
-- plain semantic encoding from PrIMus dataset
-- pseudo-semantic encoding generated from musescore files by gen_labels.py in https://github.com/vlachvojta/polyphonic-omr-by-sachindae.git
+SUPPORTED ENCODINGs:
+- semantic encoding from PrIMus dataset
+    - + shorter variant
+- agnostic encoding from PrIMus dataset
+    - + shorter variant
+- pseudo-semantic encoding generated from musicxml files by gen_labels.py from https://github.com/vlachvojta/polyphonic-omr-by-sachindae.git
+    - + shorter variant
 - One spacific translation of pseudo-semantic encoding to shorter version
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 import argparse
