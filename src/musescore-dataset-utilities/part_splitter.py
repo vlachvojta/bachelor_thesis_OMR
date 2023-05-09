@@ -1,7 +1,7 @@
 #!/usr/bin/python3.8
 """Split multi-part .musicxml files to multiple files with only one part per file.
 
-Script also removes unwanted elements in remove_credits_and_stuff function.
+Script also rem eloves unwantedements in remove_unwanted_elements function.
 
 File naming conventions: file.musicxml -> file_p[1-n].musicxml
     where n is the number of parts.
@@ -86,7 +86,7 @@ class PartSplitter:
                 self.music_score_error_files += 1
                 continue
 
-            self.remove_credits_and_stuff(file_tree)
+            self.remove_unwanted_elements(file_tree)
 
             for i, part_id in enumerate(sorted(part_ids)):
                 file_out = self.get_file_out_name(file_in, i)
@@ -224,7 +224,7 @@ class PartSplitter:
         part_ids = self.get_params_of_tags(tree, 'part', 'id')
         return Common.intersection(score_part_ids, part_ids)
 
-    def remove_credits_and_stuff(self, tree: etree.Element) -> None:
+    def remove_unwanted_elements(self, tree: etree.Element) -> None:
         """Remove unwanted elements (credits, lyrics, labels and dynamics) from XML tree.
         """
         elements_to_remove = [

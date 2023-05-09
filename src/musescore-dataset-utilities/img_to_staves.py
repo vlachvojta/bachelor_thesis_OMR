@@ -23,9 +23,7 @@ import logging
 from enum import Enum
 
 import numpy as np
-# from PIL import Image
 import cv2 as cv
-# from matplotlib import pyplot as plt
 
 rel_dir = os.path.dirname(os.path.relpath(__file__))
 sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
@@ -244,7 +242,10 @@ class StaffCuter:
         return staves
 
     def get_staves(self, data) -> list:
-        """Cut individual staves from img. Return in a list of staves."""
+        """Cut individual staves from img. Return in a list of staves. 
+
+        This metoed is DEPRICATED. use `get_staves_naive` or `get_staves_informed`!
+        """
         staves = []
         line_mean_threshold = 250
 
