@@ -1,8 +1,11 @@
 #!/usr/bin/env python3.8
-# -*- coding: utf-8 -*-
-# Starting code downloaded from:
-# https://github.com/DCGM/pero-ocr/blob/master/user_scripts/parse_folder.py
-# Authors on github: ibenes, michal-hradis, OldaKodym, xkissm00, kohuthonza
+"""Script to take folder of images and encode it to LMDB database format to be used with PERO system.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
+"""
+
+
 
 import argparse
 import re

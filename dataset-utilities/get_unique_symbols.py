@@ -1,4 +1,10 @@
 #!/usr/bin/python3.8
+"""Script for getting unique symbols from dataset. Outputs to a file.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
+"""
+
 
 import argparse
 import re
@@ -31,7 +37,6 @@ class Get_unique_symbols:
         files = list(set(files))
         self.file_names = Common.check_existing_files(files)
 
-        # self.unique_symbols['files'] = self.file_names
         print(f'Getting data from {len(self.file_names)} files '
               f'(every dot is 1000 parsed file).')
 
@@ -120,10 +125,6 @@ def parseargs():
         "-F", "--folders", nargs='*', default=['.'],
         help=("Directories where to look for files with given extensions. \n" +
               "Use in combination with --extensions."))
-    # parser.add_argument(
-    #     "-r", "--recursive", default=False, action='store_true',
-    #     help=("Activate recursive search in given directory.\n" +
-    #           "If not set, use only files in given directory"))
     parser.add_argument(
         "-d", "--database", default="all_unique_symbols.json",
         help="Database with already found unique_symbols.")
@@ -134,9 +135,6 @@ def parseargs():
         "-i", "--input_file", default="files.txt",
         help="File with list of all files to search through.")
 
-    # parser.add_argument(
-    #     "-o", "--out", default='',
-    #     help="Set output file, stdout by default")
     return parser.parse_args()
 
 
@@ -151,11 +149,8 @@ def main():
         folders=args.folders,
         database=args.database,
         input_file=args.input_file)
-    # dirs=args.directories,
-    # exts=args.extensions)
 
     gus.finalize(args.output)
-    # gus.print_symbols(args.out)
 
     end = time.time()
     print(f'Total time: {end - start}')

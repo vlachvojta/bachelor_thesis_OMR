@@ -1,7 +1,10 @@
-"""
-NOT A STAND-ALONE script... 
-It was used Manually as an in-line script for simpler creation 
+#!/usr/bin/python3.8
+"""NOT A STAND-ALONE script... 
+It was used MANUALLY cell-by-cell as an in-line script for simpler creation 
 of symbol conversion dictionary.
+
+File is divided by "# %%" marker, which was also used
+    for vscode inside execution with jupyter functions.
 
 Author: Vojtěch Vlach
 Contact: xvlach22@vutbr.cz
@@ -83,8 +86,6 @@ class SymConv:
     def two_lists_to_dict(l1: list = [], l2: list = []):
         return {v1: v2 for v1, v2 in zip(l1, l2)}
 
-# %%
-print('Hi')
 # %%
 
 def main():

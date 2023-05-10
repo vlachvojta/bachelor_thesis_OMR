@@ -294,14 +294,12 @@ class Common:
         BLACK = [0, 0, 0]
 
         in_res = img.shape[0:2]
-        # border_height = new_height - in_res[0]
         out_heights = calculate_border_sizes(in_res[0], new_height)
 
         if new_width > in_res[1]:
             border_width = new_width - in_res[1]
         else:
             border_width = 0
-        # out_widths = calculate_border_sizes(in_res[1], new_width)
 
         img = cv.copyMakeBorder(
             img, out_heights[0], out_heights[1],

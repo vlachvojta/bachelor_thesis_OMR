@@ -1,10 +1,4 @@
 #!/usr/bin/python3.8
-"""Script for first operations with primus dataset.
-
-Script was used to reorganize files with option to convert symbols
-to shorter forms
-"""
-
 
 import argparse
 import re

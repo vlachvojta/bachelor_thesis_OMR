@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.8
-# -*- coding: utf-8 -*-
-"""
+"""Script showing an example of how read existing keys from existing LMDB Database
+
 Author: Vojtěch Vlach
 Contact: xvlach22@vutbr.cz
 """
