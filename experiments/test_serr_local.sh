@@ -72,5 +72,3 @@ for checkpoint in `ls -r $CHECKPOINT_PATH/checkpoint_*.pth`; do
         echo "This checkpoint took: $((($SECONDS / 60) % 60))min $(($SECONDS % 60))sec"
     fi
 done
-
-# TODO evaluate $DECODED with $DATA_TST

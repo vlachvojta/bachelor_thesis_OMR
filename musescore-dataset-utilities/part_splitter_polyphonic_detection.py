@@ -1,15 +1,17 @@
 #!/usr/bin/python3.8
-"""Split multi-part .musicxml files to multiple files with only one part per file.
-
-Script also removes unwanted elements in remove_credits_and_stuff function.
+"""Load multi-part .musicxml files to, separate them to parts and detect polyphonic ones. 
 
 File naming conventions: file.musicxml -> file_p[1-n].musicxml
     where n is the number of parts.
 
-Example run:
+Usage:
 $ python3 part_splitter.py -i 100.musicxml -o parts_out/
 resulting in creating files parts_out/100_p00.musicxml, parts_out/100_p01.musicxml etc.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
+
 
 import argparse
 import sys
@@ -84,63 +86,12 @@ class PartSplitter:
             for i, part_id in enumerate(sorted(part_ids)):
                 file_out = self.get_file_out_name(file_in, i)
 
-                # # Create new root tag and add children from file_tree
-                # root_tag = '<score-partwise version="4.0"></score-partwise>'
-                # new_tree = etree.fromstring(root_tag)
-                # for i, child in enumerate(list(file_tree.getroot())):
-                #     if child.tag == 'part':
-                #         continue
-                #     child_str = etree.tostring(child)
-                #     child_back = etree.fromstring(child_str)
-                #     new_tree.insert(i+1, child_back)
-
-                # # Remove all other part declarations
-                # score_parts = new_tree.xpath('//score-part')
-                # for part in score_parts:
-                #     if part.get('id') != part_id:
-                #         part.getparent().remove(part)
                 parts = file_tree.xpath(f'//part[@id="{part_id}"]')
 
                 if parts:
                     if self.is_polyphonic_part(parts[0]):
                         self.polyphonic_parts.append((os.path.basename(file_out), self.chords, self.voices))
                         self.polyphonic_parts_count += 1
-
-
-                # # Insert only the right part directly from original file_tree
-                # parts = file_tree.xpath('//part')
-                # for part in parts:
-                #     if part.get('id') == part_id:
-                #         part_copy = deepcopy(part)
-                #         # part_str = etree.tostring(part)
-                #         # part_copy = etree.fromstring(part_str)
-                #         new_tree.insert(7, part_copy)
-
-                # self.change_new_page_to_new_system(new_tree)
-
-                # # Ignore percussion parts
-                # if self.is_percussion_part(new_tree):
-                #     continue
-
-                # Separate dual staff part + detect polyphonic for both
-                # if self.is_dual_staff_part(new_tree):
-                #     self.dual_staff_parts.append(os.path.basename(file_out))
-                #     self.dual_staff_parts_count += 1
-                #     second_tree, file_out_2 = self.separate_dual_staff(new_tree, file_out)
-                #     self.save_part_to_file(second_tree, file_out_2)
-
-                #     if self.is_polyphonic_part(second_tree):
-                #         self.polyphonic_parts.append(os.path.basename(file_out_2))
-                #         self.polyphonic_parts_count += 1
-                #     if self.is_polyphonic_part(new_tree):
-                #         self.polyphonic_parts.append(os.path.basename(file_out))
-                #         self.polyphonic_parts_count += 1
-                # else:
-                #     if self.is_polyphonic_part(new_tree):
-                #         self.polyphonic_parts.append(os.path.basename(file_out))
-                #         self.polyphonic_parts_count += 1
-
-                # self.save_part_to_file(new_tree, file_out)
 
         self.print_results()
 
@@ -163,17 +114,14 @@ class PartSplitter:
         print(f'\t{self.xml_syntax_error_files} had xml syntax errors')
         print(f'\t{self.music_score_error_files} had music score errors')
 
-        # TODO delete dual staff parts stats??
         if self.dual_staff_parts_count > 0:
             dual_staff_file = os.path.join(self.output_folder, '0_dual_staff_parts.json')
             print(f'\t{self.dual_staff_parts_count} dual staff parts '
                   f'(saved into {dual_staff_file})')
 
-            # TODO test this
             if not os.path.exists(dual_staff_file):
                 Common.write_to_file(self.dual_staff_parts, dual_staff_file)
             else:
-                # TODO concat existing file to new and save
                 print(f'WARNING: {dual_staff_file} already exists, printing to stdout instead')    
                 print(self.dual_staff_parts)
 
@@ -182,11 +130,9 @@ class PartSplitter:
             print(f'\t{self.polyphonic_parts_count} polyphonic parts '
                   f'(saved into {polyphonic_file})')
 
-            # TODO test this
             if not os.path.exists(polyphonic_file):
                 Common.write_to_file(self.polyphonic_parts, polyphonic_file)
             else:
-                # TODO concat existing file to new and save
                 print(f'WARNING: {polyphonic_file} already exists, printing to stdout instead')    
                 print(self.polyphonic_parts)
 
@@ -287,7 +233,6 @@ class PartSplitter:
         """Go though all measures with change new-page to new-system.
         
         Precise tags are: `<print new-page="yes" />` change to `<print new-system="yes" />`."""
-        # TODO TEST: z nějakýho důvodu to moc nefungovalo při prvním testu, potřeba udělat TDD
         print_tags = tree.xpath('//measure/print[@new-system="yes"]')
 
         for print_tag in print_tags:

@@ -12,7 +12,6 @@ class ID_downloader:
     @staticmethod
     def download_IDs(database: str = ''):
         url = 'https://musescore.com/sheetmusic?complexity=2&page='
-        # TODO add more filter options to url (1/2)
 
         ids = ID_downloader.read_database(database)
 
@@ -22,20 +21,16 @@ class ID_downloader:
             html = ID_downloader.download_html(
                 f'{url}{page}&recording_type=public-domain&'
                 'sort=rating&type=non-official')
-            # TODO add more filter options to url (2/2)
             ids += ID_downloader.strip_ids(html)
             ids = list(set(ids))
             new_len = len(ids)
 
             print(f'old ids len: {old_len}, new ids len: {new_len}')
-            # if old_len == new_len:
-            #     print('Breaking because no new IDs found.')
-            #     break
 
             page += 1
 
         print(f'Found {len(ids)} unique IDs.')
-        return ids  # IDs
+        return ids
 
     @staticmethod
     def download_html(url: str):

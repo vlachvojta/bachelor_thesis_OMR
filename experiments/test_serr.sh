@@ -89,5 +89,3 @@ done 2>&1 | tee -a log_x.txt
 cp -r $SCRATCH/experiments/$EXPERIMENT /storage/brno2/home/xvlach22/bp_omr/experiments/
 clean_scratch
 exit
-
-# TODO evaluate $DECODED with $DATA_TST

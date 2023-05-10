@@ -125,14 +125,12 @@ class Matchmaker:
                 logging.debug(f"Copying {part_name}")
 
                 for pair in complete_parts[part_name]:
-                    # print(f"For ({pair['label_id']}) writing: {self.labels[pair['label_id']]}")
                     label_sequence = self.labels[pair['label_id']]
                     out_label_file.write(
                         f"{pair['label_id']}.png {Common.PERO_LMDB_zero_tag} {label_sequence}\n")
 
                     output_image = os.path.join(self.output_folder, f"{pair['label_id']}.png")
                     copyfile(pair['image_with_path'], output_image)
-                    # print(f"{pair['label_id']} {pair['image_with_path']} => {output_image}")
         print()
 
         print(f"Copying successfull to {self.output_folder}, labels saved to {self.out_label_file}")
@@ -261,8 +259,6 @@ class Matchmaker:
 
     def load_labels(self, filename: str) -> dict:
         """Load labels from file and return as a dictionary."""
-        # print(f'labels file: {filename}')
-        # print(f'path exists: {os.path.exists(filename)}')
         if not os.path.isfile(filename):
             return {}
 
@@ -273,11 +269,6 @@ class Matchmaker:
 
         labels_list = re.split(r'\n', labels)
         labels_list = list(filter(None, labels_list))   # filter out empty lines
-
-        # print(type(labels_list))
-        # print('len(labels_list): ')
-        # print(len(labels_list))
-        # print(labels_list[:10])
 
         labels = {}
         for label in labels_list:

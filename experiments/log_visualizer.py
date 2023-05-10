@@ -2,6 +2,9 @@
 """ Simple script to visualize experiment results. CER and WER
 Example run:
 $ python3 log_visualizer.py -i log_x.txt -o visualized_log
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
 """
 
 
@@ -21,7 +24,6 @@ from common import Common
 class LogVisualizer:
     def __init__(self, file: str = "stdin", output: str = "log_out",
                  name: str = "") -> None:
-        # TODO add loadign WER if there is some
         if file == "stdin":
             print('Input form stdin not supported yet, use file instead')
             exit()
@@ -72,8 +74,6 @@ class LogVisualizer:
 
     @staticmethod
     def chart(data: dict = {}, output: str = "", name: str = "fig_01") -> None:
-        # TODO add WER to chart
-
         threshold = 10 if len(data) > 20 else 0
 
         iterations = np.array(sorted(data.keys()))[threshold:]

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Author: Vojtěch Vlach
+# Contact: xvlach22@vutbr.cz
 
 root=`cd ~ && pwd`
 BP_GIT_EXP="$root/skola/BP/bp-git/src/experiments"

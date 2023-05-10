@@ -18,6 +18,13 @@ My bachelor thesis on FIT (V|B)ut Brno, assembled in 2022/2023
 
 ## Cobebase
 
-Codebase consists of individual scripts in `src` folder where each one has its own purpose and documentation.
+Codebase consists of individual scripts where each one has its own purpose and documentation at the top.
 
-TODO docu where is what.
+There following folders in this repository:
+* BMPD_stats - containing statistics about the new BMPD dataset
+* dataset-utilities - python scripts for working with both PrIMuS and BMPD datasets
+* experiments - python scripts for experiments with CRNN and Transformer models.
+* musescore-dataset-utilities - python scripts used for creating the BMPD dataset itself.
+* primus_stats - statistics about PrIMuS dataset
+* streamlit_helpers - one script used to show dataframe in a web browser using streamlit server
+* translators - dictionaries used in shortening ground-truths of both PrIMuS and BMPD datasets.

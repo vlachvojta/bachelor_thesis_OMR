@@ -1,5 +1,9 @@
 #!/usr/bin/python3.8
-"""Download musescore files from github repo given the link of repo and the list of files."""
+"""Download musescore files from github repo given the link of repo and the list of files.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
+"""
 
 import argparse
 import re
@@ -39,7 +43,6 @@ class GithubDownloader:
         for i, file_name in enumerate(self.files_to_download):
             for folder in range(20):
                 url = f'{self.link}/{folder}/{file_name}.mscz'
-                # print(f'Downloading {file_name} with link: {url}')
 
                 try:
                     response = requests.get(url, stream=True, timeout=20)
@@ -51,7 +54,6 @@ class GithubDownloader:
                     continue
 
                 if response.headers['content-type'] == 'text/html; charset=utf-8':
-                    # print('NOT FOUND')
                     continue
 
                 output_file = self.get_output_file_name(file_name)

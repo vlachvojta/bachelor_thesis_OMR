@@ -140,7 +140,6 @@ class StaffCuter:
             if not os.path.exists(suspicious_files_path):
                 Common.write_to_file(self.suspicious_files, suspicious_files_path)
             else:
-                # TODO concat existing file to new and save
                 print(f'WARNING: {suspicious_files_path} already exists, '
                       'printing to stdout instead')
                 print(self.suspicious_files)

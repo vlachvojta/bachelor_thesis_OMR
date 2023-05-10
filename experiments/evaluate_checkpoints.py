@@ -303,7 +303,6 @@ class EvaulateCheckpoints:
         print(f'Chart saved to {chart_out_png}')
         print(f'           and {chart_out_svg}')
         plt.clf()
-        # TODO export vector graphs
 
 class Results:
     """Simple class to store error results and return in correct format to make charts."""

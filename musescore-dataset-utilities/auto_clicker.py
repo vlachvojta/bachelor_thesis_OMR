@@ -1,5 +1,11 @@
 #!/usr/bin/python3.8
-"""Simple script to automate clicking at the same spot on the screen every time."""
+"""Simple script to automate clicking at the same spot on the screen every time.
+
+Used for automating the MuseScore Batch Convert when it was prompting about saving every file.
+
+Author: Vojtěch Vlach
+Contact: xvlach22@vutbr.cz
+"""
 
 import time
 import argparse

@@ -1,4 +1,8 @@
-param ($in_ext, $out_ext, $in_dir='.') #, $out_dir='out')
+# PowerShell script for automatic converting files using MuseScore Command line interface
+# Author: Vojtěch Vlach
+# Contact: xvlach22@vutbr.cz
+
+param ($in_ext, $out_ext, $in_dir='.')
 
 if ($in_ext -eq $null){
 	$in_ext = read-host -Prompt "Please enter the INPUT files extension"
@@ -12,9 +16,6 @@ if ($out_ext -eq $null){
 }
 
 echo "directory with input files: $in_dir"
-# echo "output directory: $out_dir"
-
-# $DIR = "D:\OneDrive - Vysoké učení technické v Brně\skola\BP\datasets\musescore_pipeline_44\1_musicxml_using_MuseScore4_native_CLI"
 
 Get-ChildItem $in_dir -Filter *.$in_ext -Recurse | 
 Sort-Object @{expression = {$_.fullname}} -descending | 

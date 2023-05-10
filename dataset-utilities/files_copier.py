@@ -223,7 +223,7 @@ def parseargs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-e", "--extensions", nargs='*',
-        default=['agnostic', 'semantic'],  # TODO return to default ['agnostic', 'semantic', 'png']
+        default=['agnostic', 'semantic'],
         help=("Set file extensions for files in given folder\n" +
               "Use in combination with --directories."))
     parser.add_argument(

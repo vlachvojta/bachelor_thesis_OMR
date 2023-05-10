@@ -1,14 +1,12 @@
 #!/usr/bin/python3.8
 """Split multi-part .musicxml files to multiple files with only one part per file.
 
-Script also rem eloves unwantedements in remove_unwanted_elements function.
-
 File naming conventions: file.musicxml -> file_p[1-n].musicxml
     where n is the number of parts.
 
 Usage:
 $ python3 part_splitter.py -i 100.musicxml -o parts_out/
-resulting in creating files parts_out/100_p00.musicxml, parts_out/100_p01.musicxml etc.
+resulting in creating list of polyphonic files in parts_out/ folder.
 
 Author: Vojtěch Vlach
 Contact: xvlach22@vutbr.cz
@@ -160,17 +158,14 @@ class PartSplitter:
         print(f'\t{self.xml_syntax_error_files} had xml syntax errors')
         print(f'\t{self.music_score_error_files} had music score errors')
 
-        # TODO delete dual staff parts stats??
         if self.dual_staff_parts_count > 0:
             dual_staff_file = os.path.join(self.output_folder, '0_dual_staff_parts.json')
             print(f'\t{self.dual_staff_parts_count} dual staff parts '
                   f'(saved into {dual_staff_file})')
 
-            # TODO test this
             if not os.path.exists(dual_staff_file):
                 Common.write_to_file(self.dual_staff_parts, dual_staff_file)
             else:
-                # TODO concat existing file to new and save
                 print(f'WARNING: {dual_staff_file} already exists, printing to stdout instead')    
                 print(self.dual_staff_parts)
 
@@ -179,11 +174,9 @@ class PartSplitter:
             print(f'\t{self.polyphonic_parts_count} polyphonic parts '
                   f'(saved into {polyphonic_file})')
 
-            # TODO test this
             if not os.path.exists(polyphonic_file):
                 Common.write_to_file(self.polyphonic_parts, polyphonic_file)
             else:
-                # TODO concat existing file to new and save
                 print(f'WARNING: {polyphonic_file} already exists, printing to stdout instead')    
                 print(self.polyphonic_parts)
 
@@ -192,11 +185,9 @@ class PartSplitter:
             print(f'\t{len(self.no_complete_pages_parts)} no complete pages parts '
                   f'(saved into {out_file_name})')
 
-            # TODO test this
             if not os.path.exists(out_file_name):
                 Common.write_to_file(self.no_complete_pages_parts, out_file_name)
             else:
-                # TODO concat existing file to new and save
                 print(f'WARNING: {out_file_name} already exists, printing to stdout instead')    
                 print(self.no_complete_pages_parts)
 
@@ -265,7 +256,6 @@ class PartSplitter:
 
     def is_percussion_part(self, part: etree.Element) -> bool:
         """Check if part is percussion part using "<clef><sign>percussion" tag."""
-        # clef_signs = part.xpath('//measure[@number=1]/clef/sign')
         clef_signs = part.xpath('//measure[@number=1]/attributes/clef/sign')
 
         if clef_signs and clef_signs[0].text == 'percussion':
@@ -322,8 +312,6 @@ class PartSplitter:
         # if Last page is NOT copmlete, delete it
         if not len(print_tags) - 1 % self.staves_on_page == self.staves_on_page - 1:
             extra_systems = len(print_tags) % self.staves_on_page + 1
-            # print(f'extra_systems: {extra_systems}')
-            # print(f'len(print_tags): {len(print_tags)}')
 
             if extra_systems >= len(print_tags):
                 # part doesn't have even one complete page
@@ -354,7 +342,6 @@ class PartSplitter:
             second value: output file names
         """
         staves = self.get_number_of_staves(tree_orig)
-        # print(f'staves: {staves}')
 
         file_split = os.path.basename(file_out_orig).split('.')[0]
         file_out_names = []
@@ -368,7 +355,6 @@ class PartSplitter:
             part_trees.append(deepcopy(tree_orig))
 
         for i, part_tree in enumerate(part_trees, start=1):
-            # print(f'separating staff number: {i}')
             self.separate_specific_part(part_tree, i)
 
         return part_trees, file_out_names
