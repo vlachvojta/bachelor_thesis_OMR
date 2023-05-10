@@ -1,4 +1,4 @@
-# Prevod symbolu na kratsi format
+# Translating symbols to shorter format
 
 ## Semantic encoding types:
 * barline -> b
