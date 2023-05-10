@@ -12,11 +12,15 @@ Contact: xvlach22@vutbr.cz
 import argparse
 import re
 import os
-from common import Common
+import sys
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 import jiwer
+
+rel_dir = os.path.dirname(os.path.relpath(__file__))
+sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
+from common import Common  # noqa: E402
 
 
 class Evaulate_predictions:
