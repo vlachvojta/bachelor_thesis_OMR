@@ -40,7 +40,7 @@ def main():
         file_number = file_name[11:]
         file_nums.append(file_number)
     
-    number = max(file_nums)
+    number = max(file_nums) if file_nums else 0
 
     try:
         print(int(number))
