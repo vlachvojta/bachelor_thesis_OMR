@@ -6,7 +6,7 @@ import sys
 import os
 from common import Common
 import time
-from symbol_converter import Symbol_converter
+from symbol_converter import SymbolConverter
 import shutil
 import pandas as pd
 
@@ -124,9 +124,9 @@ class Files_copier:
         # assert img_res[0] <= self.max_img[0]
         # assert img_res[1] <= self.max_img[1]
 
-        if (img_res[0] < self.max_img[0] or
-                img_res[1] < self.max_img[1]):
-            data = Common.resize_img(data, self.height, self.width)
+        # if (img_res[0] < self.max_img[0] or
+        #         img_res[1] < self.max_img[1]):
+        data = Common.resize_img(data, self.height, self.width)
 
             # ? resize all images to match max_img height but keep ratio
             # data = Common.resize_img(data, self.max_img[0])
@@ -144,10 +144,10 @@ class Files_copier:
         old = sorted(old)
         new = sorted(new)
 
-        if not old == new:
+        if len(old) > 0 and not old == new:
             print('OLD != NEW')
-            print(f'\tnew len: {len(old)}\n'
-                  f'\told len: {len(new)}')
+            print(f'\told len: {len(old)}\n'
+                  f'\tnew len: {len(new)}')
             raise AssertionError
 
     def get_old_file_translator(self):
