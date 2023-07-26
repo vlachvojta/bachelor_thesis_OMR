@@ -1,29 +1,19 @@
 #!/usr/bin/env bash
 
-source ./.venv/bin/activate
-
-pwd
+#pwd
 EXPERIMENT="0_local_decode_pth"
-# echo "SCRATCH: "$SCRATCH
-# cd $SCRATCH
-# cp -r /storage/brno2/home/xvlach22/bp_omr/datasets $SCRATCH/datasets
-# mkdir $SCRATCH/experiments
-# cp -r /storage/brno2/home/xvlach22/bp_omr/experiments/$EXPERIMENT $SCRATCH/experiments/$EXPERIMENT
-# cp -r /storage/brno2/home/xvlach22/bp_omr/ubuntu_fonts $SCRATCH/ubuntu_fonts
-# cp -r /storage/brno2/home/xvlach22/bp_omr/code_from_others $SCRATCH/code_from_others
-# cd experiments/$EXPERIMENT
-# chmod u+x run_experiment.sh
 
 # module add python36-modules-gcc
-pip3 install --upgrade pip
+# pip3 install --upgrade pip
 # pip3 install safe_gpu lmdb opencv-python scipy brnolm
-pip3 install torch lmdb safe_gpu brnolm torchvision
+# pip3 install torch lmdb safe_gpu brnolm torchvision pero_ocr
 
-home="/home/vlachvojta/skola/BP"
-PERO_PATH=$home"/code_from_others/pero"
-PERO_OCR_PATH=$home"/code_from_others/pero-ocr"
-export PYTHONPATH=$PERO_PATH:$PERO_OCR_PATH
-export PATH=$PATH:$PYTHONPATH
+home=$HOME"/BP_sequel/"
+source ./.venv/bin/activate
+PERO_PATH=$home"/PERO"
+# PERO_OCR_PATH=$home"/code_from_others/pero-ocr"
+# export PYTHONPATH=$PERO_PATH:$PERO_OCR_PATH
+# export PATH=$PATH:$PYTHONPATH
 
 # Dataset
 LMDB=$home"/datasets/primus_full_converted_2_lmdb/images.lmdb"
@@ -50,6 +40,7 @@ for checkpoint in `ls -r $CHECKPOINT_PATH/checkpoint_*.pth`; do
     if [ -f $checkpoint.out ]; then
         echo "File $checkpoint.out already exists"
     else
+        echo
         echo "----runnning export_model.py----"
         python3 $EXPORT_PY  \
             --path $CHECKPOINT_PATH$checkpoint --net $NET  \
@@ -58,11 +49,13 @@ for checkpoint in `ls -r $CHECKPOINT_PATH/checkpoint_*.pth`; do
             --output-model-path $OCR_MODEL  \
             --trace --device cpu
 
+        echo
         echo "----runnning get_folder_logits.py----"
         python3 $GET_LOGITS_PY  \
             --ocr-json $OCR_JSON  --input $LMDB  \
             --lines $DATA_TST  --output $PICKLE
 
+        echo
         echo "----runnning decode_logtis.py----"
         python3 "$DECODE_PY" \
             --ocr-json "$OCR_JSON" \
