@@ -1,0 +1,34 @@
+# User-Guide for music21 library: 
+# https://web.mit.edu/music21/doc/usersGuide/usersGuide_99_Table_of_Contents.html
+# Install by executing: pip install music21
+
+# %%
+
+import music21 as m21
+
+stream = m21.stream.Stream()
+n = m21.note.Note('c4')
+
+n.duration.type = 'half'
+
+stream.append(n)
+
+n = m21.note.Note('f4')
+n.duration.type = 'eighth'
+
+stream.append(n)
+
+# stream.show('xml')
+
+print(stream)
+
+# %%
+
+# p = m21.pitch.Pitch('D#4')
+# GEX = m21.musicxml.m21ToXml.GeneralObjectExporter(p)
+
+GEX = m21.musicxml.m21ToXml.GeneralObjectExporter(stream)
+out = GEX.parse()  # out is bytes
+outStr = out.decode('utf-8')  # now is string
+print(outStr.strip())
+
