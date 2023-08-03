@@ -156,7 +156,8 @@ vl = voiceLeading.VoiceLeadingQuartet(n1, n2, m1, m2)
 
 vl.show('text')
 
-# %%
+# %%  Example of multiple voices taken from: 
+# https://programtalk.com/python-more-examples/music21.stream.Voice/
 
 def generateScore(chords, lengths=None, ts="4/4"):
     """Generates a four-part score from a sequence of chords.
@@ -212,8 +213,6 @@ voice2 = stream.Voice([note.Rest(type='half'), note.Note('A3')])
 
 ss = stream.Part([stream.Measure([voice1, voice2]), stream.Measure([note.Note('C3')])])
 ss.show()
-
-# Part > Measure > Stream > Voice > Note = Rest
 
 # %% Clef, Gracenote, keySignature, Note, rest, ~~multirest~~
 
@@ -305,9 +304,13 @@ score.show()
 # %%
 
 measures = [stream.Measure(note.Rest('whole')) for _ in range(4)]
+sc = stream.Score(stream.Part(measures))
 multirest = spanner.MultiMeasureRest(measures)
-multirest.addSpannedElements([note.Rest(type='whole')])
-sc = stream.Score(stream.Part([multirest] + measures))
+# multirest.addSpannedElements([measures])
+
+sc[0].append(multirest)
+
+# sc = stream.Score(stream.Part([multirest] + measures))
 
 print(multirest.numRests)
 
@@ -399,4 +402,71 @@ st.show()
 # %%
 # %%
 # %%
+# %% Trying default constructors to return if some semantic error occures
+
+# c = clef.clefFromString('C3')
+c = clef.Clef()
+t = meter.TimeSignature('5/4')
+k = key.Key()
+r = note.Rest('whole', fullMeasure=True)
+
+rr = note.Rest('half')
+rr.quarterLength = 1.75
+rr.expressions.append(expressions.Fermata())
+print(r.fullMeasure)
+n = note.Note('C4')
+f = expressions.Fermata()  # type='upright')  # type='inverted')
+f.type = 'upright'
+
+rrr = note.Rest()
+
+# f.placement = 'inverted'
+
+# f._setPlacement('above')
+# n.expressions.append(f)
+
+m = stream.Measure([c, k, t, r])
+
+mm = stream.Measure([n, rr, rrr])
+
+print(rr.duration.type)
+meas = stream.Stream([m, mm])
+meas.show()
+
+print(rrr.duration)
+n.expressions
+
+# %% BREVE REST UUAAAA
+
+n = note.Rest()
+n.duration = duration.Duration('breve')
+# n.type = 'quarter'
+
+met = meter.TimeSignature('7/4')
+
+m = stream.Measure([met, n])
+m.show()
+
+print(n.duration)
+print(n)
+
+
+
+# %%
+
+n = note.Rest()
+n.duration = duration.Duration('whole')
+
+nn = note.Note('Abb4')
+
+met = meter.TimeSignature('cut')
+
+m = stream.Measure([met, n, nn])
+m.show('text')
+m.show()
+
+print(n.duration)
+print(n)
+print(met)
+
 # %%
