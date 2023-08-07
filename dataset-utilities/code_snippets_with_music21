@@ -202,9 +202,11 @@ generateScore([chord.Chord(["C4","E4","G4", "C5"]), chord.Chord(["D4", "A4", "D5
 # %% Basic example of using voices in score
 
 voice_1 = stream.Voice([note.Note('G4', type='half')])
-voice_2 = stream.Voice([note.Note('C4', type='eighth')])
+voice_2 = stream.Voice([note.Note('C#4', type='eighth')])
 
-meas = stream.Measure([voice_1, voice_2])
+k = key.Key('A')
+
+meas = stream.Measure([k, voice_1, voice_2])
 meas2 = stream.Measure(note.Note('F4'))
 
 s1 = stream.Part([meas, meas2])
@@ -500,3 +502,19 @@ nn = note.Note('A', duration=dur)
 nn.show()
 
 # %%
+n = note.Note('CN3')
+n.stemDirection = 'down'
+print(note.stemDirectionNames)
+
+n.show()
+
+# %%
+
+n = note.Note('CN3', duration=duration.Duration(1.75))
+nn = note.Note('A')
+
+# print(nn.print_spacing)
+
+m = stream.Measure([n, nn])
+m.show()
+
