@@ -48,6 +48,17 @@ cMinor = m21.chord.Chord(["C4","G4","E-5"])
 cMinor.duration.type = 'half'
 cMinor.show()
 
+# %% Chord made of three defined notes
+
+n1 = note.Note('C4')
+n2 = note.Note('E4')
+n3 = note.Note('A4')
+
+c6 = chord.Chord([n1, n2, n3])
+
+# cMinor = m21.chord.Chord(["C4","G4","E-5"])
+# cMinor.duration.type = 'half'
+c6.show()
 
 # %%  Multi-voice score
 
@@ -222,13 +233,10 @@ n2 = note.Note('E4')
 c2 = clef.NoClef()
 
 d = note.Note('C4', type='eighth').getGrace()
-dGrace = d.getGrace()
-# m.insert(2.0, dGrace)
-# m.show()
 
 k = key.Key('C#M')
 
-meas = stream.Measure([k, clef.BassClef(), n1, dGrace, n2])
+meas = stream.Measure([k, clef.BassClef(), n1, d, n2])
 meas2 = stream.Measure([key.Key('DM'), note.Note('G4', type='half')])
 measures = [meas, meas2]
 
@@ -468,5 +476,27 @@ m.show()
 print(n.duration)
 print(n)
 print(met)
+
+# %% Key and its alteredPitches 
+
+k = key.Key('A')
+
+n = note.Note('CN3')
+
+m = stream.Measure([k, n])
+
+m.show()
+
+print(n.pitch.name)
+print(type(n.pitch))
+
+for pitc in k.alteredPitches:
+    print(pitc.name)
+
+
+dur = duration.Duration('half')
+
+nn = note.Note('A', duration=dur)
+nn.show()
 
 # %%
