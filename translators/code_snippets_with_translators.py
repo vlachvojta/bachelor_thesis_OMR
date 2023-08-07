@@ -123,3 +123,14 @@ long
 breve
 
 """
+
+# %%
+
+naked_notes = set()
+for note in notes:
+    _, naked_note, *_ = re.split('[_-]', note)
+    naked_notes.add(naked_note[1:-1])
+
+print(sorted(naked_notes))
+
+# ['', '#', '##', 'N', 'b', 'bb']
