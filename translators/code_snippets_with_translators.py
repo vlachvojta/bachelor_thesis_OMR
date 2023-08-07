@@ -134,3 +134,57 @@ for note in notes:
 print(sorted(naked_notes))
 
 # ['', '#', '##', 'N', 'b', 'bb']
+
+
+# %% All possible lengths
+basic_lengths = {
+    'hundred_twenty_eighth': 0.03125,  # '128th',
+    'sixty_fourth': 0.0625,  # '64th',
+    'thirty_second': 0.125,  # '32th',
+    'sixteenth': 0.25,  # '16th',
+    'eighth': 0.5,  # 'eighth',
+    'quarter': 1,  # 'quarter',
+    'half': 2,  # 'half',
+    'whole': 4,  # 'whole',
+    'double_whole': 2*4,
+    'quadruple_whole': 4*4
+}
+
+all_lengths = {}
+for length_name, length in basic_lengths.items():
+    print(f"'{length_name}': {float(length)},")
+    print(f"'{length_name}.': {float(length + (length / 2))},")
+    print(f"'{length_name}..': {float(length + (length / 2) + (length / 4))},")
+
+""" RESULT:
+'hundred_twenty_eighth': 0.03125,
+'hundred_twenty_eighth.': 0.046875,
+'hundred_twenty_eighth..': 0.0546875,
+'sixty_fourth': 0.0625,
+'sixty_fourth.': 0.09375,
+'sixty_fourth..': 0.109375,
+'thirty_second': 0.125,
+'thirty_second.': 0.1875,
+'thirty_second..': 0.21875,
+'sixteenth': 0.25,
+'sixteenth.': 0.375,
+'sixteenth..': 0.4375,
+'eighth': 0.5,
+'eighth.': 0.75,
+'eighth..': 0.875,
+'quarter': 1.0,
+'quarter.': 1.5,
+'quarter..': 1.75,
+'half': 2.0,
+'half.': 3.0,
+'half..': 3.5,
+'whole': 4.0,
+'whole.': 6.0,
+'whole..': 7.0,
+'double_whole': 8.0,
+'double_whole.': 12.0,
+'double_whole..': 14.0,
+'quadruple_whole': 16.0,
+'quadruple_whole.': 24.0,
+'quadruple_whole..': 28.0,
+"""
