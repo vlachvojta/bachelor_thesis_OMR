@@ -508,7 +508,7 @@ print(note.stemDirectionNames)
 
 n.show()
 
-# %%
+# %% Measure number
 
 n = note.Note('CN3', duration=duration.Duration(1.75))
 nn = note.Note('A')
@@ -516,5 +516,9 @@ nn = note.Note('A')
 # print(nn.print_spacing)
 
 m = stream.Measure([n, nn])
-m.show()
+m.number = 10
+print(m.showNumber)
+
+s = stream.Stream(m)
+s.show('text')
 
