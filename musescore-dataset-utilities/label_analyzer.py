@@ -32,6 +32,10 @@ rel_dir = os.path.dirname(os.path.relpath(__file__))
 sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
 from common import Common  # noqa: E402
 
+# Import local library, download from https://github.com/vlachvojta/polyphonic-omr-by-sachindae
+sys.path.append(os.path.join(rel_dir, '..', '..', 'lib', 'polyphonic-omr-by-sachindae', 'reverse_converter'))
+from semantic_to_music21 import parse_semantic_to_measures
+print(sys.path)
 
 class LabelAnalyzer:
     """Analyze semantic labels and musescore xml files and export to csv pandas file."""
@@ -79,8 +83,7 @@ class LabelAnalyzer:
             return
 
         # df = pd.DataFrame(self.labels.keys(), dtype=pd.str, columns=['system_id'])
-        df = pd.DataFrame.from_dict(self.labels, orient='index', columns=['labels']
-                                    )
+        df = pd.DataFrame.from_dict(self.labels, orient='index', columns=['labels'])
         df.index = df.index.set_names(['system_id'])
 
         for new_column in ['type']:
@@ -176,8 +179,9 @@ class LabelAnalyzer:
 
     def get_stats_for_row(self, row: pd.Series) -> pd.Series:
         """Gets all stats needed for row from DataFrame."""
+        logging.debug('--------------- new label_sequence')
         label_sequence = row['labels']
-        logging.debug(label_sequence[:150])
+        logging.debug(f'{row.name}: {label_sequence[:150]}')
         row['char_length'] = len(label_sequence)
 
         row['is_polyphonic'] = self.is_sequence_polyphonic(label_sequence)
@@ -209,8 +213,6 @@ class LabelAnalyzer:
         row['min_voices'] = min(voices)
         row['mean_voices'] = np.mean(voices)
         row['max_voices'] = max(voices)
-
-        logging.debug('---------------')
 
         return row
 
@@ -251,8 +253,19 @@ class LabelAnalyzer:
         return False
 
     def get_voices(self, sequence: str) -> list:
-        """Get label sequence as a string, count length of symbols in every chord.
-        
+        """Get label sequence as a string, count number of ACTUAL VOICES, chord is one voice here."""
+        measures = parse_semantic_to_measures(sequence)
+
+        voice_counts = []
+        for measure in measures:
+            max_voices_in_measure = max([symbol_group.get_voice_count() for symbol_group in measure.symbol_groups])
+            voice_counts.append(max_voices_in_measure)
+
+        return voice_counts
+
+    def get_voices_old(self, sequence: str) -> list:
+        """Get label sequence as a string, count length of symbols in EVERY CHORD.
+
         Return in a list."""
         # print(f'in: {sequence}')
 
