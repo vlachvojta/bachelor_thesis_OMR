@@ -114,6 +114,8 @@ class LmdbReader:
         for key_file in keys_files:
             keys += (Common.get_lines(key_file))
 
+        keys = list(filter(None, keys))  # Remove empty strings
+
         if not keys:
             print('NO KEYS FOUND', file=sys.stderr)
         else:
