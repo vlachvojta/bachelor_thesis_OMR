@@ -268,6 +268,11 @@ class Common:
         return [x for x in lst1 if x in lst2]
 
     @staticmethod
+    def prepare_output_folder(output_folder: str):
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+
+    @staticmethod
     def print_line_after_sys_argv() -> None:
         print('----------------------------------------------------------------------')
 

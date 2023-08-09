@@ -2,7 +2,7 @@
 My bachelor thesis on FIT (V|B)ut Brno, assembled in 2022/2023
 
 ## Primus links
-* dataset downloded from: https://grfia.dlsi.ua.es/primus/packages/primusCalvoRizoAppliedSciences2018.tgz
+* dataset downloaded from: https://grfia.dlsi.ua.es/primus/packages/primusCalvoRizoAppliedSciences2018.tgz
 * Info and other links: https://grfia.dlsi.ua.es/primus/
 * Code for experiments: https://github.com/OMR-Research/tf-end-to-end
 
@@ -16,7 +16,7 @@ My bachelor thesis on FIT (V|B)ut Brno, assembled in 2022/2023
 7. Vytvořte jednoduchou demonstrační aplikaci, která bude využívat implementovaný systém.
 8. Vytvořte stručné video prezentující vaši práci, její cíle a výsledky.
 
-## Cobebase
+## Codebase
 
 Codebase consists of individual scripts where each one has its own purpose and documentation at the top.
 

@@ -62,9 +62,9 @@ class LMDB_generator:
         #         files1, os.path.join(self.output, 'texts.lmdb'))
 
         if not self.ignore_images:
-            self.files_to_lmdb(files2, os.path.join(self.output, 'images.lmdb'))
+            self.images_to_lmdb(files2, os.path.join(self.output, 'images.lmdb'))
 
-    def files_to_lmdb(self, files: list, output: str = 'images.lmdb'):
+    def images_to_lmdb(self, files: list, output: str = 'images.lmdb'):
         print(f'Writing {len(files)} files to {output} '
               '(every dot is 200 files, every line is 10_000 files)')
 
