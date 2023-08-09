@@ -412,7 +412,7 @@ st.show()
 # %%
 # %%
 # %%
-# %% Trying default constructors to return if some semantic error occures
+# %% Trying default constructors to return if some semantic error occures, ADD DOUBLE BARLINE
 
 # c = clef.clefFromString('C3')
 c = clef.Clef()
@@ -434,8 +434,10 @@ rrr = note.Rest()
 
 # f._setPlacement('above')
 # n.expressions.append(f)
+bl = bar.Barline('double')
 
 m = stream.Measure([c, k, t, r])
+m.rightBarline = bl
 
 mm = stream.Measure([n, rr, rrr])
 
