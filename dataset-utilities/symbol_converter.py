@@ -32,12 +32,15 @@ class SymbolConverter:
               f', output: {output}, reverse: {reverse}')
 
         self.dictionary = Common.read_file(translator_file)
+        if not self.dictionary:
+            print('ERR: No dictionary loaded, exiting', file=sys.stderr)
+            sys.exit(1)
         self.mode = mode
         self.n_existing_labels = set()
         self.error_splitting_lines = set()
 
         if len(input_files) == 0:
-            print('ERR: No input files, exiting')
+            print('ERR: No input files, exiting', file=sys.stderr)
             sys.exit(1)
 
         input_files = Common.check_existing_files(input_files)
@@ -169,7 +172,9 @@ class SymbolConverter:
 
     @staticmethod
     def _reverse_dict(data: dict = {}) -> dict:
-        return {v: k for k, v in data.items()}
+        if data:
+            return {v: k for k, v in data.items()}
+        return {}
 
 
 def parseargs():
