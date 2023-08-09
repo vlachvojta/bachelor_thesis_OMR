@@ -23,6 +23,7 @@ class SymbolConverter:
     """
 
     dictionary = {}
+    dictionary_reversed = {}
 
     def __init__(self, translator_file: str = 'translator.agnostic.json',
                  input_files: list = [], output: str = 'stdout',
@@ -35,6 +36,8 @@ class SymbolConverter:
         if not self.dictionary:
             print('ERR: No dictionary loaded, exiting', file=sys.stderr)
             sys.exit(1)
+        self.dictionary_reversed = SymbolConverter._reverse_dict(self.dictionary)        
+
         self.mode = mode
         self.n_existing_labels = set()
         self.error_splitting_lines = set()
@@ -158,7 +161,7 @@ class SymbolConverter:
         If reverse, convert to smaller, else convert to larger.
         """
         if reverse:
-            dictionary = SymbolConverter._reverse_dict(self.dictionary)
+            dictionary = self.dictionary_reversed
         else:
             dictionary = self.dictionary
 
