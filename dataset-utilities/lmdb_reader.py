@@ -123,6 +123,14 @@ class LmdbReader:
 
         return keys
 
+    @staticmethod
+    def print_all_keys_in_lmdb(lmdb_path: str):
+        gb100 = 100000000000
+        env = lmdb.open(lmdb_path, map_size=gb100, readonly=True, lock=False)
+
+        with env.begin() as txn:
+            for key, _ in txn.cursor():
+                print(key.decode())
 
 
 if __name__ == '__main__':
