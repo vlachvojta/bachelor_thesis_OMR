@@ -32,6 +32,10 @@ class CustomWer:
 
     def add_lines(self, truth, pred) -> bool:
         """Add single or multiple lines to count WER and CER from."""
+        if not truth or not pred:
+            print("Warning: EMPTY lines or lists")
+            return False
+
         measures = jiwer.compute_measures(truth, pred)
         cer_success = self.add_cer(truth, pred)
 
