@@ -2,9 +2,7 @@
 # Author: Vojtěch Vlach
 # Contact: xvlach22@vutbr.cz
 
-root=`cd ~ && pwd`
-BP_GIT_EXP="$root/skola/BP/bp-git/src/experiments"
-
+BP_GIT_EXP="$HOME/BP_sequel/bp-git/experiments"
 SCRIPT=$BP_GIT_EXP"/evaluate_checkpoints.py"
 NAME=`basename $(pwd)`
 OUTPUT_FOLDER=evaluated_checkpoints/
@@ -14,8 +12,8 @@ touch $TXT_OUT
 
 echo "============== Running evaluation script =============="
 
-python3.8 $SCRIPT \
-    --input-files checkpoints/checkpoint_*.tst_out \
+python $SCRIPT \
+    --input-files checkpoints/checkpoint_*.pth.out \
     --ground-truths checkpoints/ground_truth*.tst_out \
     --output-folder $OUTPUT_FOLDER \
     --name $NAME | tee $TXT_OUT
