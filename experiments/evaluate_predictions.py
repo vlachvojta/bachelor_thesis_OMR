@@ -1,5 +1,6 @@
 #!/usr/bin/python3.8
-"""Simple script to evaluate predictions from trained models.
+"""Simple script to evaluate predictions from trained models. 
+DEPRICATED!!! Use evaluate_checkpoints.py instead.
 
 Example run:
 $ python3.8 evaluate_predictions.py -ground-truth data.tst \
