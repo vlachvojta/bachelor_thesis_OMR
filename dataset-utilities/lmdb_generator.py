@@ -5,8 +5,6 @@ Author: Vojtěch Vlach
 Contact: xvlach22@vutbr.cz
 """
 
-
-
 import argparse
 import re
 import os
@@ -18,19 +16,26 @@ from common import Common
 
 class LMDB_generator:
 
-    exts1 = []
-    exts2 = []
+    text_extensions = []
+    image_extensions = []
     in_folders = []
     output = ''
 
     gb100 = 100000000000
 
-    def __init__(self, exts1: list = ['agnostic'],
-                 exts2: list = ['png'], in_folders: list = ['.'],
+    def __init__(self, text_extensions=None,
+                 image_extensions=None, in_folders=None,
                  output: str = '', ignore_texts: bool = False,
                  ignore_images: bool = False):
-        self.exts1 = exts1
-        self.exts2 = exts2
+        if in_folders is None:
+            in_folders = ['.']
+        if image_extensions is None:
+            image_extensions = ['png']
+        if text_extensions is None:
+            text_extensions = ['agnostic']
+
+        self.text_extensions = text_extensions
+        self.image_extensions = image_extensions
         self.in_folders = in_folders
         self.output = output
         self.ignore_texts = ignore_texts
@@ -46,15 +51,15 @@ class LMDB_generator:
             print('Exporting text to lmdb is deprecated because it lost its use case.')
             # print('Getting all text file names')
             # files1 = Common.get_files_from_folders(
-            #     self.in_folders, self.exts1[0], False)
+            #     self.in_folders, self.text_extensions[0], False)
         if not self.ignore_images:
             print('Getting all image file names')
             files2 = Common.get_files_from_folders(
-                self.in_folders, self.exts2, False)
+                self.in_folders, self.image_extensions, False)
 
         if not self.ignore_images and not self.ignore_texts:
-            n_file_groups_1 = len(files1) // len(self.exts1)
-            n_file_groups_2 = len(files2) // len(self.exts2)
+            n_file_groups_1 = len(files1) // len(self.text_extensions)
+            n_file_groups_2 = len(files2) // len(self.image_extensions)
             assert n_file_groups_1 == n_file_groups_2
 
         # if not self.ignore_texts:
@@ -128,11 +133,11 @@ def parseargs():
         help="Set output file with extension. Output format is JSON")
     parser.add_argument(
         "-t", "--ignore-texts", default=False, action="store_true",
-        help="Ignore texts, don't generate text lmdb for files with exts1.")
+        help="Ignore texts, don't generate text lmdb for files with text_extensions.")
     parser.add_argument(
         "-i", "--ignore-images", default=False, action="store_true",
         help=("Ignore images, " +
-              "don't generate byte-form lmdb for files with exts2"))
+              "don't generate byte-form lmdb for files with image_extensions"))
 
     return parser.parse_args()
 
@@ -143,8 +148,8 @@ def main():
 
     start = time.time()
     generator = LMDB_generator(
-        exts1=args.extensions_text,
-        exts2=args.extensions_images,
+        text_extensions=args.extensions_text,
+        image_extensions=args.extensions_images,
         in_folders=args.src_folders,
         output=args.output_folder,
         ignore_texts=args.ignore_texts,
