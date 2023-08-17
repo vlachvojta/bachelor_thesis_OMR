@@ -36,7 +36,7 @@ class SymbolConverter:
         if not self.dictionary:
             print('ERR: No dictionary loaded, exiting', file=sys.stderr)
             sys.exit(1)
-        self.dictionary_reversed = SymbolConverter._reverse_dict(self.dictionary)        
+        self.dictionary_reversed = SymbolConverter._reverse_dict(self.dictionary)
 
         self.mode = mode
         self.n_existing_labels = set()
