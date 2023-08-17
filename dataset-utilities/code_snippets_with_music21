@@ -13,6 +13,11 @@ def m21_to_MusicXML(music_object):
     outStr = out.decode('utf-8')  # now is string
     return outStr.strip()
 
+def print_musicxml(music_object):
+    xml = m21_to_MusicXML(music_object)
+    for line in xml.split('\n'):
+        print(line)
+
 # %% 
 s1 = m21.stream.Stream()
 n = m21.note.Note('c4', type='half')
@@ -284,6 +289,21 @@ for i in range(2):
     score.__delitem__(-1)
 score[0].show('text')
 score[0].show()
+
+# for id, element in enumerate(score[0]):
+#     print(id)
+#     element.show('text')
+
+score[0][3].__delitem__(1)
+score[0][3].show('text')
+score[0][2].getSpannedElementIds()
+
+# %%
+
+score_1 = m21.converter.parse(xml)
+score_1.show()
+score_1.show('text')
+
 # %%
 
 for _ in range(21):
@@ -297,7 +317,9 @@ score[0].__delitem__(0)
 # score[0].show()
 type(score[0])
 
-mmr = score[0][0]
+# %%
+
+mmr = score[0][2]
 print(mmr.numRests)
 m1 = stream.Measure(note.Rest('whole'), number=28)
 mmr.addSpannedElements(m1)
@@ -311,6 +333,8 @@ score[0].append(stream.Measure(note.Note('C4')))
 # sc = stream.Score([stream.Stream(score[0][0:]), stream.Measure(note.Note('C4'))])
 score.show('text')
 score.show()
+
+score[0][2].getSpannedElementIds()
 # %%
 
 measures = [stream.Measure(note.Rest('whole')) for _ in range(4)]
