@@ -13,28 +13,34 @@ import re
 
 def parseargs():
     """Parse arguments."""
-    print('sys.argv: ')
-    print(' '.join(sys.argv))
-    print('--------------------------------------')
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "path", default='.',
         help="Path where to look for folders with results.csv files.")
+    parser.add_argument(
+        '-v', "--verbose", action='store_true', default=False,
+        help="Output only best checkpoint path.")
+
     return parser.parse_args()
 
 
 def main():
     """Main function for simple testing"""
     args = parseargs()
+    if args.verbose:
+        print('sys.argv: ')
+        print(' '.join(sys.argv))
+        print('--------------------------------------')
 
     start = time.time()
 
     BestResultFinder(
-        path=args.path)
+        path=args.path,
+        verbose=args.verbose)
 
     end = time.time()
-    print(f'Total time: {end - start:.2f} s')
+    if args.verbose:
+        print(f'Total time: {end - start:.2f} s')
 
 
 class BestResultFinder:
@@ -42,7 +48,9 @@ class BestResultFinder:
     best_results_with_checkpoint = {}
 
     """Get label-image pairs from two separate folders."""
-    def __init__(self, path: str = ''):
+    def __init__(self, path: str = '', verbose: bool = False):
+        self.verbose = verbose
+
         if not path:
             path = os.getcwd()
 
@@ -55,26 +63,34 @@ class BestResultFinder:
             if os.path.isdir(folder_with_path) and os.path.isfile(os.path.join(folder_with_path, 'results.csv')):
                 folders.append(f)
 
-        print(f'Found {len(folders)} folders with results.csv files: {folders}')
+        if self.verbose:
+            print(f'Found {len(folders)} folders with results.csv files: {folders}')
 
         for folder in folders:
             self.find_best_result(path, folder, 'results.csv')
 
-        all_folders = set(list(self.best_results.keys()) + list(self.best_results_with_checkpoint.keys()))
-        print(f'All folders: {all_folders}')
+        if self.verbose:
+            all_folders = set(list(self.best_results.keys()) + list(self.best_results_with_checkpoint.keys()))
+            print(f'All folders: {all_folders}')
 
-        print()
-        print('Best results in folders:')
-        for folder in sorted(all_folders):
-            print(f'{folder}')
-            if folder in self.best_results_with_checkpoint:
-                print(f'\t {self.best_results_with_checkpoint[folder]["result"]} '
-                      f'in epoch {self.best_results[folder]["epoch"]}')
-            if folder in self.best_results:
-                print(f'\t({self.best_results[folder]["result"]} in epoch {self.best_results[folder]["epoch"]})')
+            print()
+            print('Best results in folders:')
+            for folder in sorted(all_folders):
+                print(f'{folder}')
+                if folder in self.best_results_with_checkpoint:
+                    print(f'\t {self.best_results_with_checkpoint[folder]["result"]} '
+                          f'in epoch {self.best_results[folder]["epoch"]}')
+                if folder in self.best_results:
+                    print(f'\t({self.best_results[folder]["result"]} in epoch {self.best_results[folder]["epoch"]})')
 
-        BestResultFinder.print_best_result(self.best_results)
-        BestResultFinder.print_best_result(self.best_results_with_checkpoint, with_checkpoint=True)
+            BestResultFinder.print_best_result(self.best_results)
+            BestResultFinder.print_best_result(self.best_results_with_checkpoint, with_checkpoint=True)
+        else:
+            best_result = max(self.best_results_with_checkpoint,
+                              key=lambda x: self.best_results_with_checkpoint[x]['result'])
+            best_checkpoint = f"epoch{self.best_results_with_checkpoint[best_result]['epoch']}.pt"
+            best_result_path = os.path.join(path, best_result, 'weights', best_checkpoint)
+            print(best_result_path)
 
     def find_best_result(self, path, folder, results_name: str):
         results_file = os.path.join(path, folder, 'results.csv')
@@ -121,7 +137,7 @@ class BestResultFinder:
             print(f'Best result:')  # {result_dict} ')
         epoch = result_dict[best_result]["epoch"]
         print(f'\t{result_dict[best_result]["result"]} in {best_result}/{epoch}')
-        print(f'\t=>{best_result}/weights/epoch{epoch}.pt')
+        print(f'\t=> {best_result}/weights/epoch{epoch}.pt')
         print()
 
 
