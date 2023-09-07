@@ -548,3 +548,147 @@ print(m.showNumber)
 s = stream.Stream(m)
 s.show('text')
 
+# %%  Example of systemBreak from music21 documentation
+# url: https://web.mit.edu/music21/doc/usersGuide/usersGuide_15_key.html
+
+out = stream.Part()
+for i in range(0, 8):
+    pitchStream = converter.parse("tinyNotation: 4/4 c8 e d f e g f a g e f d c e c4")
+
+    if i != 0:
+        # remove redundant clefs and time signature
+        trebleClef = pitchStream.recurse().getElementsByClass('Clef')[0]
+        fourFour = pitchStream.recurse().getElementsByClass('TimeSignature')[0]
+
+        pitchStream.remove(trebleClef, recurse=True)
+        pitchStream.remove(fourFour, recurse=True)
+
+    if i % 2 == 0:
+        # add a line break at the beginning of every other line:
+        pitchStream.measure(1).insert(0, layout.SystemLayout(isNew=True))
+
+    k = key.Key('C')
+    pitchStream.measure(1).insert(0, k)
+    k.transpose(i, inPlace=True)
+    for n in pitchStream.recurse().notes:
+        n.transpose(i, inPlace=True)
+    for el in pitchStream:
+        out.append(el)
+
+out.show()
+
+# %%  Custom usage of systemBreak using layout module
+
+notes = [
+    note.Note('C4'),
+    note.Note('e4'),
+    note.Note('g4'),
+    note.Note('e4'),
+]
+
+notes2 = [
+    note.Note('a4'),
+    note.Note('d4'),
+    note.Note('c5'),
+    note.Note('d5'),
+]
+
+m1 = stream.Measure(notes)
+m2 = stream.Measure(notes2)
+m2.insert(0, layout.SystemLayout(isNew=True))
+
+s = stream.Stream([m1, m2])
+
+s.show('xml')
+
+
+
+# %%
+import re
+# %% Files with most staves with 3+ voices  (stave ids took out of top 2_000 staves with 3+ voices)
+
+staves = ['4181661_p00_s37.png', '2849781_p00_s09.png', '2849781_p00_s07.png', '1830741_p00a_s04.png', '934616_p00a_s009.png', '6388841_p00a_s05.png', '6382145_p00a_s015.png', '6331872_p00a_s012.png', '6331872_p00a_s011.png', '6307401_p00_s15.png', '6273955_p00a_s028.png', '6255710_p00_s01.png', '6251021_p00_s00.png', '6247842_p00c_s048.png', '6247842_p00a_s015.png', '6214300_p00a_s08.png', '6211562_p00a_s063.png', '6211562_p00a_s042.png', '6211562_p00a_s022.png', '6096990_p02_s48.png', '6086952_p00a_s009.png', '6072785_p00a_s037.png', '6072785_p00a_s036.png', '6068586_p00_s106.png', '6064500_p00_s05.png', '6061177_p00a_s034.png', '6029723_p08_s039.png', '6029723_p08_s033.png', '6029723_p08_s032.png', '6029723_p08_s024.png', '6029723_p06_s054.png', '6029723_p06_s053.png', '6029723_p06_s045.png', '6029723_p06_s044.png', '6029723_p06_s043.png', '6029723_p00a_s051.png', '6029723_p00a_s050.png', '6029723_p00a_s048.png', '6029723_p00a_s047.png', '6029723_p00a_s042.png', '6029723_p00a_s039.png', '6029723_p00a_s038.png', '6029723_p00a_s036.png', '6029723_p00a_s035.png', '6029723_p00a_s033.png', '6029723_p00a_s030.png', '6029723_p00a_s028.png', '6029723_p00a_s024.png', '6029723_p00a_s020.png', '6029723_p00a_s016.png', '6029723_p00a_s013.png', '6029723_p00a_s009.png', '6009345_p00_s017.png', '6009345_p00_s005.png', '6005650_p01_s14.png', '6003330_p00_s01.png', '5939350_p00a_s13.png', '5939350_p00a_s12.png', '5939350_p00a_s06.png', '5939350_p00a_s05.png', '5939350_p00a_s02.png', '5939350_p00a_s01.png', '5846302_p00a_s048.png', '5737410_p00_s21.png', '5737410_p00_s18.png', '5737410_p00_s16.png', '5706372_p01b_s042.png', '5706372_p01b_s038.png', '5706372_p01b_s034.png', '5706372_p01b_s022.png', '5706372_p01b_s020.png', '5706372_p01b_s018.png', '5706372_p01b_s016.png', '5706372_p01b_s014.png', '5706372_p01b_s012.png', '5706372_p01b_s010.png', '5706372_p01b_s008.png', '5706372_p01a_s026.png', '5706372_p01a_s025.png', '5706372_p01a_s024.png', '5706372_p01a_s023.png', '5706372_p00a_s026.png', '5706372_p00a_s025.png', '5706372_p00a_s024.png', '5706372_p00a_s023.png', '5706372_p00a_s005.png', '5706372_p00a_s003.png', '5496498_p01_s033.png', '5496498_p01_s031.png', '5483220_p00_s23.png', '5483220_p00_s22.png', '5483220_p00_s21.png', '5483220_p00_s20.png', '5483220_p00_s19.png', '5483220_p00_s18.png', '5483220_p00_s17.png', '5483220_p00_s11.png', '5483220_p00_s10.png', '5483220_p00_s09.png', '5483220_p00_s08.png', '5483220_p00_s07.png', '5483220_p00_s06.png', '5483220_p00_s05.png', '5477570_p00_s01.png', '5333260_p00_s14.png', '5333260_p00_s13.png', '5333260_p00_s09.png', '5333260_p00_s06.png', '5333260_p00_s05.png', '5326287_p00b_s007.png', '5292620_p01_s02.png', '5292620_p01_s01.png', '5269314_p00a_s011.png', '5242410_p02a_s18.png', '5233190_p01_s04.png', '5144750_p03_s13.png', '5144750_p03_s11.png', '5126520_p00_s03.png', '4586261_p00_s01.png', '4327881_p22_s05.png', '4327881_p22_s02.png', '4327881_p11_s05.png', '4327881_p11_s02.png', '4229601_p00a_s01.png', '4229601_p00_s05.png', '4229601_p00_s04.png', '4229601_p00_s03.png', '4229601_p00_s01.png', '4229601_p00_s00.png', '4181661_p00_s38.png', '4181661_p00_s36.png']
+
+files = {}
+for stave in staves:
+    file_name = re.split('_', stave)[0]
+    if file_name in files:
+        files[file_name] += 1
+    else:
+        files[file_name] = 1
+
+print(len(files))
+
+# sort dictionary by value
+sorted_footballers_by_goals = sorted(files.items(), key=lambda x:x[1], reverse=True)
+print(sorted_footballers_by_goals)
+
+# RESULT: [('6029723', 26), ('5706372', 21), ('5483220', 14), ('5939350', 6), ('4229601', 6), ('5333260', 5), ('4327881', 4), ('4181661', 3), ('6211562', 3), ('5737410', 3), ('2849781', 2), ('6331872', 2), ('6247842', 2), ('6072785', 2), ('6009345', 2), ('5496498', 2), ('5292620', 2), ('5144750', 2), ('1830741', 1), ('934616', 1), ('6388841', 1), ('6382145', 1), ('6307401', 1), ('6273955', 1), ('6255710', 1), ('6251021', 1), ('6214300', 1), ('6096990', 1), ('6086952', 1), ('6068586', 1), ('6064500', 1), ('6061177', 1), ('6005650', 1), ('6003330', 1), ('5846302', 1), ('5477570', 1), ('5326287', 1), ('5269314', 1), ('5242410', 1), ('5233190', 1), ('5126520', 1), ('4586261', 1)]
+
+# %%
+
+transcriptions = [
+    '">2 + kBbM + s3/4 + D5z + E5z + D5z + E5z + D5z + E5z + | + C5z + D5z + C5z + D5z + C5z + D5z + | + B4z + C5z + B4z + C5z + B4z + C5z + | + A4z + G4z + Gb4H + | + rz + rz + D4z + F#4z + D5q + | + D5H. + | + D4q + G4q + B4q + | + D5H + D5q + | + C5q + B4q + A4q + |"',
+    '">2 + kBbM + B4H. + | + rq + rz + G4z + B4z + D5z + | + G5H + G5q + | + G5q + A5q + F5z + E5z + | + F5H. + | + rq + rz + A4z + D5z + F5z + | + A5H + G5q + | + F5q + EN5q + F5q + | + G5H + F5q + | + EN5H + D5q + | + C5q + B4q + C5q + |"',
+    '">2 + kBbM + D5q + C5q + G4q + | + A4H. + | + A5q + C6q + B5q. + A5q. + | + rq + A5q + C6q + B5q + A5z + G5z + | + Gb5z + E5z + D5H + | + D5q + rH + | + rW + | + rW + | + rq + D4q + G4q + | + B4q + D5H + | + D5q + C5q + B4q + |"',
+    '">2 + kBbM + A4q + B4H + | + B4q + G4q + B4q + | + D5q + G5H + | + G5q + G5q + F5q + | + E5q + F5H + | + F5q + A4q + D5q + | + F5q + A5H + | + G5q + F5q + EN5q + | + F5q + G5H + | + F5q + EN5H + | + D5q + D5q + C5z + D5z + |"',
+    '">2 + kBbM + C5z + B4z + A4q. + BN4z + | + C#5q + D5H + | + C#5q + D5q + A4q + | + F#4q + rq + F4q + | + G4q + A4q + F#4q + | + D5q + E5H + | + D5q + C5q + B4q + | + A4q + B4q + C5q + | + D5q + F4H + | + F4q + E5H + | + D5q + C5q. + B4z + |"',
+    '">2 + kBbM + C5q + D5H + | + D5H. + | + D5q + D5z + E5z + D5z + C#5q + | + D5q + F5q + EN5q + | + D5q + C#5H + | + EN5q + A4H + | + A4q + F5H + | + F5q + F5q + EN5q + | + D5q + EN5H + | + E5q + E5H + | + rq + F#5H + |"',
+    '">2 + kBbM + F#5q + F5q + G5q + | + A5q + B5H + | + B5q + G4q + B4q + | + B4q + EN5H + | + EN5q + E5q + F5q + | + G5q + A5H + | + A5q + F4q + A4q + | + A4q + EN5q + D#5q + | + EN5q + G5q + F5q + | + EN5q + D5q + C#5q + | + D5q + EN5H + |"',
+    '">2 + kBbM + EN5q + C6H + | + B5q + A5H + | + G5q + F#5H + | + F#5q + D5q + F5z + G5z + F5z + | + C5q + D5q + D5z + E5z + D5z + | + C#5q + D5q + B4z + D5z + B4z + | + A4q + E4q + Ab4q + | + Cb5q + C5q + rq + | + rq + EN4q + A4q + | + C5q + EN5H + |"',
+    '">2 + kBbM + EN5q + D5q + C5q + | + BN4q + C5H + | + C5q + A4q + C5q + | + EN5q + A5H + | + A5q + A5q + G5q + | + F5q + G5H + | + G5q + BN4q + EN5q + | + G5q + BN5H + | + A5q + rq + G5z + F#5z + | + EN5z + F#5z + A5H + |"'
+]
+
+def curr(start, end, i, n):
+    return int(start + ((end - start) / (n-1) * i))
+
+    print(f'start: {start}, end: {end}, i: {i}')
+    print((end - start) / (end-1))
+    print((end - start) / (end-1) * i)
+    print(start + ((end - start) / (end-1) * i))
+    
+
+out = ''
+
+n = 9
+
+for i in range(n):    
+    y = curr(122, 820, i, n)
+    y2 = curr(178, 884, i, n)
+    y3 = curr(150, 859, i, n)
+
+    textregion =  f"""
+    <TextRegion id="r00{i}">
+      <Coords points="25,{y} 25,{y2} 733,{y2} 733,{y} 25,{y}"/>
+      <TextLine id="r00{i}-l000" index="0" custom="heights_v2:[22,200]">
+        <Coords points="25,{y} 25,{y2} 733,{y2} 733,{y} 25,{y}"/>
+        <Baseline points="25,{y3} 733,{y3}"/>
+        <TextEquiv conf="0.987">
+          <Unicode>{transcriptions[i]}</Unicode>
+        </TextEquiv>
+      </TextLine>
+    </TextRegion>"""
+    out += textregion
+
+print(out)
+
+# %%
+
+lines = """011-r000-l000.jpg 000000 ">2 + kBbM + s3/4 + D5z + E5z + D5z + E5z + D5z + E5z + | + C5z + D5z + C5z + D5z + C5z + D5z + | + B4z + C5z + B4z + C5z + B4z + C5z + | + A4z + G4z + Gb4H + | + rz + rz + D4z + F#4z + D5q + | + D5H. + | + D4q + G4q + B4q + | + D5H + D5q + | + C5q + B4q + A4q + |"
+011-r001-l000.jpg 000000 ">2 + kBbM + B4H. + | + rq + rz + G4z + B4z + D5z + | + G5H + G5q + | + G5q + A5q + F5z + E5z + | + F5H. + | + rq + rz + A4z + D5z + F5z + | + A5H + G5q + | + F5q + EN5q + F5q + | + G5H + F5q + | + EN5H + D5q + | + C5q + B4q + C5q + |"
+011-r002-l000.jpg 000000 ">2 + kBbM + D5q + C5q + G4q + | + A4H. + | + A5q + C6q + B5q. + A5q. + | + rq + A5q + C6q + B5q + A5z + G5z + | + Gb5z + E5z + D5H + | + D5q + rH + | + rW + | + rW + | + rq + D4q + G4q + | + B4q + D5H + | + D5q + C5q + B4q + |"
+011-r003-l000.jpg 000000 ">2 + kBbM + A4q + B4H + | + B4q + G4q + B4q + | + D5q + G5H + | + G5q + G5q + F5q + | + E5q + F5H + | + F5q + A4q + D5q + | + F5q + A5H + | + G5q + F5q + EN5q + | + F5q + G5H + | + F5q + EN5H + | + D5q + D5q + C5z + D5z + |"
+011-r004-l000.jpg 000000 ">2 + kBbM + C5z + B4z + A4q. + BN4z + | + C#5q + D5H + | + C#5q + D5q + A4q + | + F#4q + rq + F4q + | + G4q + A4q + F#4q + | + D5q + E5H + | + D5q + C5q + B4q + | + A4q + B4q + C5q + | + D5q + F4H + | + F4q + E5H + | + D5q + C5q. + B4z + |"
+011-r005-l000.jpg 000000 ">2 + kBbM + C5q + D5H + | + D5H. + | + D5q + D5z + E5z + D5z + C#5q + | + D5q + F5q + EN5q + | + D5q + C#5H + | + EN5q + A4H + | + A4q + F5H + | + F5q + F5q + EN5q + | + D5q + EN5H + | + E5q + E5H + | + rq + F#5H + |"
+011-r006-l000.jpg 000000 ">2 + kBbM + F#5q + F5q + G5q + | + A5q + B5H + | + B5q + G4q + B4q + | + B4q + EN5H + | + EN5q + E5q + F5q + | + G5q + A5H + | + A5q + F4q + A4q + | + A4q + EN5q + D#5q + | + EN5q + G5q + F5q + | + EN5q + D5q + C#5q + | + D5q + EN5H + |"
+011-r007-l000.jpg 000000 ">2 + kBbM + EN5q + C6H + | + B5q + A5H + | + G5q + F#5H + | + F#5q + D5q + F5z + G5z + F5z + | + C5q + D5q + D5z + E5z + D5z + | + C#5q + D5q + B4z + D5z + B4z + | + A4q + E4q + Ab4q + | + Cb5q + C5q + rq + | + rq + EN4q + A4q + | + C5q + EN5H + |"
+011-r008-l000.jpg 000000 ">2 + kBbM + EN5q + D5q + C5q + | + BN4q + C5H + | + C5q + A4q + C5q + | + EN5q + A5H + | + A5q + A5q + G5q + | + F5q + G5H + | + G5q + BN4q + EN5q + | + G5q + BN5H + | + A5q + rq + G5z + F#5z + | + EN5z + F#5z + A5H + |\""""
+
+lines = lines.split('\n')
+
+
+for line in lines:
+    _, _, label = re.split(r'\s+', line, maxsplit=2)
+    print(f'\'{label}\',')    
+
+# %%
