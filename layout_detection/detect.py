@@ -4,10 +4,13 @@ import argparse
 from PIL import Image
 from ultralytics import YOLO
 
+from find_best_result import BestResultFinder
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", help="Model path.", required=True)
+    parser.add_argument("--model", help="Model path.", type=str)
+    parser.add_argument("--find-best-model-path", type=str, default='orbis_music',
+                        help="If set, the best model is found automatically in given directory.")
     parser.add_argument("--images", help="Path to a directory with images.", required=True)
     parser.add_argument("--image-size", help="Image size.", required=False, default=640, type=int)
     parser.add_argument("--batch-size", help="Batch size.", required=False, default=1, type=int)
@@ -20,9 +23,18 @@ def parse_args():
 def main():
     args = parse_args()
 
+    if args.model:
+        print('Loading model from args')
+        model = YOLO(args.model)
+    else:
+        model_path = BestResultFinder(path=args.find_best_model_path)()
+        if not model_path:
+            raise FileNotFoundError(f'Model not found in {args.find_best_model_path}')
+        print(f'Loading model: {model_path}')
+        model = YOLO(model_path)
+
     images = [f"{os.path.join(args.images, image)}" for image in os.listdir(args.images)
               if image.endswith(".jpg") or image.endswith(".png")]
-    model = YOLO(args.model)
 
     for image in images:
         result = model.predict(

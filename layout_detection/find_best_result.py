@@ -36,7 +36,7 @@ def main():
 
     BestResultFinder(
         path=args.path,
-        verbose=args.verbose)
+        verbose=args.verbose)()
 
     end = time.time()
     if args.verbose:
@@ -44,10 +44,10 @@ def main():
 
 
 class BestResultFinder:
+    """Get label-image pairs from two separate folders."""
     best_results = {}
     best_results_with_checkpoint = {}
 
-    """Get label-image pairs from two separate folders."""
     def __init__(self, path: str = '', verbose: bool = False):
         self.verbose = verbose
 
@@ -57,17 +57,27 @@ class BestResultFinder:
         if path and not os.path.exists(path):
             raise FileNotFoundError(f'Path ({path}) not found')
 
+        self.path = path
+
+    def __call__(self) -> str:
         folders = []
-        for f in os.listdir(path):
-            folder_with_path = os.path.join(path, f)
+        for f in os.listdir(self.path):
+            folder_with_path = os.path.join(self.path, f)
             if os.path.isdir(folder_with_path) and os.path.isfile(os.path.join(folder_with_path, 'results.csv')):
                 folders.append(f)
+
+        if not folders:
+            if self.verbose:
+                print('No folders with results.csv files found')
+            else:
+                print('')
+            return ''
 
         if self.verbose:
             print(f'Found {len(folders)} folders with results.csv files: {folders}')
 
         for folder in folders:
-            self.find_best_result(path, folder, 'results.csv')
+            self.find_best_result(self.path, folder, 'results.csv')
 
         if self.verbose:
             all_folders = set(list(self.best_results.keys()) + list(self.best_results_with_checkpoint.keys()))
@@ -89,8 +99,9 @@ class BestResultFinder:
             best_result = max(self.best_results_with_checkpoint,
                               key=lambda x: self.best_results_with_checkpoint[x]['result'])
             best_checkpoint = f"epoch{self.best_results_with_checkpoint[best_result]['epoch']}.pt"
-            best_result_path = os.path.join(path, best_result, 'weights', best_checkpoint)
+            best_result_path = os.path.join(self.path, best_result, 'weights', best_checkpoint)
             print(best_result_path)
+            return best_result_path
 
     def find_best_result(self, path, folder, results_name: str):
         results_file = os.path.join(path, folder, 'results.csv')
