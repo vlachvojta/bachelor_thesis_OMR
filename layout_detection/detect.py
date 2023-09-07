@@ -1,8 +1,7 @@
 import os
 import argparse
 
-from safe_gpu.safe_gpu import GPUOwner
-
+from PIL import Image
 from ultralytics import YOLO
 
 
@@ -12,8 +11,8 @@ def parse_args():
     parser.add_argument("--images", help="Path to a directory with images.", required=True)
     parser.add_argument("--image-size", help="Image size.", required=False, default=640, type=int)
     parser.add_argument("--batch-size", help="Batch size.", required=False, default=1, type=int)
-    parser.add_argument("--confidence", help="Confidence threshold.", required=True, type=float)
-    parser.add_argument("--labels", help="Path to a directory with predicted labels.", required=True)
+    parser.add_argument("--confidence", help="Confidence threshold.", type=float, required=False, default=0.25)
+    parser.add_argument("--output-labels", help="Output label path", type=str, default='predicted_labels')
 
     return parser.parse_args()
 
@@ -21,23 +20,29 @@ def parse_args():
 def main():
     args = parse_args()
 
-    gpu_owner = GPUOwner()
-
-    images = [f"{os.path.join(args.images, image)}" for image in os.listdir(args.images) if image.endswith(".jpg") or image.endswith(".png")]
+    images = [f"{os.path.join(args.images, image)}" for image in os.listdir(args.images)
+              if image.endswith(".jpg") or image.endswith(".png")]
     model = YOLO(args.model)
 
-    while images:
-        batch = images[:args.batch_size]
-        images = images[args.batch_size:]
+    for image in images:
+        result = model.predict(
+            source=image,
+            imgsz=args.image_size,
+            conf=args.confidence,
+            save_txt=True,
+            device=0)[0]
 
-        result = model(batch, 
-                       imgsz=args.image_size,
-                       conf=args.confidence,
-                       save_txt=True,
-                       device=0)
+        # Show the results
+        im_array = result.plot()  # plot a BGR numpy array of predictions
+        im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
+
+        # Save the results to image
+        if not os.path.exists(os.path.join(result.save_dir, 'images')):
+            os.makedirs(os.path.join(result.save_dir, 'images'))
+        im.save(os.path.join(result.save_dir, 'images', os.path.basename(image)))  # save image
 
     return 0
 
 
 if __name__ == "__main__":
-    exit(main())
+    main()
