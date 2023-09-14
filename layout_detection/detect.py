@@ -44,9 +44,10 @@ def main():
             save_txt=True,
             device=0)[0]
 
-        # Show the results
+        # Show the result
         im_array = result.plot()  # plot a BGR numpy array of predictions
         im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
+        # im.show()  # show image
 
         # Save the results to image
         if not os.path.exists(os.path.join(result.save_dir, 'images')):
