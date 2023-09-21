@@ -26,6 +26,7 @@ There following folders in this repository:
 * BMPD_stats - containing statistics about the new BMPD dataset
 * dataset-utilities - python scripts for working with both PrIMuS and BMPD datasets
 * experiments - python scripts for experiments with CRNN and Transformer models.
+* layout_detection - python scripts for training and detecting layout detection of staves on pages using ultralytics YOLOv8 models (added AFTER submission of thesis)
 * musescore-dataset-utilities - python scripts used for creating the BMPD dataset itself.
 * primus_stats - statistics about PrIMuS dataset
 * streamlit_helpers - one script used to show dataframe in a web browser using streamlit server
