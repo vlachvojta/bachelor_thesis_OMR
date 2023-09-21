@@ -1,6 +1,8 @@
 # Bachelor thesis OMR
 My bachelor thesis on FIT (V|B)ut Brno, assembled in 2022/2023
 
+Final thesis in CZ is available in: [Automaticke_rozpoznani_hudebnich_zapisu_pomoci_neuronovych_siti.pdf](Automaticke_rozpoznani_hudebnich_zapisu_pomoci_neuronovych_siti.pdf)
+
 ## Primus links
 * dataset downloaded from: https://grfia.dlsi.ua.es/primus/packages/primusCalvoRizoAppliedSciences2018.tgz
 * Info and other links: https://grfia.dlsi.ua.es/primus/
