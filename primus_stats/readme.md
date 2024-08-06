@@ -8,6 +8,7 @@
 * Semantic encoding: 1781
 * Agnostic encoding: 758
 * Total unique symbols: 2539
+
 Semantic encoding and agnostic encoding have no intersection. => encoding is recognizable by any token.
 
 Symbolů v semantic kódování je víc než 2 * víc symbolů, než v agnostic. **Bude to mít vliv na trénování?**
