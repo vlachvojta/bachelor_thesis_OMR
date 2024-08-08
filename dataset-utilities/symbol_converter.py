@@ -27,7 +27,7 @@ class SymbolConverter:
 
     def __init__(self, translator_file: str = 'translator.agnostic.json',
                  input_files: list = [], output: str = 'stdout',
-                 reverse: bool = False, mode: str = "orig"):
+                 reverse: bool = False, mode: str = "orig", add_pluses: bool = False):
         print('\tHello form SYMBOL_CONVERTER (SC)')
         print(f'\tDictionary: {translator_file}, input_files {input_files}'
               f', output: {output}, reverse: {reverse}')
@@ -39,6 +39,7 @@ class SymbolConverter:
         self.dictionary_reversed = SymbolConverter._reverse_dict(self.dictionary)
 
         self.mode = mode
+        self.add_pluses = add_pluses
         self.n_existing_labels = set()
         self.error_splitting_lines = set()
 
@@ -117,7 +118,10 @@ class SymbolConverter:
 
             stave_id = self.get_correct_PERO_id(stave_id)
 
-            output.append(f'{stave_id} "{" ".join(labels_converted)}"')
+            if self.add_pluses:
+                output.append(f'{stave_id} "{" + ".join(labels_converted)}"')
+            else:
+                output.append(f'{stave_id} "{" ".join(labels_converted)}"')
 
         return output
 
@@ -192,6 +196,9 @@ def parseargs():
         help=("Mode of input data. Orig is first use, "
               "matchmaker is used to load labels from matchmaker output."))
     parser.add_argument(
+        "-a", "--add_pluses", default=False, action='store_true',
+        help="Add pluses to output to unify encoding with polyphonic semantic encoding.")
+    parser.add_argument(
         "-r", "--reverse", default=False, action='store_true',
         help="Reverse conversion. Convert shorter to larger tokens.")
     return parser.parse_args()
@@ -207,7 +214,8 @@ def main():
         output=args.output_file,
         reverse=args.reverse,
         translator_file=args.translator,
-        mode=args.mode)
+        mode=args.mode,
+        add_pluses=args.add_pluses)
 
     end = time.time()
     print(f'Total time: {end - start}')
