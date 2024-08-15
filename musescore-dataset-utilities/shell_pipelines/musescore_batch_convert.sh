@@ -39,6 +39,9 @@ echo "$musescore_version $in_dir/*.$in_ext -o $out_dir/*.$out_ext"
 
 # ================================ MAIN ================================
 
+num_files=$(ls $in_dir/*.$in_ext | wc -l)
+i=0
+
 # find all files with input extension in the directory
 ls $in_dir/*.$in_ext | while read file; do
     file=$(basename $file) # remove path
@@ -49,13 +52,14 @@ ls $in_dir/*.$in_ext | while read file; do
 
     # check if the output file already exists
     if [ ! "$(ls ${out_dir}/${file}*.${out_ext} 2>/dev/null)" ]; then
-        echo "$file.$in_ext"  # print the name of the file (-e for escape sequences, -n for no newline)
+        echo "$file.$in_ext $i/$num_files"
         # musescore3 $in_dir/$file -o ${out_dir}/${file%}.$out_ext  2> /dev/null
         #musescore3 $in_dir/$file.$in_ext -o $out_dir/$file.$out_ext  2> /dev/null
         $musescore_version $in_dir/$file.$in_ext -o $out_dir/$file.$out_ext  2> /dev/null
     else
         echo -n "."
     fi
+    i=$((i+1))
 done
 # sort -r to process files in reverse order for some reason
 
