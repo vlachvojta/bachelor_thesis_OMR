@@ -21,6 +21,7 @@ import os
 import time
 import logging
 from enum import Enum
+import shutil
 
 import numpy as np
 import cv2 as cv
@@ -34,6 +35,7 @@ class Mode(Enum):
     """Class for splitting mode of StaffCuter"""
     INFORMED = 1
     NAIVE = 2
+    COPY = 3
 
 
 class StaffCuter:
@@ -45,7 +47,8 @@ class StaffCuter:
         self.output_folder = output_folder
         self.image_height = image_height
         self.verbose = verbose
-        self.mode = Mode.NAIVE if staff_count is None else Mode.INFORMED
+
+        self.mode = self.get_mode(staff_count)
         self.staff_count = staff_count
 
         if verbose:
@@ -85,6 +88,17 @@ class StaffCuter:
             if not self.verbose:
                 Common.print_dots(i, 200, 1_000)
             logging.debug('Working with: %d, %s', i, file)
+
+            if self.mode == Mode.COPY:
+                file_name = os.path.basename(file)
+                file_name_id, stave_id, png = re.split(r'[\-|\.]', file_name, maxsplit=2)
+
+                output_file_name = f'{file_name_id}_s{int(stave_id)-1:03d}.{png}'
+                output_file_path = os.path.join(self.output_folder, output_file_name)
+
+                shutil.copy(file, output_file_path)
+                continue
+
             image = cv.imread(file, cv.IMREAD_UNCHANGED)
             data = self.grayscale(image)
             logging.debug('\tgot Grayscale picture.')
@@ -312,6 +326,16 @@ class StaffCuter:
 
         return data
 
+    def get_mode(self, staff_count: int) -> Mode:
+        """Get mode of splitting staves."""
+        if staff_count is None:
+            return Mode.NAIVE
+        if staff_count > 0:
+            return Mode.INFORMED
+        if staff_count < 0:
+            return Mode.COPY
+        return Mode.NAIVE
+
 
 def parseargs():
     """Parse arguments."""
@@ -335,7 +359,8 @@ def parseargs():
     parser.add_argument(
         "-s", "--staff-count", type=int, default=None,
         help=("If None, do naive splitting, "
-              "else split to this number of staves using 'informed' algorithm."))
+              "if > 0 split to this number of staves using 'informed' algorithm."
+              "if < 0 don't split staves, just copy files with same naming convention as gen_labels.py"))
     parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,
         help="Activate verbose logging.")

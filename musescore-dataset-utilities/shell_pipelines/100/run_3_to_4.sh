@@ -36,6 +36,6 @@ mkdir -p $out_dir
 python $BP_GIT/musescore-dataset-utilities/img_to_staves.py \
     --input-folder $in_dir \
     --output-folder $out_dir \
-    --staff-count 1
+    --staff-count -1
 
 
