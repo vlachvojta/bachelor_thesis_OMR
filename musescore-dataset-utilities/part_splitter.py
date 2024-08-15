@@ -84,7 +84,8 @@ class PartSplitter:
                 self.music_score_error_files += 1
                 continue
 
-            self.remove_unwanted_elements(file_tree)
+            self.remove_unwanted_elements(file_tree)  # TODO delete this... all of this?
+            self.set_page_size(file_tree)
 
             for i, part_id in enumerate(sorted(part_ids)):
                 file_out = self.get_file_out_name(file_in, i)
@@ -180,7 +181,7 @@ class PartSplitter:
                 print(f'WARNING: {polyphonic_file} already exists, printing to stdout instead')    
                 print(self.polyphonic_parts)
 
-        if self.no_complete_pages_parts > 0:
+        if len(self.no_complete_pages_parts) > 0:
             out_file_name = os.path.join(self.output_folder, '0_no_complete_pages_parts.json')
             print(f'\t{len(self.no_complete_pages_parts)} no complete pages parts '
                   f'(saved into {out_file_name})')
@@ -281,6 +282,38 @@ class PartSplitter:
 
         return has_chords or has_more_voices
 
+    def get_new_page_tag(self) -> etree.Element:
+        # return XML tag that looks like this:
+        # <print new-page="yes">
+	    #     <system-layout>
+		#         <system-margins>
+		# 	        <left-margin>0.00</left-margin>
+		# 	        <right-margin>-0.00</right-margin>
+		#         </system-margins>
+	    #         <top-system-distance>70.00</top-system-distance>
+	    #     </system-layout>
+        # </print>
+        new_page_tag = etree.Element('print')
+        new_page_tag.set('new-page', 'yes')
+        system_layout = etree.Element('system-layout')
+        system_margins = etree.Element('system-margins')
+        left_margin = etree.Element('left-margin')
+        left_margin.text = '0.00'
+        right_margin = etree.Element('right-margin')
+        right_margin.text = '-0.00'
+        system_margins.append(left_margin)
+        system_margins.append(right_margin)
+        system_layout.append(system_margins)
+
+        top_system_distance = etree.Element('top-system-distance')
+        top_system_distance.text = '70.00'
+        system_layout.append(top_system_distance)
+
+        new_page_tag.append(system_layout)
+
+        return new_page_tag
+
+
     def change_new_system_to_new_page(self, tree: etree.Element) -> etree.Element:
         """Go though all measures with change new-page to new-system.
         
@@ -309,7 +342,7 @@ class PartSplitter:
         if len(print_tags) == 0:
             return False
 
-        # if Last page is NOT copmlete, delete it
+        # if Last page is NOT complete, delete it
         if not len(print_tags) - 1 % self.staves_on_page == self.staves_on_page - 1:
             extra_systems = len(print_tags) % self.staves_on_page + 1
 
@@ -328,13 +361,16 @@ class PartSplitter:
             # Every n-th new-system change to new-page. N is staves_on_page
             # (the first system in the score doesn't have a new-system tag)
             if i % self.staves_on_page == self.staves_on_page - 1:
-                print_tag.attrib.pop('new-system')
-                print_tag.attrib['new-page'] = 'yes'
+                # delete this print_tag and add default one using self.get_new_page_tag()
+                parent = print_tag.getparent()
+                parent.remove(print_tag)
+                new_page_tag = self.get_new_page_tag()
+                parent.insert(0, new_page_tag)
 
         return True
 
     def separate_multiple_staff_part(self, tree_orig: etree.Element, file_out_orig: str
-                                    ) -> (list, list):
+                                    ) -> tuple[list, list]:
         """Seaparate multiple staff part to one staff parts.
 
         Return tuple:
@@ -384,6 +420,16 @@ class PartSplitter:
                 staff.text = '1'
             else:
                 note.getparent().remove(note)
+    
+    def set_page_size(self, file_tree: etree.Element):
+        """Set page height to 600 to surpress more stavess on one page."""
+        page_height = file_tree.xpath('//page-height')
+        if page_height:
+            page_height[0].text = '600.00'
+
+        # page_width = file_tree.xpath('//page-width')
+        # if page_width:
+        #     page_width[0].text = '1233.87'
 
 
 def parseargs():
