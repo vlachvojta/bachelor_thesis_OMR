@@ -52,7 +52,7 @@ ls $in_dir/*.$in_ext | while read file; do
 
     # check if the output file already exists
     if [ ! "$(ls ${out_dir}/${file}*.${out_ext} 2>/dev/null)" ]; then
-        echo "$file.$in_ext $i/$num_files"
+        echo -e "$file.$in_ext \t $i/$num_files"
         # musescore3 $in_dir/$file -o ${out_dir}/${file%}.$out_ext  2> /dev/null
         #musescore3 $in_dir/$file.$in_ext -o $out_dir/$file.$out_ext  2> /dev/null
         $musescore_version $in_dir/$file.$in_ext -o $out_dir/$file.$out_ext  2> /dev/null
