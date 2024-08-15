@@ -93,10 +93,11 @@ class LineChecker:
         for result, files in result_lists.items():
             print(f"\t{len(files)} are {result}")
 
-        # self.results = {k: str(v) for k, v in self.results.items()}
-        Common.save_dict_as_json(result_lists, os.path.join(self.output_dir, self.RESULT_FILE))
-        Common.save_dict_as_json(result_lists, os.path.join(self.input_dir, self.RESULT_FILE))
-        print(f'For results, see {os.path.join(self.input_dir, self.RESULT_FILE)}')
+        self.results = {k: str(v) for k, v in self.results.items()}
+        input_dir_results = os.path.join(self.input_dir, self.RESULT_FILE)
+        Common.save_dict_as_json(self.results, os.path.join(self.output_dir, self.RESULT_FILE))
+        Common.save_dict_as_json(self.results, input_dir_results)
+        print(f'For results, see {input_dir_results}')
 
 
 def detect_lines(image):
