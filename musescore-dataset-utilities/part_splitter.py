@@ -217,21 +217,21 @@ class PartSplitter:
         return Common.intersection(score_part_ids, part_ids)
 
     def remove_unwanted_elements(self, tree: etree.Element) -> None:
-        """Remove unwanted elements (credits, lyrics, labels and dynamics) from XML tree.
-        """
-        elements_to_remove = [
-            'credit', 'rights', 'lyric', 'direction', 'creator', 'work', 'part-group', 'notations'
-        ]
+        """Remove unwanted elements (credits, lyrics, labels and dynamics) from XML tree."""
+        elements_to_remove = ['work', 'rights', 'credit', 'creator']
+        # elements_to_remove = [
+        #     'lyric', 'direction', 'part-group', 'notations'
+        # ]
 
         for elem in elements_to_remove:
             self.remove_element(tree, elem)
 
-        for elem in tree.xpath('//part-name'):
-            elem.text = ''
-        for elem in tree.xpath('//instrument-name'):
-            elem.text = ''
-        for elem in tree.xpath('//part-abbreviation'):
-            elem.text = ''
+        # for elem in tree.xpath('//part-name'):
+        #     elem.text = ''
+        # for elem in tree.xpath('//instrument-name'):
+        #     elem.text = ''
+        # for elem in tree.xpath('//part-abbreviation'):
+        #     elem.text = ''
 
     def remove_element(self, tree: etree.Element, element: str) -> None:
         """Remove all element by name from given tree."""
