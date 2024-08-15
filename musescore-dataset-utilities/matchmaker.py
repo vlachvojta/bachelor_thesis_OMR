@@ -135,9 +135,7 @@ class Matchmaker:
                     if image_name not in self.staff_lines_results:
                         print(f'WARNING: Image {image_name} not found in staff lines check results')
                     else:
-                        print(f'self.staff_lines_results[{image_name}] = {self.staff_lines_results[image_name]}')
                         if self.staff_lines_results[image_name] != LineCheckResult.OK:
-                            print(f'Image {image_name} is not OK in staff lines check, skipping.')
                             skipped_not_ok_staff_lines += 1
                             continue
 
