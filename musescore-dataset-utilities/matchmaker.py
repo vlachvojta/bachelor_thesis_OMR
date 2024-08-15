@@ -22,6 +22,8 @@ import logging
 from shutil import copyfile
 from datetime import datetime
 
+from check_staff_lines import LineChecker, LineCheckResult
+
 rel_dir = os.path.dirname(os.path.relpath(__file__))
 sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
 from common import Common  # noqa: E402
@@ -37,6 +39,7 @@ class Matchmaker:
         self.verbose = verbose
         self.stats_file = os.path.join(self.output_folder, '0_matchmaker_stats.json')
         self.out_label_file = os.path.join(self.output_folder, '0_labels.semantic')
+        self.staff_lines_results = self.load_staff_lines_results()
 
         if verbose:
             logging.basicConfig(level=logging.DEBUG, format='[%(levelname)-s]\t- %(message)s')
@@ -117,6 +120,8 @@ class Matchmaker:
         else:
             print(f'Copying images and labels from {len(complete_parts)} parts '
                   '(every dot is 200 parts, line is 1_000)')
+        
+        skipped_not_ok_staff_lines = 0
 
         with open(self.out_label_file, 'w', encoding='utf-8') as out_label_file:
             for i, part_name in enumerate(sorted(complete_parts.keys())):
@@ -125,6 +130,18 @@ class Matchmaker:
                 logging.debug(f"Copying {part_name}")
 
                 for pair in complete_parts[part_name]:
+                    # Do not copy neither if image is not OK in the check_staff_lines.py results
+                    image_name = os.path.basename(pair['image_with_path'])
+                    if image_name not in self.staff_lines_results:
+                        print(f'WARNING: Image {image_name} not found in staff lines check results')
+                    else:
+                        print(f'self.staff_lines_results[{image_name}] = {self.staff_lines_results[image_name]}')
+                        if self.staff_lines_results[image_name] != LineCheckResult.OK:
+                            print(f'Image {image_name} is not OK in staff lines check, skipping.')
+                            skipped_not_ok_staff_lines += 1
+                            continue
+
+                    
                     label_sequence = self.labels[pair['label_id']]
                     out_label_file.write(
                         f"{pair['label_id']}.png {Common.PERO_LMDB_zero_tag} {label_sequence}\n")
@@ -134,6 +151,8 @@ class Matchmaker:
         print()
 
         print(f"Copying successfull to {self.output_folder}, labels saved to {self.out_label_file}")
+        if skipped_not_ok_staff_lines:
+            print(f"Skipped {skipped_not_ok_staff_lines} images that were not OK in staff lines check.")
 
     def print_results(self, complete_parts, sus_img_parts):
         print('')
@@ -321,6 +340,16 @@ class Matchmaker:
             mscz_id, part_id, *_ = re.split(r'_|-', file)
 
         return f'{mscz_id}_{part_id}'
+
+    def load_staff_lines_results(self) -> dict:
+        """Load results from check_staff_lines.py."""
+        staff_lines_result_file = os.path.join(self.image_folder, LineChecker.RESULT_FILE)
+        staff_lines_results = Common.read_file(staff_lines_result_file)
+
+        if not staff_lines_results:
+            return {}
+
+        return {file: LineCheckResult(result) for file, result in staff_lines_results.items()}
 
 
 def parseargs():

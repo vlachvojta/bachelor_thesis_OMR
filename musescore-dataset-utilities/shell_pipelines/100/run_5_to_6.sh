@@ -33,6 +33,12 @@ echo ""
 
 mkdir -p $out_dir
 
+
+python $BP_GIT/musescore-dataset-utilities/check_staff_lines.py \
+    --input-dir $in_dir_images \
+    --output-dir $in_dir_images/checking_staff_lines
+
+
 python $BP_GIT/musescore-dataset-utilities/matchmaker.py \
     --image-folder $in_dir_images \
     --label-files $in_dir_labels/0_labels.semantic \
