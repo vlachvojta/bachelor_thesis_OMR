@@ -21,6 +21,7 @@ out_dir=$(get_arg $2 '3_img_pages')
 
 echo ""
 echo "================================================"
+echo "Running 100/run_2_to_3_musescore3.sh"
 echo "musicxml parts -> png images using Musescore 3 CLI"
 echo "================================================"
 echo ""

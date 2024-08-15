@@ -22,6 +22,7 @@ out_dir=$(get_arg $2 '2_musicxml_parts')
 
 echo ""
 echo "================================================"
+echo "Running 100/run_1_to_2.sh"
 echo "musicxml -> musicxml parts using part_splitter.py"
 echo "================================================"
 echo ""

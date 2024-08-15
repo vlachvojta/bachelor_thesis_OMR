@@ -22,6 +22,7 @@ out_dir=$(get_arg $2 '7_lmdb_db')
 
 echo ""
 echo "================================================"
+echo "Running 100/run_6_to_7.sh"
 echo "Matching images and labels using matchmaker.py"
 echo "================================================"
 echo ""

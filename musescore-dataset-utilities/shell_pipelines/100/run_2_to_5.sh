@@ -22,6 +22,7 @@ out_dir=$(get_arg $2 '5_labels_semantic')
 
 echo ""
 echo "================================================"
+echo "Running 100/run_2_to_5.sh"
 echo "musicxml parts -> semantic labels using polyphonic OMR/label_gen/genlabels.py"
 echo "================================================"
 echo ""

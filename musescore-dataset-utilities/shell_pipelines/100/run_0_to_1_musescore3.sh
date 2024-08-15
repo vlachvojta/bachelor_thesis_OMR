@@ -21,6 +21,7 @@ out_dir=$(get_arg $2 '1_musicxml_by_M3_CLI')
 
 echo ""
 echo "================================================"
+echo "Running 100/run_0_to_1_musescore3.sh"
 echo "mscz -> musicxml using Musescore 3 CLI"
 echo "================================================"
 echo ""

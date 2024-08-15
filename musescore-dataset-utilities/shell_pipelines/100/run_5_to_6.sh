@@ -23,6 +23,7 @@ out_dir=$(get_arg $3 '6_copied_pairs')
 
 echo ""
 echo "================================================"
+echo "Running 100/run_5_to_6.sh"
 echo "Matching images and labels using matchmaker.py"
 echo "================================================"
 echo ""

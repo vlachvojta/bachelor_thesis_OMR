@@ -22,6 +22,7 @@ out_dir=$(get_arg $2 '4_img_staves')
 
 echo ""
 echo "================================================"
+echo "Running 100/run_3_to_4.sh"
 echo "png pages -> png staves using img_to_staves.py"
 echo "================================================"
 echo ""
