@@ -1,18 +1,102 @@
 import os
+import sys
 import cv2
-import lmdb
 import argparse
 import numpy as np
+from enum import Enum
 
+
+rel_dir = os.path.dirname(os.path.relpath(__file__))
+sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
+from common import Common  # noqa: E402
+
+
+class LineCheckResult(Enum):
+    OK = "OK"
+    NO_COUNT = "NO (Count)"
+    NO_GAPS = "NO (Gaps)"
+    UNKNOWN = "Unknown"
+
+    # make this enum JSON serializable
+    def __str__(self):
+        return self.value
+
+
+line_checker_results_type = dict[str, LineCheckResult]
 
 
 def parse_args():
+    print('sys.argv: ')
+    print(' '.join(sys.argv))
+    print('--------------------------------------')
+
     parser = argparse.ArgumentParser(description="Check lines")
 
-    parser.add_argument("--lines", type=str, help="Path to lines file")
-    parser.add_argument("--lmdb", type=str, help="Path to lmdb")
+    # parser.add_argument("--lines", type=str, help="Path to lines file")
+    # parser.add_argument("--lmdb", type=str, help="Path to lmdb")
+    parser.add_argument("--input-dir", type=str, help="Path to input directory")
+    parser.add_argument("--output-dir", type=str, help="Path to output directory")
+    parser.add_argument("--save-images", action="store_true", help="Save rendered images")
 
     return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    LineChecker(
+        input_dir=args.input_dir,
+        output_dir=args.output_dir,
+        save_images=args.save_images
+    )()
+
+class LineChecker:
+    RESULT_FILE = "line_checker_results.json"
+
+    def __init__(self, input_dir: str, output_dir: str, save_images: bool):
+        print('Running LineChecker')
+        self.input_dir = input_dir
+        self.output_dir = output_dir
+        self.save_images = save_images
+
+        self.results: line_checker_results_type = {}
+
+
+    def __call__(self):
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        files = os.listdir(self.input_dir)
+        files = [file for file in files if file.endswith(".png")]
+        input_files_len = len(files)
+
+        print(f"Checking {input_files_len} images in {self.input_dir} (every dot is 200 files, every line is 2_000)")
+
+        for i, file in enumerate(files):
+            Common.print_dots(i, 200, 2_000)
+            file_path = os.path.join(self.input_dir, file)
+            output_path = os.path.join(self.output_dir, file.replace(".png", "_checked_lines.png"))
+
+            result = process(file_path, output_path, self.save_images)
+
+            self.results[file] = result
+
+            # print(f"{file} {result}")
+
+        # convert dictionary of [file, result] to dictionary of [result, [files]]
+        result_lists = {str(result): [file for file, r in self.results.items() if r == result] for result in LineCheckResult}
+
+        # print stats
+        print('')
+        print('--------------------------------------')
+        print('Results:')
+        print(f'From {input_files_len} input files:')
+        for result, files in result_lists.items():
+            print(f"\t{len(files)} are {result}")
+
+        # self.results = {k: str(v) for k, v in self.results.items()}
+        Common.save_dict_as_json(result_lists, os.path.join(self.output_dir, self.RESULT_FILE))
+        Common.save_dict_as_json(result_lists, os.path.join(self.input_dir, self.RESULT_FILE))
+        print(f'For results, see {os.path.join(self.input_dir, self.RESULT_FILE)}')
 
 
 def detect_lines(image):
@@ -94,34 +178,29 @@ def render(image, lines, color):
         cv2.line(image, (line[0], line[1]), (line[2], line[3]), color, 1, cv2.LINE_AA)
 
 
-def load_image(txn, image_name):
-    return cv2.imdecode(np.frombuffer(txn.get(image_name.encode()), dtype=np.uint8), 1)
-
-
-def process(line, txn):
-    # image = cv2.imread(input_path, cv2.IMREAD_COLOR)
-
-    image = load_image(txn, line)
+def process(input_path, output_path, save_image: bool = False) -> LineCheckResult:
+    image = cv2.imread(input_path, cv2.IMREAD_COLOR)
     
     lines = detect_lines(image)
     lines = merge_close_lines(lines)
 
-    result = "Unknown"
+    result = LineCheckResult.UNKNOWN
     color = (255, 0, 0)
 
     if len(lines) == 5:
         if check_gaps(lines):
-            result = "OK"
+            result = LineCheckResult.OK
             color = (0, 255, 0)
         else:
-            result = "NO (Gaps)"
+            result = LineCheckResult.NO_GAPS
             color = (0, 128, 255)
     else:
-        result = "NO (Count)"
+        result = LineCheckResult.NO_COUNT
         color = (0, 0, 255)
 
-    # render(image, lines, color)
-    # cv2.imwrite(output_path, image)
+    if save_image:
+        render(image, lines, color)
+        cv2.imwrite(output_path, image)
 
     return result
 
@@ -139,23 +218,5 @@ def load(path):
     return data
 
 
-def main():
-    args = parse_args()
-
-    lines = load(args.lines)
-    
-    env = lmdb.open(args.lmdb, readonly=True, lock=False)
-    with env.begin() as txn:
-        for line in lines:
-            result = process(line, txn)
-
-            # if result.startswith("NOT"):
-            #     result = "NOT"
-
-            print(f"{line} {result}")
-
-    return 0
-
-
 if __name__ == "__main__":
-    exit(main())
+    main()
