@@ -32,17 +32,17 @@ echo ""
 
 mkdir -p $out_dir
 
-python $BP_GIT/dataset-utilities/lmdb_generator.py \
-    --src-folders $in_dir \
-    --output-folder $out_dir \
-    --extensions-text 'semantic' \
-    --extensions-images 'png' \
-    --ignore-texts
+# python $BP_GIT/dataset-utilities/lmdb_generator.py \
+#     --src-folders $in_dir \
+#     --output-folder $out_dir \
+#     --extensions-text 'semantic' \
+#     --extensions-images 'png' \
+#     --ignore-texts
 
-python $BP_GIT/dataset-utilities/symbol_converter.py \
-    --input_files $in_dir/0_labels.semantic \
-    --output_file $out_dir/0_labels.semantic \
-    --translator $BP_GIT/dataset-utilities/translator.Semantic_to_SSemantic.json \
-    --mode matchmaker
+# python $BP_GIT/dataset-utilities/symbol_converter.py \
+#     --input_files $in_dir/0_labels.semantic \
+#     --output_file $out_dir/0_labels.semantic \
+#     --translator $BP_GIT/dataset-utilities/translator.Semantic_to_SSemantic.json \
+#     --mode matchmaker
 
 # - label_set_splitter.py - split whole label file to two randomized sets of labels for validation set and training set
