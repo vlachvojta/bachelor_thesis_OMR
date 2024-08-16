@@ -22,4 +22,4 @@ sub_dir=$(get_arg $1 '')
 
 # ================================ MAIN ================================
 
-$BP_GIT/musescore-dataset-utilities/shell_pipelines/run_pipeline_100.sh './' $sub_dir
+$BP_GIT/musescore-dataset-utilities/shell_pipelines/run_pipeline_100.sh './' $sub_dir  | tee -a pip_100_$sub_dir.log
