@@ -29,4 +29,4 @@ echo ""
 # ================================ MAIN ================================
 
 mkdir -p $out_dir
-$LOCAL/../musescore_batch_convert.sh musicxml png $in_dir $out_dir musescore4portable
+$LOCAL/../musescore_batch_convert.sh musicxml png $in_dir $out_dir musescore4portable random
