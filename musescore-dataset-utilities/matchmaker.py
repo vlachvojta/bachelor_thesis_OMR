@@ -58,10 +58,10 @@ class Matchmaker:
 
         # Load images from folders
         self.images = []
-        sub_folders = [os.path.join(self.image_folder, folder)
-                       for folder in os.listdir(self.image_folder)]
-        image_folders = [folder for folder in sub_folders if os.path.isdir(folder)]
-        image_folders += [self.image_folder]
+        # sub_folders = [os.path.join(self.image_folder, folder)
+        #                for folder in os.listdir(self.image_folder)]
+        # image_folders = [folder for folder in sub_folders if os.path.isdir(folder)]
+        image_folders = [self.image_folder]
         print(f'Looking for images in {len(image_folders)} folders '
               '(including the root input folder)')
 
@@ -360,7 +360,7 @@ def parseargs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i", "--image-folder", default='.',
-        help="Input folder where to look for images and sub-folders with images.")
+        help="Input folder where to look for images.")
     parser.add_argument(
         "-l", "--label-files", nargs='+',
         help="Files with labels.")
