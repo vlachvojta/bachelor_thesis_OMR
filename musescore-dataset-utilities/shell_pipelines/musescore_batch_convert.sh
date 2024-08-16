@@ -81,11 +81,10 @@ convert_with_musescore() {
         echo "Style: notenames"
         convert_with_musescore_notenames $musescore_version $input_file $output_file
     elif [ "$style" == "random" ]; then
-        # echo "Style: random"
-        styles=("default" "default" "default" "default" "default" "default" "default" "default" \
-            "nsm" "nsm" "nsm" "nsm" \
-            "muse_jazz" "muse_jazz" "muse_jazz" "muse_jazz" \
-            "bold" "bold" "bold" "bold" \
+        styles=("default" "default" "default" "default" \
+            "nsm" "nsm" \
+            "muse_jazz" "muse_jazz"  \
+            "bold" "bold"  \
             "colornotes" "notenames")
         random_style=${styles[$RANDOM % ${#styles[@]}]}
         convert_with_musescore $musescore_version $input_file $output_file $random_style
