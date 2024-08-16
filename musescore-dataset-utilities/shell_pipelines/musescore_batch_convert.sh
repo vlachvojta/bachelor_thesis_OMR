@@ -34,29 +34,57 @@ if [ "$musescore_version" != "musescore3" ] && [ "$musescore_version" != "musesc
     exit 1
 fi
 
-# echo "musescore $in_dir/*.$in_ext -o $out_dir/*.$out_ext"
+in_progress_dir=$in_dir/in_progress
+if [ ! -d "$in_progress_dir" ]; then
+    mkdir -p $in_progress_dir
+fi
+
+done_dir=$in_dir/done
+if [ ! -d "$done_dir" ]; then
+    mkdir -p $done_dir
+fi
+
 echo "$musescore_version $in_dir/*.$in_ext -o $out_dir/*.$out_ext"
 
 # ================================ MAIN ================================
 
+files_done=$(ls $done_dir/*.$in_ext 2>/dev/null | wc -l)
 num_files=$(ls $in_dir/*.$in_ext | wc -l)
-i=0
+num_files=$((num_files + files_done))
+i=$files_done
 
 # find all files with input extension in the directory
 ls $in_dir/*.$in_ext | while read file; do
     file=$(basename $file) # remove path
     file=$(echo "${file%.$in_ext}") # remove file suffix
 
-    # echo "Converting $file.$in_ext to $file.$out_ext"
-    # echo "Checking if ${out_dir}/${file}*.${out_ext} exists"
-
     # check if the output file already exists
     if [ ! "$(ls ${out_dir}/${file}*.${out_ext} 2>/dev/null)" ]; then
-        echo -e "$file.$in_ext \t $i/$num_files"
-        # musescore3 $in_dir/$file -o ${out_dir}/${file%}.$out_ext  2> /dev/null
-        #musescore3 $in_dir/$file.$in_ext -o $out_dir/$file.$out_ext  2> /dev/null
-        $musescore_version $in_dir/$file.$in_ext -o $out_dir/$file.$out_ext  2> /dev/null
+        echo -e "$file.$in_ext \t $i/$num_files \t $(date "+%Y%m%d-%H%M%S")"
+
+        # move file to in_progress directory to parse it there
+        mv $in_dir/$file.$in_ext $in_progress_dir
+
+        # Add this grep if you want to filter out some warnings from stderr
+        # 2>&1 | grep -v "/lib/x86_64-linux-gnu/lib"
+        $musescore_version -f $in_progress_dir/$file.$in_ext -o $out_dir/$file.$out_ext 2>/dev/null
+
+        # save exit code
+        mscz_exit_code=$?
+        echo "Exit code: $mscz_exit_code"
+
+        # if exit code is not 0, move file to error directory
+        if [ $mscz_exit_code -ne 0 ]; then
+            mkdir -p $in_dir/err_$mscz_exit_code
+            mv $in_progress_dir/$file.$in_ext $in_dir/err_$mscz_exit_code
+        else
+            # move file to done directory
+            mv $in_progress_dir/$file.$in_ext $done_dir
+        fi
+
     else
+        # move file to done directory
+        mv $in_dir/$file.$in_ext $done_dir
         echo -n "."
     fi
     i=$((i+1))
