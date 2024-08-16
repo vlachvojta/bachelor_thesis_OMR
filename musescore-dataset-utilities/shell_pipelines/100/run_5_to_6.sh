@@ -24,20 +24,19 @@ out_dir=$(get_arg $3 '6_copied_pairs')
 echo ""
 echo "================================================"
 echo "Running 100/run_5_to_6.sh"
-echo "Matching images and labels using matchmaker.py"
+echo "Matching images and labels using check_staff_lines.py, matchmaker.py and symbol_converter.py"
 echo "================================================"
 echo ""
 
 
 # ================================ MAIN ================================
 
-mkdir -p $out_dir
-
-
 python $BP_GIT/musescore-dataset-utilities/check_staff_lines.py \
     --input-dir $in_dir_images \
-    --output-dir $in_dir_images/checking_staff_lines
+    --output-dir $in_dir_images/checking_staff_lines \
+    --save-images
 
+mkdir -p $out_dir
 
 python $BP_GIT/musescore-dataset-utilities/matchmaker.py \
     --image-folder $in_dir_images \

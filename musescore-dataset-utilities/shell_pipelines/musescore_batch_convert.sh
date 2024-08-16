@@ -33,6 +33,10 @@ if [ ! -d "$in_dir" ]; then
     exit 1
 fi
 
+if [ ! -d "$out_dir" ]; then
+    mkdir -p $out_dir
+fi
+
 # check $musescore_version is either musescore4portable or musescore3
 if [ "$musescore_version" != "musescore3" ] && [ "$musescore_version" != "musescore4portable" ]; then
     echo "Invalid MuseScore version. Use musescore3 or musescore4portable"

@@ -106,7 +106,7 @@ def detect_lines(image):
     width = gray.shape[1]
     min_length = int(width * 0.75)
 
-    threshold = 80
+    threshold = 50
     black_white = np.copy(gray)
     black_white[black_white < threshold] = 0
     black_white[black_white >= threshold] = 255
@@ -181,8 +181,13 @@ def render(image, lines, color):
 
 def process(input_path, output_path, save_image: bool = False) -> LineCheckResult:
     image = cv2.imread(input_path, cv2.IMREAD_COLOR)
-    
-    lines = detect_lines(image)
+
+    try:
+        lines = detect_lines(image)
+    # except cv2.error OpenCV(4.8.0) error assertion failed !_src.empty() in function 'cv::cvtColor'
+    except cv2.error as e:
+        print(f"Error processing {input_path}: {e}")
+        return LineCheckResult.UNKNOWN
     lines = merge_close_lines(lines)
 
     result = LineCheckResult.UNKNOWN

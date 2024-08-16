@@ -352,6 +352,7 @@ class Matchmaker:
 
 def parseargs():
     """Parse arguments."""
+    print('')
     print('sys.argv: ')
     print(' '.join(sys.argv))
     print('--------------------------------------')
