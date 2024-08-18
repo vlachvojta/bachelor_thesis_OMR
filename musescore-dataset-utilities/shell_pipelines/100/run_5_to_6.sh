@@ -43,7 +43,8 @@ python $BP_GIT/musescore-dataset-utilities/matchmaker.py \
     --output-folder $out_dir
 
 python $BP_GIT/dataset-utilities/symbol_converter.py \
-    --translator $BP_GIT/translators/translator.Semantic_to_SSemantic.json \
+    --translator $BP_GIT/translators/translator.SSemantic_to_Semantic_v2.json \
     --input_files $out_dir/0_labels.semantic \
     --output_file $out_dir/0_labels.SSemantic \
     --mode matchmaker \
+    --reverse
