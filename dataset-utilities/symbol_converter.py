@@ -11,6 +11,8 @@ import argparse
 import re
 import sys
 import time
+import json
+import os
 
 from common import Common
 
@@ -31,6 +33,9 @@ class SymbolConverter:
         print('\tHello form SYMBOL_CONVERTER (SC)')
         print(f'\tDictionary: {translator_file}, input_files {input_files}'
               f', output: {output}, reverse: {reverse}')
+
+        self.output_file = output
+        self.output_dir = os.path.dirname(output)
 
         self.dictionary = Common.read_file(translator_file)
         if not self.dictionary:
@@ -72,8 +77,22 @@ class SymbolConverter:
                 print(f'Converted labels saved to {output}')
 
         if len(self.n_existing_labels) > 0:
-            print(f'Found {len(self.n_existing_labels)} not existing labels, please update translator')
-            print(sorted(self.n_existing_labels))
+            self.n_existing_labels = sorted(list(self.n_existing_labels))
+            print(f'Found {len(self.n_existing_labels)} not existing labels, please update translator.')
+
+            if output == 'stdout':
+                print(self.n_existing_labels)
+            else: # save as a json file
+                n_existing_labels_file = os.path.join(self.output_dir, 'not_existing_labels.json')
+                print(f'saving not existing labels to {n_existing_labels_file}')
+                print(f'[', end='')
+                labels_to_print = min(20, len(self.n_existing_labels))
+                for label in self.n_existing_labels[:labels_to_print]:
+                    print(f'"{label}", ', end='')
+                print(f'...]')
+                
+                Common.save_dict_as_json(self.n_existing_labels, n_existing_labels_file)
+
         if len(self.error_splitting_lines) > 0:
             print(f'{len(self.n_existing_labels)} lines have different format than needed')
             print(sorted(self.n_existing_labels))
