@@ -160,10 +160,13 @@ create_job_json() {
 
 # ================================ MAIN ================================
 
+# count files in directories to show progress n/N
 files_done=$(ls $done_dir/*.$in_ext 2>/dev/null | wc -l)
+files_err=$(ls $in_dir/err_*/*.$in_ext 2>/dev/null | wc -l)
+files_in_progress=$(ls $in_progress_dir/*.$in_ext 2>/dev/null | wc -l)
 num_files=$(ls $in_dir/*.$in_ext | wc -l)
-num_files=$((num_files + files_done))
-i=$files_done
+num_files=$((num_files + files_done + files_err + files_in_progress))
+i=$((files_done + files_err + files_in_progress))
 
 # find all files with input extension in the directory
 ls $in_dir/*.$in_ext | while read file; do
