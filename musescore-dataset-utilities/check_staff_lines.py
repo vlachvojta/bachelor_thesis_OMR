@@ -59,14 +59,20 @@ class LineChecker:
         self.output_dir = output_dir
         self.save_images = save_images
 
-        self.results: line_checker_results_type = {}
+        self.input_dir_results = os.path.join(self.input_dir, self.RESULT_FILE)
+
+        loaded_results = {}
+        if os.path.isfile(self.input_dir_results):
+            loaded_results = Common.read_file(self.input_dir_results)
+        
+        self.results: line_checker_results_type = loaded_results if loaded_results else {}
 
 
     def __call__(self):
         os.makedirs(self.output_dir, exist_ok=True)
 
         files = os.listdir(self.input_dir)
-        files = [file for file in files if file.endswith(".png")]
+        files = [file for file in files if file.endswith(".png") and file not in self.results.keys()]
         input_files_len = len(files)
 
         print(f"Checking {input_files_len} images in {self.input_dir} (every dot is 200 files, every line is 2_000)")
@@ -79,7 +85,6 @@ class LineChecker:
             result = process(file_path, output_path, self.save_images)
 
             self.results[file] = result
-
             # print(f"{file} {result}")
 
         # convert dictionary of [file, result] to dictionary of [result, [files]]
@@ -94,9 +99,7 @@ class LineChecker:
             print(f"\t{len(files)} are {result}")
 
         self.results = {k: str(v) for k, v in self.results.items()}
-        input_dir_results = os.path.join(self.input_dir, self.RESULT_FILE)
-        Common.save_dict_as_json(self.results, os.path.join(self.output_dir, self.RESULT_FILE))
-        Common.save_dict_as_json(self.results, input_dir_results)
+        Common.save_dict_as_json(self.results, self.input_dir_results)
         print(f'For results, see {input_dir_results}')
 
 
