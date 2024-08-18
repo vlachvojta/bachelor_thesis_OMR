@@ -33,8 +33,7 @@ echo ""
 
 python $BP_GIT/musescore-dataset-utilities/check_staff_lines.py \
     --input-dir $in_dir_images \
-    --output-dir $in_dir_images/checking_staff_lines \
-    --save-images
+    --output-dir $in_dir_images/checking_staff_lines
 
 mkdir -p $out_dir
 
