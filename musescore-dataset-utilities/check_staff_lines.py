@@ -64,21 +64,25 @@ class LineChecker:
         loaded_results = {}
         if os.path.isfile(self.input_dir_results):
             loaded_results = Common.read_file(self.input_dir_results)
-        
+            loaded_results = {k: LineCheckResult(v) for k, v in loaded_results.items()}
+
         self.results: line_checker_results_type = loaded_results if loaded_results else {}
+        self.loaded_results = loaded_results
 
 
     def __call__(self):
         os.makedirs(self.output_dir, exist_ok=True)
 
         files = os.listdir(self.input_dir)
-        files = [file for file in files if file.endswith(".png") and file not in self.results.keys()]
+        files = [file for file in files if file.endswith(".png")]
         input_files_len = len(files)
 
         print(f"Checking {input_files_len} images in {self.input_dir} (every dot is 200 files, every line is 2_000)")
 
         for i, file in enumerate(files):
             Common.print_dots(i, 200, 2_000)
+            if file in self.loaded_results.keys():
+                continue
             file_path = os.path.join(self.input_dir, file)
             output_path = os.path.join(self.output_dir, file.replace(".png", "_checked_lines.png"))
 
@@ -100,7 +104,7 @@ class LineChecker:
 
         self.results = {k: str(v) for k, v in self.results.items()}
         Common.save_dict_as_json(self.results, self.input_dir_results)
-        print(f'For results, see {input_dir_results}')
+        print(f'For results, see {self.input_dir_results}')
 
 
 def detect_lines(image):

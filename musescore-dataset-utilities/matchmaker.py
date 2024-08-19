@@ -47,7 +47,7 @@ class Matchmaker:
             logging.basicConfig(level=logging.INFO,format='[%(levelname)-s]\t- %(message)s')
 
         # Load labels
-        print(f'Loading labels from {len(self.label_files)} files.')
+        print(f'Loading labels from {len(self.label_files)} files: {self.label_files}')
         self.labels = {}
         for label_file in label_files:
             self.labels.update(self.load_labels(label_file))
