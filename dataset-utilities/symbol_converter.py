@@ -73,7 +73,7 @@ class SymbolConverter:
                 print('\n'.join(lines_out))
             else:
                 # print('\n'.join(lines_out[:20]))
-                Common.write_to_file('\n'.join(lines_out), output)
+                Common.write_to_file('\n'.join(lines_out) + '\n', output)
                 print(f'Converted labels saved to {output}')
 
         if len(self.n_existing_labels) > 0:

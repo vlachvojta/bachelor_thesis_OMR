@@ -110,10 +110,10 @@ class Matchmaker:
 
     def copy_complete_parts(self, complete_parts):
         """Copy complete PAIRS of labels and images to given location and renamte them to match."""
-        if os.path.exists(self.out_label_file):
-            date = datetime.now().strftime("%Y_%m_%d_%H-%M-%S")
-            self.out_label_file = os.path.join(self.output_folder, f'0_labels_{date}.semantic')
-            print(f'PRINTING to new file with date as ID: {date}')
+        # if os.path.exists(self.out_label_file):
+        #     date = datetime.now().strftime("%Y_%m_%d_%H-%M-%S")
+        #     self.out_label_file = os.path.join(self.output_folder, f'0_labels_{date}.semantic')
+        #     print(f'PRINTING to new file with date as ID: {date}')
 
         if self.verbose:
             print(f'Copying images and labels from {len(complete_parts)} parts.')
@@ -139,7 +139,7 @@ class Matchmaker:
                             skipped_not_ok_staff_lines += 1
                             continue
 
-                    
+
                     label_sequence = self.labels[pair['label_id']]
                     out_label_file.write(
                         f"{pair['label_id']}.png {Common.PERO_LMDB_zero_tag} {label_sequence}\n")
