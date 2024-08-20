@@ -18,39 +18,48 @@ get_arg() {
 }
 
 in_dir=$(get_arg $1 '6_copied_pairs')
-out_yolo_dir=$(get_arg $2 '7_yolo_detected')
+out_dir=$(get_arg $2 '7_yolo_detected')
 
 
 echo ""
 echo "================================================"
 echo "Running 100/run_6_to_7.sh"
-echo "Resizing images to 1024x1458, detecting staves with YOLO, runnning mathcmaker"
+echo "Resizing images to 1024x1458, detecting staves with YOLO."
+echo "in_dir: $in_dir, out_dir: $out_dir"
 echo "================================================"
 echo ""
 
 
 # ================================ MAIN ================================
 
-mkdir -p $out_dir
+files=$(ls -1q $in_dir/*.png | wc -l)
+echo "Number of images in $in_dir: $files"
+
+i=0
 
 # for every file in in_dir, resize to 1024x1458, save to the same file in in_dir (overwrite)
 for file in $(ls -1q $in_dir/*.png); do
-    echo "Resizing $file"
+    if [ $((i % 1000)) -eq 0 ]; then
+        echo "Resizing image $i"
+    fi
     convert $file \
         -resize 1024x1458 \
         -background white \
-        -gravity center \
+        -gravity North \
         -extent 1024x1458 $file
+    i=$((i+1))
 done
+
+mkdir -p $out_dir
 
 # for every file in in_dir, run YOLOv5 to detect staves, 
 # save stave cut-outs but only if there is one staff detected
 python $BP_GIT/musescore-dataset-utilities/yolo_detect.py \
     --model /mnt/matylda1/ikiss/orbis/experiments/yolov8/2024-08-15_training/yolov8s_1024px_extra-music/orbis/yolov8s_1024px_extra-music/weights/best.pt \
     --images $in_dir \
-    --crops $out_dir/crops \
+    --crops $out_dir \
+    --labels $out_dir/labels \
     --image-size 1024 \
     --confidence 0.283 \
-    --batch-size 1 \
-    --renders $out_dir/renders
+    --batch-size 1
 
