@@ -18,12 +18,13 @@ get_arg() {
 }
 
 in_dir=$(get_arg $1 '6_copied_pairs')
-out_dir=$(get_arg $2 '7_lmdb_db')
+out_yolo_dir=$(get_arg $2 '7_yolo_detected')
+
 
 echo ""
 echo "================================================"
 echo "Running 100/run_6_to_7.sh"
-echo "Matching images and labels using matchmaker.py"
+echo "Resizing images to 1024x1458, detecting staves with YOLO, runnning mathcmaker"
 echo "================================================"
 echo ""
 
@@ -32,32 +33,24 @@ echo ""
 
 mkdir -p $out_dir
 
-# python $BP_GIT/dataset-utilities/lmdb_generator.py \
-#     --src-folders $in_dir \
-#     --output-folder $out_dir \
-#     --extensions-text 'semantic' \
-#     --extensions-images 'png' \
-#     --ignore-texts
+# for every file in in_dir, resize to 1024x1458, save to the same file in in_dir (overwrite)
+for file in $(ls -1q $in_dir/*.png); do
+    echo "Resizing $file"
+    convert $file \
+        -resize 1024x1458 \
+        -background white \
+        -gravity center \
+        -extent 1024x1458 $file
+done
 
-# python $BP_GIT/dataset-utilities/symbol_converter.py \
-#     --input_files $in_dir/0_labels.semantic \
-#     --output_file $out_dir/0_labels.semantic \
-#     --translator $BP_GIT/dataset-utilities/translator.Semantic_to_SSemantic.json \
-#     --mode matchmaker
+# for every file in in_dir, run YOLOv5 to detect staves, 
+# save stave cut-outs but only if there is one staff detected
+python $BP_GIT/musescore-dataset-utilities/yolo_detect.py \
+    --model /mnt/matylda1/ikiss/orbis/experiments/yolov8/2024-08-15_training/yolov8s_1024px_extra-music/orbis/yolov8s_1024px_extra-music/weights/best.pt \
+    --images $in_dir \
+    --crops $out_dir/crops \
+    --image-size 1024 \
+    --confidence 0.283 \
+    --batch-size 1 \
+    --renders $out_dir/renders
 
-# - label_set_splitter.py - split whole label file to two randomized sets of labels for validation set and training set
-
-
-
-
-
-
-
-
-
-
-convert 1141576_p00b_s000.png \
-    -resize 1024x1458 \
-    -background white \
-    -gravity center \
-    -extent 1024x1458 1141576_p00b_s000_A4.png
