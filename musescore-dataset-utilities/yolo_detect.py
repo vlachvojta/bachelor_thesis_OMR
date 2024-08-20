@@ -1,4 +1,5 @@
 import os
+import sys
 import cv2
 import argparse
 
@@ -7,8 +8,13 @@ from ultralytics import YOLO
 
 from safe_gpu.safe_gpu import GPUOwner
 
+rel_dir = os.path.dirname(os.path.relpath(__file__))
+sys.path.append(os.path.join(rel_dir, '..', 'dataset-utilities'))
+from common import Common  # noqa: E402
 
-CROPPED_CATEGORIES = {"obrázek", "fotografie", "kreslený-humor-karikatura-komiks", "erb-cejch-logo-symbol", "iniciála", "mapa", "graf", "geometrické-výkresy", "ostatní-výkresy", "schéma", "půdorys", "ex-libris" }
+
+CROPPED_CATEGORIES = {"notový-zápis"}
+# CROPPED_CATEGORIES = {"obrázek", "fotografie", "kreslený-humor-karikatura-komiks", "erb-cejch-logo-symbol", "iniciála", "mapa", "graf", "geometrické-výkresy", "ostatní-výkresy", "schéma", "půdorys", "ex-libris" }
 
 # TODO add NOTOVY ZAPIS
 
@@ -51,7 +57,7 @@ def normalize_name(name):
 def get_crop_output_path(original_image_path, crops_dir, label_name, label_index):
     _, filename = os.path.split(original_image_path)
     filename, _ = os.path.splitext(filename)
-    crop_output_path = os.path.join(crops_dir, f"{filename}__{label_name}_{label_index}.jpg")
+    crop_output_path = os.path.join(crops_dir, f"{filename}.png")
     return crop_output_path
 
 
@@ -71,7 +77,7 @@ def get_render_output_path(original_image_path, renders_dir):
 def main():
     args = parse_args()
 
-    gpu_owner = GPUOwner()
+    # gpu_owner = GPUOwner()
 
     extensions = (".jpg", ".png")
 
@@ -87,21 +93,31 @@ def main():
     if args.renders is not None and not os.path.exists(args.renders):
         os.makedirs(args.renders)
 
+    i=0
+    print(f'Going through {len(images)} images with batch {args.batch_size} (= {len(images) // args.batch_size} batches) with YOLO. '
+          '(every dot is 200 batches, every line is 2_000)')
+
     while images:
+        i+=1
+        Common.print_dots(i, 200, 2_000)
         batch = images[:args.batch_size]
         images = images[args.batch_size:]
 
         results = model(batch, 
                         imgsz=args.image_size,
                         conf=args.confidence,
-                        device=0)
-        
+                        device=0,
+                        verbose=False)
 
         if args.labels or args.crops or args.renders:
             for result in results:
                 image = result.orig_img
                 labels = []
                 labels_counter = defaultdict(int)
+
+                labels_found = len(result.boxes.cls)
+                if not labels_found == 1:
+                    continue
 
                 for label, bbox, conf in zip(result.boxes.cls, result.boxes.xyxy, result.boxes.conf):
                     name = result.names[label.item()]
@@ -112,7 +128,7 @@ def main():
                         crop = image[coords[1]:coords[3], coords[0]:coords[2]]
                         crop_output_path = get_crop_output_path(original_image_path=result.path, crops_dir=args.crops, label_name=name, label_index=labels_counter[name])
                         save_image(crop_output_path, crop)
-                    
+
                     labels_counter[name] += 1
 
                     labels.append(f"{name} {coords[0]} {coords[1]} {coords[2]} {coords[3]} {conf.item()}")
@@ -130,4 +146,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    main()
