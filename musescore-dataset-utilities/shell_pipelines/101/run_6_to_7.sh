@@ -46,3 +46,18 @@ mkdir -p $out_dir
 #     --mode matchmaker
 
 # - label_set_splitter.py - split whole label file to two randomized sets of labels for validation set and training set
+
+
+
+
+
+
+
+
+
+
+convert 1141576_p00b_s000.png \
+    -resize 1024x1458 \
+    -background white \
+    -gravity center \
+    -extent 1024x1458 1141576_p00b_s000_A4.png
