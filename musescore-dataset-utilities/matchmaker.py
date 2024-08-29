@@ -32,10 +32,12 @@ from common import Common  # noqa: E402
 class Matchmaker:
     """Get label-image pairs from two separate folders."""
     def __init__(self, label_files: list = None, image_folder: list = None,
-                 output_folder: str = 'pairs', verbose: bool = False):
+                 output_folder: str = 'pairs', ignore_line_check: bool = False,
+                 verbose: bool = False):
         self.label_files = label_files if label_files else []
         self.image_folder = image_folder if image_folder else []
         self.output_folder = output_folder
+        self.ignore_line_check = ignore_line_check
         self.verbose = verbose
         self.stats_file = os.path.join(self.output_folder, '0_matchmaker_stats.json')
         self.out_label_file = os.path.join(self.output_folder, '0_labels.semantic')
@@ -130,14 +132,15 @@ class Matchmaker:
                 logging.debug(f"Copying {part_name}")
 
                 for pair in complete_parts[part_name]:
-                    # Do not copy neither if image is not OK in the check_staff_lines.py results
-                    image_name = os.path.basename(pair['image_with_path'])
-                    if image_name not in self.staff_lines_results:
-                        print(f'WARNING: Image {image_name} not found in staff lines check results')
-                    else:
-                        if self.staff_lines_results[image_name] != LineCheckResult.OK:
-                            skipped_not_ok_staff_lines += 1
-                            continue
+                    if not self.ignore_line_check:
+                        # Do not copy neither if image is not OK in the check_staff_lines.py results
+                        image_name = os.path.basename(pair['image_with_path'])
+                        if image_name not in self.staff_lines_results:
+                            print(f'WARNING: Image {image_name} not found in staff lines check results')
+                        else:
+                            if self.staff_lines_results[image_name] != LineCheckResult.OK:
+                                skipped_not_ok_staff_lines += 1
+                                continue
 
 
                     label_sequence = self.labels[pair['label_id']]
@@ -368,6 +371,9 @@ def parseargs():
         "-o", "--output-folder", type=str, default='pairs',
         help="Output folder to copy complete pairs.")
     parser.add_argument(
+        "-c", "--ignore-line-check", action='store_true', default=False,
+        help="Ignore line check results.")
+    parser.add_argument(
         '-v', "--verbose", action='store_true', default=False,
         help="Activate verbose logging.")
     return parser.parse_args()
@@ -383,6 +389,7 @@ def main():
         image_folder=args.image_folder,
         label_files=args.label_files,
         output_folder=args.output_folder,
+        ignore_line_check=args.ignore_line_check,
         verbose=args.verbose)
     cutter()
 

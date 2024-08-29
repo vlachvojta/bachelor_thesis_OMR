@@ -37,5 +37,6 @@ mkdir -p $out_dir
 python $BP_GIT/musescore-dataset-utilities/matchmaker.py \
     --image-folder $in_dir_images \
     --label-files $in_dir_labels/0_labels.SSemantic \
-    --output-folder $out_dir
+    --output-folder $out_dir \
+    --ignore-line-check
 
