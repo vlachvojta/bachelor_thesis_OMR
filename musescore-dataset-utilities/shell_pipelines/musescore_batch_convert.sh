@@ -180,10 +180,57 @@ ls $in_dir/*.$in_ext | while read file; do
         # move file to in_progress directory to parse it there
         mv $in_dir/$file.$in_ext $in_progress_dir
 
-        convert_with_musescore $musescore_version $in_progress_dir/$file.$in_ext $out_dir/$file.$out_ext $style_arg
-        # Add this grep if you want to filter out some warnings from stderr
-        # 2>&1 | grep -v "/lib/x86_64-linux-gnu/lib"
+        # convert_with_musescore $musescore_version $in_progress_dir/$file.$in_ext $out_dir/$file.$out_ext $style_arg
+        musescore_command=("convert_with_musescore" "$musescore_version" "$in_progress_dir/$file.$in_ext" "$out_dir/$file.$out_ext" "$style_arg")
 
+        "${musescore_command[@]}" &
+        runnerpid=$!
+
+        echo "runnerpid: $runnerpid"
+        echo "Started MuseScore with PID: $runnerpid"
+
+        # Immediately check the process
+        echo "Immediate ps -p $runnerpid:"
+        ps -p $runnerpid
+
+
+        # first option:
+        # start checking periodically if the musesore background process stil runs
+        end_time=$((SECONDS + timeout))
+        while [ $SECONDS -lt $end_time ]; do
+            if ! ps -p $runnerpid > /dev/null; then
+                echo "Exiting the loop if the process is no longer running"
+                break # Exit the loop if the process is no longer running
+            fi
+            echo "sleeping 1 second"
+            sleep 1 # Short sleep to avoid consuming too much CPU
+        done
+
+        # At this point, the MuseScore process has either finished or timed out
+        if ps -p $runnerpid > /dev/null; then
+            echo "Command timed out."
+            kill -SIGKILL $runnerpid 2>/dev/null
+            # Perform any additional actions here
+        fi
+
+        # second option:
+        start_time=$SECONDS
+        while true; do
+            if ! kill -0 $runnerpid 2>/dev/null; then
+                echo "MuseScore process finished."
+                break
+            fi
+            current_time=$SECONDS
+            elapsed_time=$((current_time - start_time))
+            if [ $elapsed_time -ge $timeout ]; then
+                echo "Command timed out."
+                kill -SIGKILL $runnerpid 2>/dev/null
+                break
+            fi
+            sleep 1
+        done
+
+        # original code to prevent getting stuck on the same file after restart
         # save exit code
         mscz_exit_code=$?
         echo "Exit code: $mscz_exit_code"
