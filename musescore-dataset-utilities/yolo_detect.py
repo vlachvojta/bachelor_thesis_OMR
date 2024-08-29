@@ -16,9 +16,6 @@ from common import Common  # noqa: E402
 CROPPED_CATEGORIES = {"notový-zápis"}
 # CROPPED_CATEGORIES = {"obrázek", "fotografie", "kreslený-humor-karikatura-komiks", "erb-cejch-logo-symbol", "iniciála", "mapa", "graf", "geometrické-výkresy", "ostatní-výkresy", "schéma", "půdorys", "ex-libris" }
 
-# TODO add NOTOVY ZAPIS
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", help="Model path.", required=True)
