@@ -15,3 +15,5 @@ for dir in $(ls -d */ | cut -f1 -d'/'); do \
     zip -r "$dir.zip" $dir/*${suffix} > /dev/null; \
 done
 
+# count images in images.zip
+unzip -l images.zip | grep png | wc -l
