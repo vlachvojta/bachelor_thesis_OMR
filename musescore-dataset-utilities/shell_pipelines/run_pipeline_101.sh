@@ -24,9 +24,7 @@ $LOCAL/100/run_3_to_4.sh $data_dir/3_img_pages/$sub_dir $data_dir/4_img_staves/$
 $LOCAL/100/run_2_to_5.sh $data_dir/2_musicxml_parts/$sub_dir/done $data_dir/5_labels_semantic/$sub_dir  && \
 $LOCAL/100/run_5_to_6.sh $data_dir/4_img_staves/$sub_dir $data_dir/5_labels_semantic/$sub_dir $data_dir/6_copied_pairs/$sub_dir
 $LOCAL/101/run_6_to_7.sh $data_dir/6_copied_pairs/$sub_dir $data_dir/7_yolo_detected/$sub_dir
-$LOCAL/101/run_7_to_8.sh $data_dir/7_yolo_detected/$sub_dir $data_dir/6_copied_pairs/$sub_dir $data_dir/8_copied_pairs/$sub_dir
 
-# $LOCAL/100/run_6_to_7.sh $data_dir/6_copied_pairs/$sub_dir
 
 exit_code=$?
 echo "pipeline scripts exited with: $exit_code"
@@ -37,11 +35,11 @@ time_end=$(date +%s)
 time_diff=$((time_end - time_start))
 echo "Time taken by running pipeline 100: $time_diff seconds"
 
-# if 6_copied_pairs is not empty exists, print the count of images and labels
-if [ -d $data_dir/6_copied_pairs/$sub_dir ]; then
-    echo "Count of images in 6_copied_pairs: $(ls -1q $data_dir/6_copied_pairs/$sub_dir/*.png | wc -l)"
-    echo "Count of labels in 6_copied_pairs/0_labels.SSemantic: $(wc -l $data_dir/6_copied_pairs/$sub_dir/0_labels.SSemantic)"
+# if 7_yolo_detected is not empty, print the count of images and labels
+if [ -d $data_dir/7_yolo_detected/$sub_dir ]; then
+    echo "Count of images in 7_yolo_detected: $(ls -1q $data_dir/7_yolo_detected/$sub_dir/*.png | wc -l)"
+    echo "Count of labels in 7_yolo_detected/0_labels.SSemantic: $(wc -l $data_dir/7_yolo_detected/$sub_dir/0_labels.SSemantic)"
 else
-    echo "6_copied_pairs is empty"
+    echo "7_yolo_detected is empty"
 fi
 
