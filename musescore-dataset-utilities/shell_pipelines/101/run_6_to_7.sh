@@ -75,6 +75,7 @@ echo "Copying corresponding labels from $in_dir/0_labels.SSemantic to $out_dir/0
 rm -f $out_dir/0_labels.SSemantic
 touch $out_dir/0_labels.SSemantic
 
+# copy labels only for correctly cut-out images (for every png file in $out_dir, copy the corresponding label from $in_dir/0_labels.SSemantic)
 for file in $(ls -1q $out_dir/*.png); do
     filename=$(basename $file)
     grep $filename $in_dir/0_labels.SSemantic >> $out_dir/0_labels.SSemantic
