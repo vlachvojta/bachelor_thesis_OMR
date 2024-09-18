@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Description: Place this script to your folder for easy access to pipeline 100
+# Description: Place this script to your folder for easy access to pipeline 101
 # Usage: ./run_pipeline_100_here.sh [<sub_dir>]
 
 # if $BP_GIT variable is not set, default to current directory
