@@ -15,7 +15,7 @@ VLACH, Vojtěch. NEURAL NETWORKS FOR OPTICAL MUSIC RECOGNITION. Brno, 2023. Bach
 ## Codebase
 Codebase consists of individual scripts where each one has its own purpose and documentation at the top.
 
-There following folders in this repository:
+There are following folders in this repository
 * BMPD_stats - containing statistics about the new BMPD dataset
 * dataset-utilities - python scripts for working with both PrIMuS and BMPD datasets
 * experiments - python scripts for experiments with CRNN and Transformer models.
